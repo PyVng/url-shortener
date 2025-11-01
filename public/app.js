@@ -662,92 +662,96 @@ class AuthManager {
     }
 
     setupEventListeners() {
-        // Remove existing event listeners to avoid duplicates
-        this.removeEventListeners();
+        // Remove existing modal if it exists
+        if (this.authModal && this.authModal.parentNode) {
+            this.authModal.remove();
+            this.authModal = null;
+        }
 
-        // Auth buttons
+        // Auth buttons - these are outside the modal
         const loginBtn = document.getElementById('loginBtn');
         const registerBtn = document.getElementById('registerBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        // Remove existing listeners first
         if (loginBtn) {
+            loginBtn.removeEventListener('click', this.showModal.bind(this));
             loginBtn.addEventListener('click', () => this.showModal('login'));
         }
         if (registerBtn) {
+            registerBtn.removeEventListener('click', this.showModal.bind(this));
             registerBtn.addEventListener('click', () => this.showModal('register'));
         }
-
-        // Logout button
-        const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
+            logoutBtn.removeEventListener('click', this.logout.bind(this));
             logoutBtn.addEventListener('click', () => this.logout());
         }
 
-        // Modal events
+        // Modal events - only if modal exists
         if (this.authModal) {
-            const closeBtn = this.authModal.querySelector('.auth-modal-close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.hideModal();
-                });
-            }
-
-            // Click outside to close
-            this.authModal.addEventListener('click', (event) => {
-                if (event.target === this.authModal) {
-                    this.hideModal();
-                }
-            });
-
-            // Tab switching
-            const tabs = this.authModal.querySelectorAll('.auth-tab');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const tabName = e.currentTarget.dataset.tab;
-                    if (tabName) {
-                        this.switchTab(tabName);
-                    }
-                });
-            });
-
-            // OAuth buttons
-            const oauthButtons = this.authModal.querySelectorAll('.oauth-btn');
-            oauthButtons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.handleOAuthLogin(e);
-                });
-            });
-
-            // Form submissions
-            const loginForm = document.getElementById('loginFormElement');
-            const registerForm = document.getElementById('registerFormElement');
-
-            if (loginForm) {
-                loginForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.handleLogin(e);
-                });
-            }
-            if (registerForm) {
-                registerForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.handleRegister(e);
-                });
-            }
+            this.attachModalEventListeners();
         }
     }
 
-    removeEventListeners() {
-        // Remove modal-specific event listeners if they exist
-        if (this.authModal) {
-            const newModal = this.authModal.cloneNode(true);
-            this.authModal.parentNode.replaceChild(newModal, this.authModal);
-            this.authModal = newModal;
+    attachModalEventListeners() {
+        if (!this.authModal) return;
+
+        // Close button
+        const closeBtn = this.authModal.querySelector('.auth-modal-close');
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.hideModal();
+            };
+        }
+
+        // Click outside to close
+        this.authModal.onclick = (event) => {
+            if (event.target === this.authModal) {
+                this.hideModal();
+            }
+        };
+
+        // Tab switching
+        const tabs = this.authModal.querySelectorAll('.auth-tab');
+        tabs.forEach(tab => {
+            tab.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const tabName = tab.dataset.tab;
+                if (tabName) {
+                    this.switchTab(tabName);
+                }
+            };
+        });
+
+        // OAuth buttons
+        const oauthButtons = this.authModal.querySelectorAll('.oauth-btn');
+        oauthButtons.forEach(btn => {
+            btn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.handleOAuthLogin(e);
+            };
+        });
+
+        // Form submissions
+        const loginForm = document.getElementById('loginFormElement');
+        const registerForm = document.getElementById('registerFormElement');
+
+        if (loginForm) {
+            loginForm.onsubmit = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.handleLogin(e);
+            };
+        }
+        if (registerForm) {
+            registerForm.onsubmit = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.handleRegister(e);
+            };
         }
     }
 
