@@ -31,6 +31,16 @@ router.get('/auth/me', AuthController.getCurrentUser);
 // PUT /api/auth/profile - обновление профиля пользователя
 router.put('/auth/profile', AuthController.requireAuth, AuthController.updateProfile);
 
+// OAuth аутентификация
+// GET /api/auth/providers - получение доступных OAuth провайдеров
+router.get('/auth/providers', AuthController.getOAuthProviders);
+
+// POST /api/auth/oauth/:provider - инициация OAuth входа
+router.post('/auth/oauth/:provider', AuthController.oauthLogin);
+
+// GET /api/auth/callback - callback для OAuth (для server-side обработки)
+router.get('/auth/callback', AuthController.oauthCallback);
+
 // Обработка перенаправлений - этот маршрут должен быть в главном server.js
 // GET /:shortCode - перенаправление на оригинальный URL
 

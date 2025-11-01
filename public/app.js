@@ -578,8 +578,23 @@ class AuthManager {
         }
     }
 
-    createAuthModal() {
+    async createAuthModal() {
         const t = translations[this.currentLanguage || 'en'];
+
+        // Получаем доступные OAuth провайдеры
+        let oauthProviders = [];
+        try {
+            const response = await fetch('/api/auth/providers');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    oauthProviders = data.data.providers;
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load OAuth providers:', error);
+        }
+
         const modal = document.createElement('div');
         modal.id = 'authModal';
         modal.className = 'auth-modal';
@@ -590,6 +605,23 @@ class AuthManager {
                     <button class="auth-tab active" data-tab="login">${t.login}</button>
                     <button class="auth-tab" data-tab="register">${t.register}</button>
                 </div>
+
+                ${oauthProviders.length > 0 ? `
+                <div class="oauth-section">
+                    <div class="oauth-buttons">
+                        ${oauthProviders.map(provider => `
+                            <button class="oauth-btn oauth-${provider.name}" data-provider="${provider.name}">
+                                <span class="oauth-icon">${provider.icon}</span>
+                                ${provider.displayName}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div class="oauth-divider">
+                        <span>or</span>
+                    </div>
+                </div>
+                ` : ''}
+
                 <div id="loginForm" class="auth-form active">
                     <h3>${t.login}</h3>
                     <form id="loginFormElement">
@@ -661,6 +693,12 @@ class AuthManager {
             const tabs = this.authModal.querySelectorAll('.auth-tab');
             tabs.forEach(tab => {
                 tab.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
+            });
+
+            // OAuth buttons
+            const oauthButtons = this.authModal.querySelectorAll('.oauth-btn');
+            oauthButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => this.handleOAuthLogin(e));
             });
 
             // Form submissions
@@ -791,6 +829,29 @@ class AuthManager {
         if (messageDiv) {
             messageDiv.textContent = '';
             messageDiv.className = 'auth-message';
+        }
+    }
+
+    async handleOAuthLogin(event) {
+        const provider = event.target.dataset.provider || event.target.closest('.oauth-btn').dataset.provider;
+
+        try {
+            const response = await fetch(`/api/auth/oauth/${provider}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Перенаправляем на OAuth провайдера
+                window.location.href = data.data.url;
+            } else {
+                this.showMessage(data.error || 'OAuth login failed', 'error');
+            }
+        } catch (error) {
+            console.error('OAuth login error:', error);
+            this.showMessage('Network error during OAuth login', 'error');
         }
     }
 

@@ -20,6 +20,42 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API маршруты
 app.use('/api', apiRoutes);
 
+// OAuth callback маршрут
+app.get('/auth/callback', async (req, res) => {
+  try {
+    const { code, state } = req.query;
+
+    if (!code) {
+      return res.status(400).send('Authorization code is required');
+    }
+
+    // Импортируем Supabase клиент
+    const { supabase } = require('./db/supabase');
+
+    if (!supabase) {
+      return res.status(503).send('Authentication service not configured');
+    }
+
+    // Обмениваем код на сессию
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+      console.error('OAuth callback error:', error);
+      return res.status(400).send('Authentication failed');
+    }
+
+    // Перенаправляем на страницу успеха с токенами
+    const redirectUrl = new URL('/auth/success', `${req.protocol}://${req.get('host')}`);
+    redirectUrl.searchParams.set('access_token', data.session.access_token);
+    redirectUrl.searchParams.set('refresh_token', data.session.refresh_token);
+
+    res.redirect(redirectUrl.toString());
+  } catch (error) {
+    console.error('OAuth callback processing error:', error);
+    res.status(500).send('Internal server error');
+  }
+});
+
 // Маршрут для перенаправления коротких URL
 app.get('/:shortCode', UrlController.redirectToOriginal);
 
