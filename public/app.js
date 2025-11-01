@@ -5,6 +5,14 @@ const translations = {
         title: "URL Shortener",
         subtitle: "Сократите длинные ссылки в короткие и удобные",
         languageLabel: "Язык:",
+        login: "Войти",
+        register: "Регистрация",
+        logout: "Выйти",
+        welcome: "Привет",
+        authError: "Ошибка аутентификации",
+        loginSuccess: "Успешный вход",
+        registerSuccess: "Регистрация успешна",
+        logoutSuccess: "Выход выполнен",
         enterUrlLabel: "Введите длинный URL:",
         urlPlaceholder: "https://example.com/very/long/url/that/needs/to/be/shortened",
         shortenBtn: "Сократить URL",
@@ -29,6 +37,14 @@ const translations = {
         title: "URL Shortener",
         subtitle: "Shorten long links into short and convenient ones",
         languageLabel: "Language:",
+        login: "Login",
+        register: "Register",
+        logout: "Logout",
+        welcome: "Welcome",
+        authError: "Authentication error",
+        loginSuccess: "Login successful",
+        registerSuccess: "Registration successful",
+        logoutSuccess: "Logged out",
         enterUrlLabel: "Enter long URL:",
         urlPlaceholder: "https://example.com/very/long/url/that/needs/to/be/shortened",
         shortenBtn: "Shorten URL",
@@ -53,6 +69,14 @@ const translations = {
         title: "Acortador de URL",
         subtitle: "Acorta enlaces largos en cortos y convenientes",
         languageLabel: "Idioma:",
+        login: "Iniciar sesión",
+        register: "Registrarse",
+        logout: "Cerrar sesión",
+        welcome: "Bienvenido",
+        authError: "Error de autenticación",
+        loginSuccess: "Inicio de sesión exitoso",
+        registerSuccess: "Registro exitoso",
+        logoutSuccess: "Sesión cerrada",
         enterUrlLabel: "Ingresa URL larga:",
         urlPlaceholder: "https://example.com/muy/largo/url/que/necesita/ser/acortado",
         shortenBtn: "Acortar URL",
@@ -463,10 +487,14 @@ class AuthManager {
     }
 
     setupEventListeners() {
-        // Auth button
-        const authBtn = document.getElementById('authBtn');
-        if (authBtn) {
-            authBtn.addEventListener('click', () => this.showModal());
+        // Auth buttons
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => this.showModal('login'));
+        }
+        if (registerBtn) {
+            registerBtn.addEventListener('click', () => this.showModal('register'));
         }
 
         // Logout button
@@ -505,9 +533,10 @@ class AuthManager {
         }
     }
 
-    showModal() {
+    showModal(initialTab = 'login') {
         if (this.authModal) {
             this.authModal.style.display = 'block';
+            this.switchTab(initialTab);
         }
     }
 
@@ -815,6 +844,12 @@ class UrlShortener {
         // Обновление заголовка и подзаголовка
         document.querySelector('h1').textContent = t.title;
         document.querySelector('header p').textContent = t.subtitle;
+
+        // Обновление кнопок аутентификации
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        if (loginBtn) loginBtn.textContent = t.login;
+        if (registerBtn) registerBtn.textContent = t.register;
 
         // Обновление формы
         document.querySelector('label[for="languageSelect"]').textContent = t.languageLabel;
