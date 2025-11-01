@@ -495,17 +495,24 @@ footer {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(5px);
+    overflow-y: auto;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .auth-modal-content {
     background-color: white;
-    margin: 10% auto;
+    margin: 0 auto;
     padding: 0;
     border-radius: 12px;
-    width: 90%;
+    width: 100%;
     max-width: 400px;
+    max-height: 90vh;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
     animation: modalFadeIn 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes modalFadeIn {
@@ -568,6 +575,8 @@ footer {
 .auth-form {
     padding: 30px;
     display: none;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .auth-form.active {

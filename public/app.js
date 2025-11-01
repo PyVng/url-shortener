@@ -692,7 +692,11 @@ class AuthManager {
             // Tab switching
             const tabs = this.authModal.querySelectorAll('.auth-tab');
             tabs.forEach(tab => {
-                tab.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tabName = e.currentTarget.dataset.tab;
+                    this.switchTab(tabName);
+                });
             });
 
             // OAuth buttons
