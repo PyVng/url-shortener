@@ -758,6 +758,7 @@ class AuthManager {
     showModal(initialTab = 'login') {
         if (this.authModal) {
             this.authModal.style.display = 'block';
+            this.attachModalEventListeners(); // Ensure event listeners are attached
             this.switchTab(initialTab);
         }
     }
