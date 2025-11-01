@@ -1,10 +1,10 @@
-const { nanoid } = require('nanoid');
+const crypto = require('crypto');
 const { createShortUrl, getOriginalUrl } = require('../db/database');
 
 class UrlModel {
   // Генерация короткого кода
   static generateShortCode(length = 8) {
-    return nanoid(length);
+    return crypto.randomBytes(length).toString('base64url').substring(0, length);
   }
 
   // Валидация URL
