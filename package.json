@@ -10,7 +10,12 @@
     "dev": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["url-shortener", "nodejs", "express", "postgresql"],
+  "keywords": [
+    "url-shortener",
+    "nodejs",
+    "express",
+    "postgresql"
+  ],
   "author": "",
   "license": "ISC",
   "description": "A multilingual URL shortener service built with Node.js, Express, and PostgreSQL",
@@ -18,7 +23,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "nanoid": "^5.1.6",
+    "nanoid": "^4.0.2",
     "pg": "^8.16.3"
   }
 }
