@@ -81,6 +81,75 @@
 - ✅ **Автоматическое обновление токенов**
 - ✅ **Защищенные API endpoints**
 
+### 🔐 Настройка OAuth провайдеров для Production
+
+**Важно!** OAuth провайдеры нужно настроить отдельно для каждого Supabase проекта.
+
+#### Шаг 1: Включение OAuth провайдеров в Supabase Dashboard
+
+1. **Откройте Supabase Dashboard** вашего production проекта
+2. **Перейдите в Authentication → Providers**
+3. **Включите нужные провайдеры**:
+   - **Google**: Введите Client ID и Client Secret из Google Cloud Console
+   - **GitHub**: Создайте OAuth App в GitHub Settings → Developer settings
+   - **Discord**: Создайте приложение в Discord Developer Portal
+   - **Twitter**: Настройте в Twitter Developer Portal
+   - **Apple**: Настройте в Apple Developer Program
+   - **Facebook**: Создайте приложение в Facebook Developers
+
+#### Шаг 2: Настройка Redirect URLs
+
+Для каждого провайдера добавьте **Redirect URL**:
+```
+https://your-vercel-app.vercel.app/auth/callback
+```
+
+Где `your-vercel-app.vercel.app` - ваш домен на Vercel.
+
+#### Шаг 3: Проверка переменных окружения на Vercel
+
+Убедитесь, что в Vercel установлены правильные переменные:
+```
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+#### Шаг 4: Тестирование OAuth
+
+1. **Передеплойте** приложение на Vercel после настройки провайдеров
+2. **Попробуйте войти** через OAuth кнопку
+3. **Проверьте логи Vercel** при ошибках
+
+#### Распространенные проблемы:
+
+- **"Provider not enabled"** → Включите провайдера в Supabase Dashboard
+- **"Invalid redirect URL"** → Добавьте правильный Redirect URL
+- **"Invalid client"** → Проверьте Client ID/Secret в настройках провайдера
+- **CORS ошибки** → Проверьте, что домен добавлен в Supabase Auth settings
+
+#### Получение API ключей для провайдеров:
+
+**Google:**
+1. Перейдите в [Google Cloud Console](https://console.cloud.google.com)
+2. Создайте проект или выберите существующий
+3. Включите Google+ API
+4. Создайте OAuth 2.0 credentials
+5. Добавьте redirect URL: `https://your-app.vercel.app/auth/callback`
+
+**GitHub:**
+1. Перейдите в GitHub Settings → Developer settings → OAuth Apps
+2. Создайте новое OAuth приложение
+3. Homepage URL: `https://your-app.vercel.app`
+4. Authorization callback URL: `https://your-app.vercel.app/auth/callback`
+
+**Discord:**
+1. Перейдите в [Discord Developer Portal](https://discord.com/developers/applications)
+2. Создайте новое приложение
+3. В OAuth2 settings добавьте redirect: `https://your-app.vercel.app/auth/callback`
+
+**И так далее для остальных провайдеров...**
+
 ### 🛠 Доступные API endpoints с аутентификацией:
 
 ```
