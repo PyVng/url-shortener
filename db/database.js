@@ -5,6 +5,8 @@ require('dotenv').config();
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  // Отключаем нативные модули для совместимости с Vercel
+  native: false,
 });
 
 // Инициализация базы данных
@@ -72,4 +74,4 @@ const databaseOperations = {
   }
 };
 
-module.exports = { db, ...databaseOperations };
+module.exports = { ...databaseOperations };

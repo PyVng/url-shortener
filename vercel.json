@@ -17,6 +17,12 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "PGSSLMODE": "require"
+  },
+  "functions": {
+    "server.js": {
+      "maxDuration": 10
+    }
   }
 }
