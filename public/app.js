@@ -858,12 +858,14 @@ class AuthManager {
     updateLanguage(language) {
         this.currentLanguage = language;
         if (this.authModal) {
-            // Recreate modal with new language
+            // Remove existing modal
             const modal = document.getElementById('authModal');
             if (modal) {
                 modal.remove();
             }
+            // Recreate modal with new language
             this.createAuthModal();
+            // Re-setup event listeners for the new modal
             this.setupEventListeners();
         }
     }
