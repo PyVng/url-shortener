@@ -14,25 +14,34 @@
                     <h1>🔗 URL Shortener</h1>
                     <p>Сократите длинные ссылки в короткие и удобные</p>
                 </div>
-                <div class="language-selector">
-                    <label for="languageSelect">Язык:</label>
-                    <select id="languageSelect">
-                        <option value="ru">Русский</option>
-                        <option value="en">English</option>
-                        <option value="es">Español</option>
-                        <option value="fr">Français</option>
-                        <option value="de">Deutsch</option>
-                        <option value="zh">中文</option>
-                        <option value="ja">日本語</option>
-                        <option value="ar">العربية</option>
-                        <option value="pt">Português</option>
-                        <option value="it">Italiano</option>
-                        <option value="hi">हिन्दी</option>
-                        <option value="ko">한국어</option>
-                        <option value="tr">Türkçe</option>
-                        <option value="pl">Polski</option>
-                        <option value="nl">Nederlands</option>
-                    </select>
+                <div class="header-controls">
+                    <div class="auth-section">
+                        <button id="authBtn" class="btn btn-outline auth-btn">Войти</button>
+                        <div id="userInfo" class="user-info" style="display: none;">
+                            <span>Привет, <span id="userName"></span></span>
+                            <button id="logoutBtn" class="btn btn-outline logout-btn">Выйти</button>
+                        </div>
+                    </div>
+                    <div class="language-selector">
+                        <label for="languageSelect">Language:</label>
+                        <select id="languageSelect">
+                            <option value="en">English</option>
+                            <option value="zh">中文</option>
+                            <option value="es">Español</option>
+                            <option value="ar">العربية</option>
+                            <option value="hi">हिन्दी</option>
+                            <option value="ru">Русский</option>
+                            <option value="fr">Français</option>
+                            <option value="ja">日本語</option>
+                            <option value="de">Deutsch</option>
+                            <option value="pt">Português</option>
+                            <option value="it">Italiano</option>
+                            <option value="ko">한국어</option>
+                            <option value="tr">Türkçe</option>
+                            <option value="pl">Polski</option>
+                            <option value="nl">Nederlands</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </header>
@@ -71,6 +80,7 @@
                             <div class="short-url-container">
                                 <input type="text" id="shortUrlInput" readonly>
                                 <button id="copyBtn" class="btn btn-secondary">Копировать</button>
+                                <button id="goToBtn" class="btn btn-outline">Перейти</button>
                             </div>
                         </div>
                     </div>

@@ -1,77 +1,69 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+// Legacy database interface - now uses the new DatabaseManager
+// This file is kept for backward compatibility
+const dbManager = require('./manager');
 
-// Создание подключения к PostgreSQL
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  // Отключаем нативные модули для совместимости с Vercel
-  native: false,
-});
+// Initialize database manager
+let isInitialized = false;
 
-// Инициализация базы данных
 async function initializeDatabase() {
-  try {
-    const client = await pool.connect();
-    const sql = `
-      CREATE TABLE IF NOT EXISTS urls (
-        id SERIAL PRIMARY KEY,
-        short_code TEXT UNIQUE NOT NULL,
-        original_url TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `;
-    await client.query(sql);
-    console.log('Таблица urls создана или уже существует.');
-    client.release();
-  } catch (err) {
-    console.error('Ошибка создания таблицы:', err.message);
+  if (!isInitialized) {
+    try {
+      await dbManager.initialize();
+      isInitialized = true;
+      console.log('Database initialized successfully');
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+      throw error;
+    }
   }
 }
 
-// Вызываем инициализацию
-initializeDatabase();
-
-// Функции для работы с базой данных
+// Legacy functions for backward compatibility
 const databaseOperations = {
   // Создание короткого URL
   createShortUrl: async (shortCode, originalUrl) => {
-    try {
-      const client = await pool.connect();
-      const sql = 'INSERT INTO urls (short_code, original_url) VALUES ($1, $2) RETURNING id';
-      const result = await client.query(sql, [shortCode, originalUrl]);
-      client.release();
-      return { id: result.rows[0].id, shortCode, originalUrl };
-    } catch (err) {
-      throw err;
-    }
+    await initializeDatabase();
+    return await dbManager.createShortUrl(shortCode, originalUrl);
   },
 
   // Получение оригинального URL по короткому коду
   getOriginalUrl: async (shortCode) => {
-    try {
-      const client = await pool.connect();
-      const sql = 'SELECT original_url FROM urls WHERE short_code = $1';
-      const result = await client.query(sql, [shortCode]);
-      client.release();
-      return result.rows.length > 0 ? result.rows[0].original_url : null;
-    } catch (err) {
-      throw err;
-    }
+    await initializeDatabase();
+    return await dbManager.getOriginalUrl(shortCode);
   },
 
   // Получение всех URL (для отладки)
   getAllUrls: async () => {
-    try {
-      const client = await pool.connect();
-      const sql = 'SELECT * FROM urls ORDER BY created_at DESC';
-      const result = await client.query(sql);
-      client.release();
-      return result.rows;
-    } catch (err) {
-      throw err;
-    }
-  }
+    await initializeDatabase();
+    return await dbManager.getAllUrls();
+  },
+
+  // Get URL statistics
+  getUrlStats: async (shortCode) => {
+    await initializeDatabase();
+    return await dbManager.getUrlStats(shortCode);
+  },
+
+  // Health check
+  healthCheck: async () => {
+    await initializeDatabase();
+    return await dbManager.healthCheck();
+  },
+
+  // Get database statistics
+  getStats: async () => {
+    await initializeDatabase();
+    return await dbManager.getStats();
+  },
+
+  // Rate limiting
+  checkRateLimit: async (identifier, limit = 100, window = 3600) => {
+    await initializeDatabase();
+    return await dbManager.checkRateLimit(identifier, limit, window);
+  },
 };
+
+// Auto-initialize on module load
+initializeDatabase().catch(console.error);
 
 module.exports = { ...databaseOperations };

@@ -1,4 +1,4 @@
-// URL Shortener Frontend JavaScript
+// URL Shortener Frontend JavaScript with Authentication
 
 const translations = {
     ru: {
@@ -13,6 +13,7 @@ const translations = {
         originalUrlLabel: "Оригинальный URL:",
         shortUrlLabel: "Короткий URL:",
         copyBtn: "Копировать",
+        goToBtn: "Перейти",
         createNewBtn: "Создать новый",
         errorTitle: "❌ Ошибка",
         tryAgainBtn: "Попробовать снова",
@@ -36,6 +37,7 @@ const translations = {
         originalUrlLabel: "Original URL:",
         shortUrlLabel: "Short URL:",
         copyBtn: "Copy",
+        goToBtn: "Go to",
         createNewBtn: "Create new",
         errorTitle: "❌ Error",
         tryAgainBtn: "Try again",
@@ -59,6 +61,7 @@ const translations = {
         originalUrlLabel: "URL original:",
         shortUrlLabel: "URL corta:",
         copyBtn: "Copiar",
+        goToBtn: "Ir a",
         createNewBtn: "Crear nuevo",
         errorTitle: "❌ Error",
         tryAgainBtn: "Intentar de nuevo",
@@ -82,6 +85,7 @@ const translations = {
         originalUrlLabel: "URL originale:",
         shortUrlLabel: "URL courte:",
         copyBtn: "Copier",
+        goToBtn: "Aller à",
         createNewBtn: "Créer nouveau",
         errorTitle: "❌ Erreur",
         tryAgainBtn: "Réessayer",
@@ -105,6 +109,7 @@ const translations = {
         originalUrlLabel: "Original-URL:",
         shortUrlLabel: "Kurze URL:",
         copyBtn: "Kopieren",
+        goToBtn: "Gehe zu",
         createNewBtn: "Neu erstellen",
         errorTitle: "❌ Fehler",
         tryAgainBtn: "Erneut versuchen",
@@ -128,6 +133,7 @@ const translations = {
         originalUrlLabel: "原始 URL:",
         shortUrlLabel: "短 URL:",
         copyBtn: "复制",
+        goToBtn: "前往",
         createNewBtn: "创建新的",
         errorTitle: "❌ 错误",
         tryAgainBtn: "重试",
@@ -151,6 +157,7 @@ const translations = {
         originalUrlLabel: "元の URL:",
         shortUrlLabel: "短い URL:",
         copyBtn: "コピー",
+        goToBtn: "移動",
         createNewBtn: "新規作成",
         errorTitle: "❌ エラー",
         tryAgainBtn: "再試行",
@@ -174,6 +181,7 @@ const translations = {
         originalUrlLabel: "URL الأصلي:",
         shortUrlLabel: "URL قصير:",
         copyBtn: "نسخ",
+        goToBtn: "اذهب إلى",
         createNewBtn: "إنشاء جديد",
         errorTitle: "❌ خطأ",
         tryAgainBtn: "حاول مرة أخرى",
@@ -197,6 +205,7 @@ const translations = {
         originalUrlLabel: "URL original:",
         shortUrlLabel: "URL curta:",
         copyBtn: "Copiar",
+        goToBtn: "Ir para",
         createNewBtn: "Criar novo",
         errorTitle: "❌ Erro",
         tryAgainBtn: "Tentar novamente",
@@ -220,6 +229,7 @@ const translations = {
         originalUrlLabel: "URL originale:",
         shortUrlLabel: "URL corta:",
         copyBtn: "Copia",
+        goToBtn: "Vai a",
         createNewBtn: "Crea nuovo",
         errorTitle: "❌ Errore",
         tryAgainBtn: "Riprova",
@@ -243,6 +253,7 @@ const translations = {
         originalUrlLabel: "मूल URL:",
         shortUrlLabel: "छोटी URL:",
         copyBtn: "कॉपी करें",
+        goToBtn: "जाएं",
         createNewBtn: "नया बनाएं",
         errorTitle: "❌ त्रुटि",
         tryAgainBtn: "पुनः प्रयास करें",
@@ -266,6 +277,7 @@ const translations = {
         originalUrlLabel: "원본 URL:",
         shortUrlLabel: "짧은 URL:",
         copyBtn: "복사",
+        goToBtn: "이동",
         createNewBtn: "새로 만들기",
         errorTitle: "❌ 오류",
         tryAgainBtn: "다시 시도",
@@ -289,6 +301,7 @@ const translations = {
         originalUrlLabel: "Orijinal URL:",
         shortUrlLabel: "Kısa URL:",
         copyBtn: "Kopyala",
+        goToBtn: "Git",
         createNewBtn: "Yeni oluştur",
         errorTitle: "❌ Hata",
         tryAgainBtn: "Tekrar dene",
@@ -312,6 +325,7 @@ const translations = {
         originalUrlLabel: "Oryginalny URL:",
         shortUrlLabel: "Krótki URL:",
         copyBtn: "Kopiuj",
+        goToBtn: "Przejdź do",
         createNewBtn: "Utwórz nowy",
         errorTitle: "❌ Błąd",
         tryAgainBtn: "Spróbuj ponownie",
@@ -335,6 +349,7 @@ const translations = {
         originalUrlLabel: "Originele URL:",
         shortUrlLabel: "Korte URL:",
         copyBtn: "Kopiëren",
+        goToBtn: "Ga naar",
         createNewBtn: "Nieuwe maken",
         errorTitle: "❌ Fout",
         tryAgainBtn: "Probeer opnieuw",
@@ -348,9 +363,269 @@ const translations = {
     }
 };
 
+class AuthManager {
+    constructor() {
+        this.currentUser = null;
+        this.authModal = null;
+        this.init();
+    }
+
+    init() {
+        this.checkAuthStatus();
+        this.createAuthModal();
+        this.setupEventListeners();
+    }
+
+    async checkAuthStatus() {
+        try {
+            const response = await fetch('/api/auth/me');
+            if (response.ok) {
+                const data = await response.json();
+                this.setCurrentUser(data.data.user);
+            } else {
+                this.setCurrentUser(null);
+            }
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            this.setCurrentUser(null);
+        }
+    }
+
+    setCurrentUser(user) {
+        this.currentUser = user;
+        this.updateUI();
+    }
+
+    updateUI() {
+        const authBtn = document.getElementById('authBtn');
+        const userInfo = document.getElementById('userInfo');
+        const userName = document.getElementById('userName');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        if (this.currentUser) {
+            if (authBtn) authBtn.style.display = 'none';
+            if (userInfo) userInfo.style.display = 'block';
+            if (userName) userName.textContent = this.currentUser.email || this.currentUser.name;
+        } else {
+            if (authBtn) authBtn.style.display = 'block';
+            if (userInfo) userInfo.style.display = 'none';
+        }
+    }
+
+    createAuthModal() {
+        const modal = document.createElement('div');
+        modal.id = 'authModal';
+        modal.className = 'auth-modal';
+        modal.innerHTML = `
+            <div class="auth-modal-content">
+                <span class="auth-modal-close">&times;</span>
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">Вход</button>
+                    <button class="auth-tab" data-tab="register">Регистрация</button>
+                </div>
+                <div id="loginForm" class="auth-form active">
+                    <h3>Вход в аккаунт</h3>
+                    <form id="loginFormElement">
+                        <div class="form-group">
+                            <label for="loginEmail">Email:</label>
+                            <input type="email" id="loginEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Пароль:</label>
+                            <input type="password" id="loginPassword" required>
+                        </div>
+                        <button type="submit" class="auth-submit-btn">Войти</button>
+                    </form>
+                </div>
+                <div id="registerForm" class="auth-form">
+                    <h3>Регистрация</h3>
+                    <form id="registerFormElement">
+                        <div class="form-group">
+                            <label for="registerEmail">Email:</label>
+                            <input type="email" id="registerEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPassword">Пароль:</label>
+                            <input type="password" id="registerPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerName">Имя (опционально):</label>
+                            <input type="text" id="registerName">
+                        </div>
+                        <button type="submit" class="auth-submit-btn">Зарегистрироваться</button>
+                    </form>
+                </div>
+                <div id="authMessage" class="auth-message"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        this.authModal = modal;
+    }
+
+    setupEventListeners() {
+        // Auth button
+        const authBtn = document.getElementById('authBtn');
+        if (authBtn) {
+            authBtn.addEventListener('click', () => this.showModal());
+        }
+
+        // Logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => this.logout());
+        }
+
+        // Modal events
+        if (this.authModal) {
+            const closeBtn = this.authModal.querySelector('.auth-modal-close');
+            closeBtn.addEventListener('click', () => this.hideModal());
+
+            window.addEventListener('click', (event) => {
+                if (event.target === this.authModal) {
+                    this.hideModal();
+                }
+            });
+
+            // Tab switching
+            const tabs = this.authModal.querySelectorAll('.auth-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
+            });
+
+            // Form submissions
+            const loginForm = document.getElementById('loginFormElement');
+            const registerForm = document.getElementById('registerFormElement');
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+            }
+            if (registerForm) {
+                registerForm.addEventListener('submit', (e) => this.handleRegister(e));
+            }
+        }
+    }
+
+    showModal() {
+        if (this.authModal) {
+            this.authModal.style.display = 'block';
+        }
+    }
+
+    hideModal() {
+        if (this.authModal) {
+            this.authModal.style.display = 'none';
+            this.clearForms();
+            this.clearMessage();
+        }
+    }
+
+    switchTab(tabName) {
+        const tabs = this.authModal.querySelectorAll('.auth-tab');
+        const forms = this.authModal.querySelectorAll('.auth-form');
+
+        tabs.forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === tabName);
+        });
+
+        forms.forEach(form => {
+            form.classList.toggle('active', form.id === `${tabName}Form`);
+        });
+
+        this.clearMessage();
+    }
+
+    async handleLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                this.setCurrentUser(data.data.user);
+                this.hideModal();
+                this.showMessage('Успешный вход!', 'success');
+            } else {
+                this.showMessage(data.error || 'Ошибка входа', 'error');
+            }
+        } catch (error) {
+            this.showMessage('Ошибка сети', 'error');
+        }
+    }
+
+    async handleRegister(event) {
+        event.preventDefault();
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        const name = document.getElementById('registerName').value;
+
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, name })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                this.setCurrentUser(data.data.user);
+                this.hideModal();
+                this.showMessage('Регистрация успешна!', 'success');
+            } else {
+                this.showMessage(data.error || 'Ошибка регистрации', 'error');
+            }
+        } catch (error) {
+            this.showMessage('Ошибка сети', 'error');
+        }
+    }
+
+    async logout() {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            this.setCurrentUser(null);
+            this.showMessage('Выход выполнен', 'success');
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    }
+
+    clearForms() {
+        const forms = ['loginFormElement', 'registerFormElement'];
+        forms.forEach(formId => {
+            const form = document.getElementById(formId);
+            if (form) form.reset();
+        });
+    }
+
+    showMessage(message, type) {
+        const messageDiv = document.getElementById('authMessage');
+        if (messageDiv) {
+            messageDiv.textContent = message;
+            messageDiv.className = `auth-message ${type}`;
+            setTimeout(() => this.clearMessage(), 5000);
+        }
+    }
+
+    clearMessage() {
+        const messageDiv = document.getElementById('authMessage');
+        if (messageDiv) {
+            messageDiv.textContent = '';
+            messageDiv.className = 'auth-message';
+        }
+    }
+}
+
 class UrlShortener {
     constructor() {
-        this.currentLanguage = 'ru';
+        this.currentLanguage = 'en'; // English as default
         this.form = document.getElementById('urlForm');
         this.originalUrlInput = document.getElementById('originalUrl');
         this.shortenBtn = document.getElementById('shortenBtn');
@@ -362,6 +637,7 @@ class UrlShortener {
         this.originalUrlDisplay = document.getElementById('originalUrlDisplay');
         this.shortUrlInput = document.getElementById('shortUrlInput');
         this.copyBtn = document.getElementById('copyBtn');
+        this.goToBtn = document.getElementById('goToBtn');
         this.createNewBtn = document.getElementById('createNewBtn');
         this.tryAgainBtn = document.getElementById('tryAgainBtn');
         this.languageSelect = document.getElementById('languageSelect');
@@ -372,6 +648,7 @@ class UrlShortener {
     init() {
         this.form.addEventListener('submit', this.handleSubmit.bind(this));
         this.copyBtn.addEventListener('click', this.copyToClipboard.bind(this));
+        this.goToBtn.addEventListener('click', this.goToUrl.bind(this));
         this.createNewBtn.addEventListener('click', this.resetForm.bind(this));
         this.tryAgainBtn.addEventListener('click', this.resetForm.bind(this));
         this.languageSelect.addEventListener('change', this.changeLanguage.bind(this));
@@ -502,6 +779,13 @@ class UrlShortener {
         }
     }
 
+    goToUrl() {
+        const shortUrl = this.shortUrlInput.value;
+        if (shortUrl) {
+            window.open(shortUrl, '_blank');
+        }
+    }
+
     resetForm() {
         this.form.reset();
         this.hideMessages();
@@ -550,6 +834,7 @@ class UrlShortener {
         if (shortLabel) shortLabel.textContent = t.shortUrlLabel;
 
         document.getElementById('copyBtn').textContent = t.copyBtn;
+        document.getElementById('goToBtn').textContent = t.goToBtn;
         document.getElementById('createNewBtn').textContent = t.createNewBtn;
 
         // Обновление ошибок
@@ -568,6 +853,7 @@ class UrlShortener {
 
 // Инициализация приложения при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
+    new AuthManager();
     new UrlShortener();
 });
 

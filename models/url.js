@@ -26,7 +26,7 @@ class UrlModel {
   }
 
   // Создание короткого URL
-  static async createShortUrl(originalUrl) {
+  static async createShortUrl(originalUrl, baseUrl = null, userId = null) {
     // Валидация URL
     const validation = this.validateUrl(originalUrl);
     if (!validation.valid) {
@@ -44,11 +44,13 @@ class UrlModel {
 
       try {
         const result = await createShortUrl(shortCode, originalUrl);
+        // Используем переданный baseUrl или fallback к environment переменной
+        const finalBaseUrl = baseUrl || process.env.BASE_URL || 'http://localhost:3000';
         return {
           id: result.id,
           shortCode: result.shortCode,
           originalUrl: result.originalUrl,
-          shortUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/${result.shortCode}`
+          shortUrl: `${finalBaseUrl}/${result.shortCode}`
         };
       } catch (error) {
         // Если код уже существует, попробуем сгенерировать новый

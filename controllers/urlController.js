@@ -13,7 +13,15 @@ class UrlController {
         });
       }
 
-      const result = await UrlModel.createShortUrl(originalUrl);
+      // Определяем базовый URL динамически для Vercel
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+      const host = req.headers['x-forwarded-host'] || req.headers.host || req.hostname;
+      const baseUrl = `${protocol}://${host}`;
+
+      // Получаем userId из аутентифицированного пользователя (если есть)
+      const userId = req.user ? req.user.id : null;
+
+      const result = await UrlModel.createShortUrl(originalUrl, baseUrl, userId);
 
       res.status(201).json({
         success: true,

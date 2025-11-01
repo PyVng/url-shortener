@@ -18,6 +18,7 @@
   ],
   "env": {
     "NODE_ENV": "production",
+    "ACTIVE_DATABASE": "supabase",
     "PGSSLMODE": "require"
   }
 }
