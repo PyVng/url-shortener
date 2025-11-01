@@ -9,6 +9,9 @@ const translations = {
         register: "Регистрация",
         logout: "Выйти",
         welcome: "Привет",
+        password: "Пароль",
+        name: "Имя",
+        optional: "опционально",
         authError: "Ошибка аутентификации",
         loginSuccess: "Успешный вход",
         registerSuccess: "Регистрация успешна",
@@ -41,6 +44,9 @@ const translations = {
         register: "Register",
         logout: "Logout",
         welcome: "Welcome",
+        password: "Password",
+        name: "Name",
+        optional: "optional",
         authError: "Authentication error",
         loginSuccess: "Login successful",
         registerSuccess: "Registration successful",
@@ -73,6 +79,9 @@ const translations = {
         register: "Registrarse",
         logout: "Cerrar sesión",
         welcome: "Bienvenido",
+        password: "Contraseña",
+        name: "Nombre",
+        optional: "opcional",
         authError: "Error de autenticación",
         loginSuccess: "Inicio de sesión exitoso",
         registerSuccess: "Registro exitoso",
@@ -105,6 +114,9 @@ const translations = {
         register: "S'inscrire",
         logout: "Se déconnecter",
         welcome: "Bienvenue",
+        password: "Mot de passe",
+        name: "Nom",
+        optional: "optionnel",
         authError: "Erreur d'authentification",
         loginSuccess: "Connexion réussie",
         registerSuccess: "Inscription réussie",
@@ -137,6 +149,9 @@ const translations = {
         register: "Registrieren",
         logout: "Abmelden",
         welcome: "Willkommen",
+        password: "Passwort",
+        name: "Name",
+        optional: "optional",
         authError: "Authentifizierungsfehler",
         loginSuccess: "Erfolgreich angemeldet",
         registerSuccess: "Registrierung erfolgreich",
@@ -169,6 +184,9 @@ const translations = {
         register: "注册",
         logout: "登出",
         welcome: "欢迎",
+        password: "密码",
+        name: "姓名",
+        optional: "可选",
         authError: "认证错误",
         loginSuccess: "登录成功",
         registerSuccess: "注册成功",
@@ -201,6 +219,9 @@ const translations = {
         register: "登録",
         logout: "ログアウト",
         welcome: "ようこそ",
+        password: "パスワード",
+        name: "名前",
+        optional: "任意",
         authError: "認証エラー",
         loginSuccess: "ログイン成功",
         registerSuccess: "登録成功",
@@ -229,6 +250,17 @@ const translations = {
         title: "مختصر URL",
         subtitle: "اختصر الروابط الطويلة إلى روابط قصيرة ومريحة",
         languageLabel: "اللغة:",
+        login: "تسجيل الدخول",
+        register: "التسجيل",
+        logout: "تسجيل الخروج",
+        welcome: "مرحباً",
+        password: "كلمة المرور",
+        name: "الاسم",
+        optional: "اختياري",
+        authError: "خطأ في المصادقة",
+        loginSuccess: "تم تسجيل الدخول بنجاح",
+        registerSuccess: "تم التسجيل بنجاح",
+        logoutSuccess: "تم تسجيل الخروج",
         enterUrlLabel: "أدخل URL طويل:",
         urlPlaceholder: "https://example.com/very/long/url/that/needs/to/be/shortened",
         shortenBtn: "اختصر URL",
@@ -253,6 +285,17 @@ const translations = {
         title: "Encurtador de URL",
         subtitle: "Encurte links longos em links curtos e convenientes",
         languageLabel: "Idioma:",
+        login: "Entrar",
+        register: "Registrar",
+        logout: "Sair",
+        welcome: "Bem-vindo",
+        password: "Senha",
+        name: "Nome",
+        optional: "opcional",
+        authError: "Erro de autenticação",
+        loginSuccess: "Login realizado com sucesso",
+        registerSuccess: "Registro realizado com sucesso",
+        logoutSuccess: "Logout realizado",
         enterUrlLabel: "Digite URL longa:",
         urlPlaceholder: "https://example.com/muito/longo/url/que/precisa/ser/encurtado",
         shortenBtn: "Encurtar URL",
@@ -277,6 +320,17 @@ const translations = {
         title: "Accorciatore URL",
         subtitle: "Accorcia link lunghi in link corti e convenienti",
         languageLabel: "Lingua:",
+        login: "Accedi",
+        register: "Registrati",
+        logout: "Esci",
+        welcome: "Benvenuto",
+        password: "Password",
+        name: "Nome",
+        optional: "opzionale",
+        authError: "Errore di autenticazione",
+        loginSuccess: "Accesso effettuato con successo",
+        registerSuccess: "Registrazione effettuata con successo",
+        logoutSuccess: "Disconnesso",
         enterUrlLabel: "Inserisci URL lungo:",
         urlPlaceholder: "https://example.com/molto/lungo/url/che/deve/essere/accorciato",
         shortenBtn: "Accorcia URL",
@@ -301,6 +355,17 @@ const translations = {
         title: "URL संक्षेपक",
         subtitle: "लंबी लिंक्स को छोटी और सुविधाजनक लिंक्स में संक्षिप्त करें",
         languageLabel: "भाषा:",
+        login: "लॉग इन",
+        register: "पंजीकरण",
+        logout: "लॉग आउट",
+        welcome: "स्वागत है",
+        password: "पासवर्ड",
+        name: "नाम",
+        optional: "वैकल्पिक",
+        authError: "प्रमाणीकरण त्रुटि",
+        loginSuccess: "सफलतापूर्वक लॉग इन",
+        registerSuccess: "पंजीकरण सफल",
+        logoutSuccess: "लॉग आउट हो गया",
         enterUrlLabel: "लंबी URL दर्ज करें:",
         urlPlaceholder: "https://example.com/very/long/url/that/needs/to/be/shortened",
         shortenBtn: "URL संक्षिप्त करें",
@@ -325,6 +390,17 @@ const translations = {
         title: "URL 단축기",
         subtitle: "긴 링크를 짧고 편리한 링크로 단축",
         languageLabel: "언어:",
+        login: "로그인",
+        register: "등록",
+        logout: "로그아웃",
+        welcome: "환영합니다",
+        password: "비밀번호",
+        name: "이름",
+        optional: "선택사항",
+        authError: "인증 오류",
+        loginSuccess: "로그인 성공",
+        registerSuccess: "등록 성공",
+        logoutSuccess: "로그아웃됨",
         enterUrlLabel: "긴 URL 입력:",
         urlPlaceholder: "https://example.com/very/long/url/that/needs/to/be/shortened",
         shortenBtn: "URL 단축",
@@ -349,6 +425,17 @@ const translations = {
         title: "URL Kısaltıcı",
         subtitle: "Uzun bağlantıları kısa ve kullanışlı bağlantılara kısaltın",
         languageLabel: "Dil:",
+        login: "Giriş",
+        register: "Kayıt",
+        logout: "Çıkış",
+        welcome: "Hoş geldiniz",
+        password: "Şifre",
+        name: "İsim",
+        optional: "isteğe bağlı",
+        authError: "Kimlik doğrulama hatası",
+        loginSuccess: "Giriş başarılı",
+        registerSuccess: "Kayıt başarılı",
+        logoutSuccess: "Çıkış yapıldı",
         enterUrlLabel: "Uzun URL girin:",
         urlPlaceholder: "https://example.com/cok/uzun/url/ki/kisaltilmali",
         shortenBtn: "URL'yi kısalt",
@@ -373,6 +460,17 @@ const translations = {
         title: "Skracacz URL",
         subtitle: "Skróć długie linki do krótkich i wygodnych",
         languageLabel: "Język:",
+        login: "Zaloguj się",
+        register: "Zarejestruj się",
+        logout: "Wyloguj się",
+        welcome: "Witaj",
+        password: "Hasło",
+        name: "Imię",
+        optional: "opcjonalne",
+        authError: "Błąd uwierzytelniania",
+        loginSuccess: "Zalogowano pomyślnie",
+        registerSuccess: "Rejestracja zakończona sukcesem",
+        logoutSuccess: "Wylogowano",
         enterUrlLabel: "Wprowadź długi URL:",
         urlPlaceholder: "https://example.com/bardzo/dlugi/url/ktory/musi/zostac/skrocony",
         shortenBtn: "Skróć URL",
@@ -397,6 +495,17 @@ const translations = {
         title: "URL Verkorter",
         subtitle: "Verkort lange links naar korte en handige links",
         languageLabel: "Taal:",
+        login: "Inloggen",
+        register: "Registreren",
+        logout: "Uitloggen",
+        welcome: "Welkom",
+        password: "Wachtwoord",
+        name: "Naam",
+        optional: "optioneel",
+        authError: "Authenticatie fout",
+        loginSuccess: "Succesvol ingelogd",
+        registerSuccess: "Registratie succesvol",
+        logoutSuccess: "Uitgelogd",
         enterUrlLabel: "Voer lange URL in:",
         urlPlaceholder: "https://example.com/zeer/lange/url/die/moet/worden/verkort",
         shortenBtn: "URL verkorten",
@@ -423,6 +532,7 @@ class AuthManager {
     constructor() {
         this.currentUser = null;
         this.authModal = null;
+        this.currentLanguage = 'en'; // Default language
         this.init();
     }
 
@@ -469,6 +579,7 @@ class AuthManager {
     }
 
     createAuthModal() {
+        const t = translations[this.currentLanguage || 'en'];
         const modal = document.createElement('div');
         modal.id = 'authModal';
         modal.className = 'auth-modal';
@@ -476,39 +587,39 @@ class AuthManager {
             <div class="auth-modal-content">
                 <span class="auth-modal-close">&times;</span>
                 <div class="auth-tabs">
-                    <button class="auth-tab active" data-tab="login">Вход</button>
-                    <button class="auth-tab" data-tab="register">Регистрация</button>
+                    <button class="auth-tab active" data-tab="login">${t.login}</button>
+                    <button class="auth-tab" data-tab="register">${t.register}</button>
                 </div>
                 <div id="loginForm" class="auth-form active">
-                    <h3>Вход в аккаунт</h3>
+                    <h3>${t.login}</h3>
                     <form id="loginFormElement">
                         <div class="form-group">
                             <label for="loginEmail">Email:</label>
                             <input type="email" id="loginEmail" required>
                         </div>
                         <div class="form-group">
-                            <label for="loginPassword">Пароль:</label>
+                            <label for="loginPassword">${t.password || 'Пароль'}:</label>
                             <input type="password" id="loginPassword" required>
                         </div>
-                        <button type="submit" class="auth-submit-btn">Войти</button>
+                        <button type="submit" class="auth-submit-btn">${t.login}</button>
                     </form>
                 </div>
                 <div id="registerForm" class="auth-form">
-                    <h3>Регистрация</h3>
+                    <h3>${t.register}</h3>
                     <form id="registerFormElement">
                         <div class="form-group">
                             <label for="registerEmail">Email:</label>
                             <input type="email" id="registerEmail" required>
                         </div>
                         <div class="form-group">
-                            <label for="registerPassword">Пароль:</label>
+                            <label for="registerPassword">${t.password || 'Пароль'}:</label>
                             <input type="password" id="registerPassword" required>
                         </div>
                         <div class="form-group">
-                            <label for="registerName">Имя (опционально):</label>
+                            <label for="registerName">${t.name || 'Имя'} (${t.optional || 'опционально'}):</label>
                             <input type="text" id="registerName">
                         </div>
-                        <button type="submit" class="auth-submit-btn">Зарегистрироваться</button>
+                        <button type="submit" class="auth-submit-btn">${t.register}</button>
                     </form>
                 </div>
                 <div id="authMessage" class="auth-message"></div>
@@ -680,6 +791,19 @@ class AuthManager {
         if (messageDiv) {
             messageDiv.textContent = '';
             messageDiv.className = 'auth-message';
+        }
+    }
+
+    updateLanguage(language) {
+        this.currentLanguage = language;
+        if (this.authModal) {
+            // Recreate modal with new language
+            const modal = document.getElementById('authModal');
+            if (modal) {
+                modal.remove();
+            }
+            this.createAuthModal();
+            this.setupEventListeners();
         }
     }
 }
@@ -868,6 +992,11 @@ class UrlShortener {
     changeLanguage(event) {
         this.currentLanguage = event.target.value;
         this.updateTexts();
+
+        // Update language in AuthManager
+        if (window.authManager) {
+            window.authManager.updateLanguage(this.currentLanguage);
+        }
     }
 
     updateTexts() {
@@ -920,7 +1049,7 @@ class UrlShortener {
 
 // Инициализация приложения при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
-    new AuthManager();
+    window.authManager = new AuthManager();
     new UrlShortener();
 });
 
