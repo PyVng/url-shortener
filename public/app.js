@@ -662,6 +662,9 @@ class AuthManager {
     }
 
     setupEventListeners() {
+        // Remove existing event listeners to avoid duplicates
+        this.removeEventListeners();
+
         // Auth buttons
         const loginBtn = document.getElementById('loginBtn');
         const registerBtn = document.getElementById('registerBtn');
@@ -681,9 +684,15 @@ class AuthManager {
         // Modal events
         if (this.authModal) {
             const closeBtn = this.authModal.querySelector('.auth-modal-close');
-            closeBtn.addEventListener('click', () => this.hideModal());
+            if (closeBtn) {
+                closeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.hideModal();
+                });
+            }
 
-            window.addEventListener('click', (event) => {
+            // Click outside to close
+            this.authModal.addEventListener('click', (event) => {
                 if (event.target === this.authModal) {
                     this.hideModal();
                 }
@@ -694,15 +703,22 @@ class AuthManager {
             tabs.forEach(tab => {
                 tab.addEventListener('click', (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     const tabName = e.currentTarget.dataset.tab;
-                    this.switchTab(tabName);
+                    if (tabName) {
+                        this.switchTab(tabName);
+                    }
                 });
             });
 
             // OAuth buttons
             const oauthButtons = this.authModal.querySelectorAll('.oauth-btn');
             oauthButtons.forEach(btn => {
-                btn.addEventListener('click', (e) => this.handleOAuthLogin(e));
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleOAuthLogin(e);
+                });
             });
 
             // Form submissions
@@ -710,11 +726,28 @@ class AuthManager {
             const registerForm = document.getElementById('registerFormElement');
 
             if (loginForm) {
-                loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+                loginForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleLogin(e);
+                });
             }
             if (registerForm) {
-                registerForm.addEventListener('submit', (e) => this.handleRegister(e));
+                registerForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleRegister(e);
+                });
             }
+        }
+    }
+
+    removeEventListeners() {
+        // Remove modal-specific event listeners if they exist
+        if (this.authModal) {
+            const newModal = this.authModal.cloneNode(true);
+            this.authModal.parentNode.replaceChild(newModal, this.authModal);
+            this.authModal = newModal;
         }
     }
 
