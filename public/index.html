@@ -8,21 +8,10 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="header-content">
-                <div class="title-section">
-                    <h1>🔗 URL Shortener</h1>
-                    <p>Сократите длинные ссылки в короткие и удобные</p>
-                </div>
-                <div class="header-controls">
-                    <div class="auth-section">
-                        <button id="loginBtn" class="btn btn-outline auth-btn">Войти</button>
-                        <button id="registerBtn" class="btn btn-primary auth-btn">Регистрация</button>
-                        <div id="userInfo" class="user-info" style="display: none;">
-                            <span>Привет, <span id="userName"></span></span>
-                            <button id="logoutBtn" class="btn btn-outline logout-btn">Выйти</button>
-                        </div>
-                    </div>
+        <!-- Top Navigation Bar -->
+        <nav class="top-nav">
+            <div class="nav-container">
+                <div class="nav-left">
                     <div class="language-selector">
                         <label for="languageSelect">Language:</label>
                         <select id="languageSelect">
@@ -43,6 +32,25 @@
                             <option value="nl">Nederlands</option>
                         </select>
                     </div>
+                </div>
+                <div class="nav-right">
+                    <div class="auth-section">
+                        <button id="loginBtn" class="btn btn-outline auth-btn">Войти</button>
+                        <button id="registerBtn" class="btn btn-primary auth-btn">Регистрация</button>
+                        <div id="userInfo" class="user-info" style="display: none;">
+                            <span>Привет, <span id="userName"></span></span>
+                            <button id="logoutBtn" class="btn btn-outline logout-btn">Выйти</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <header>
+            <div class="header-content">
+                <div class="title-section">
+                    <h1>🔗 URL Shortener</h1>
+                    <p>Сократите длинные ссылки в короткие и удобные</p>
                 </div>
             </div>
         </header>
