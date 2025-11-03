@@ -67,24 +67,27 @@ router.get('/auth/status', (req, res) => {
 router.get('/version', (req, res) => {
   const packageJson = require('../package.json');
 
-  // Получаем информацию о git коммите
+  // Получаем информацию о git коммите (работает локально)
   const { execSync } = require('child_process');
   let gitInfo = {
-    commit: 'unknown',
-    branch: 'unknown',
-    timestamp: new Date().toISOString()
+    commit: process.env.VERCEL_GIT_COMMIT_SHA || 'unknown',
+    branch: process.env.VERCEL_GIT_COMMIT_REF || 'unknown',
+    timestamp: process.env.VERCEL_GIT_COMMIT_AUTHOR_DATE || new Date().toISOString()
   };
 
-  try {
-    // Получаем короткий хэш последнего коммита
-    gitInfo.commit = execSync('git rev-parse --short HEAD').toString().trim();
-    // Получаем текущую ветку
-    gitInfo.branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
-    // Получаем timestamp последнего коммита
-    const commitDate = execSync('git log -1 --format=%ci').toString().trim();
-    gitInfo.timestamp = new Date(commitDate).toISOString();
-  } catch (error) {
-    console.warn('Could not get git info:', error.message);
+  // Если не на Vercel, пытаемся получить git информацию локально
+  if (!process.env.VERCEL) {
+    try {
+      // Получаем короткий хэш последнего коммита
+      gitInfo.commit = execSync('git rev-parse --short HEAD').toString().trim();
+      // Получаем текущую ветку
+      gitInfo.branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
+      // Получаем timestamp последнего коммита
+      const commitDate = execSync('git log -1 --format=%ci').toString().trim();
+      gitInfo.timestamp = new Date(commitDate).toISOString();
+    } catch (error) {
+      console.warn('Could not get git info:', error.message);
+    }
   }
 
   res.json({
@@ -92,7 +95,8 @@ router.get('/version', (req, res) => {
     version: packageJson.version,
     git: gitInfo,
     buildTime: new Date().toISOString(),
-    name: packageJson.name
+    name: packageJson.name,
+    environment: process.env.VERCEL ? 'vercel' : 'local'
   });
 });
 
