@@ -5,6 +5,12 @@ class SupabaseRestAdapter {
     this.supabaseKey = config.serviceRoleKey || config.anonKey; // Use service role for full access
     this.serviceRoleKey = config.serviceRoleKey;
     this.tableName = 'urls';
+
+    // Lazy initialization tracking
+    this.initialized = false;
+    this.initializationPromise = null;
+    this.lastConnectionCheck = 0;
+    this.connectionStatus = null; // 'connected', 'failed', or null
   }
 
   async connect() {
@@ -16,15 +22,36 @@ class SupabaseRestAdapter {
     console.log('Disconnected from Supabase REST API');
   }
 
-  async initialize() {
+  // Lazy initialization - only initialize when first needed
+  async ensureInitialized() {
+    if (this.initialized) {
+      return true;
+    }
+
+    if (this.initializationPromise) {
+      return await this.initializationPromise;
+    }
+
+    this.initializationPromise = this._performInitialization();
+    const result = await this.initializationPromise;
+
+    this.initialized = result;
+    this.initializationPromise = null;
+
+    return result;
+  }
+
+  async _performInitialization() {
     try {
-      console.log('🔧 Initializing Supabase REST API...');
-      console.log('🔧 Supabase URL:', this.supabaseUrl);
-      console.log('🔧 Table name:', this.tableName);
+      console.log('🔧 Lazy initializing Supabase REST API...');
 
       // Check if table exists by trying to select from it
       const initUrl = `${this.supabaseUrl}/rest/v1/${this.tableName}?limit=1`;
-      console.log('🔧 Testing connection with URL:', initUrl);
+
+      // Configurable timeout for Vercel serverless functions (cold starts can take time)
+      const defaultInitTimeout = process.env.VERCEL ? 20000 : 10000; // 20s on Vercel, 10s locally
+      const initTimeout = parseInt(process.env.SUPABASE_INIT_TIMEOUT) || defaultInitTimeout;
+      console.log(`🔧 Using initialization timeout: ${initTimeout}ms (${process.env.VERCEL ? 'Vercel' : 'local'})`);
 
       const response = await fetch(initUrl, {
         headers: {
@@ -32,8 +59,7 @@ class SupabaseRestAdapter {
           'Authorization': `Bearer ${this.supabaseKey}`,
           'Content-Type': 'application/json',
         },
-        // Add timeout for Vercel
-        signal: AbortSignal.timeout(10000), // 10 second timeout
+        signal: AbortSignal.timeout(initTimeout),
       });
 
       console.log('🔧 Initialization response status:', response.status);
@@ -41,10 +67,13 @@ class SupabaseRestAdapter {
       if (!response.ok && response.status !== 404) {
         const errorText = await response.text().catch(() => 'Unable to read response');
         console.error('🔧 Initialization failed with status:', response.status, 'Response:', errorText);
-        throw new Error(`Failed to check table existence: ${response.status} - ${errorText}`);
+        this.connectionStatus = 'failed';
+        return false;
       }
 
       console.log('✅ Supabase REST API initialized successfully');
+      this.connectionStatus = 'connected';
+      return true;
     } catch (error) {
       console.error('❌ Supabase REST API initialization error:', error.message);
       console.error('❌ Error details:', {
@@ -52,17 +81,17 @@ class SupabaseRestAdapter {
         message: error.message,
         code: error.code,
         cause: error.cause,
-        stack: error.stack?.split('\n')[0] // First line of stack trace
+        stack: error.stack?.split('\n')[0]
       });
 
-      // Don't throw error on Vercel - allow graceful degradation
-      if (process.env.VERCEL) {
-        console.warn('⚠️ Running on Vercel - continuing despite initialization error');
-        return;
-      }
-
-      throw error;
+      this.connectionStatus = 'failed';
+      return false;
     }
+  }
+
+  // Legacy initialize method for backward compatibility
+  async initialize() {
+    return await this.ensureInitialized();
   }
 
   async createShortUrl(shortCode, originalUrl, userId = null) {
@@ -230,7 +259,12 @@ class SupabaseRestAdapter {
   // User links operations
   async getUserLinks(userId, options = {}) {
     const maxRetries = 3;
-    const retryDelay = 1000; // 1 second
+    const baseRetryDelay = 1000; // 1 second base delay
+
+    // Configurable timeout for requests
+    const defaultRequestTimeout = process.env.VERCEL ? 18000 : 15000; // 18s on Vercel, 15s locally
+    const requestTimeout = parseInt(process.env.SUPABASE_REQUEST_TIMEOUT) || defaultRequestTimeout;
+    console.log(`🔍 Using request timeout: ${requestTimeout}ms (${process.env.VERCEL ? 'Vercel' : 'local'})`);
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -253,7 +287,7 @@ class SupabaseRestAdapter {
 
         const response = await fetch(url, {
           headers,
-          signal: AbortSignal.timeout(15000), // 15 second timeout for Vercel
+          signal: AbortSignal.timeout(requestTimeout),
         });
 
         console.log('🔍 getUserLinks response status:', response.status);
@@ -300,8 +334,12 @@ class SupabaseRestAdapter {
 
           // Retry on server errors (5xx) or rate limiting (429)
           if (attempt < maxRetries) {
-            console.log(`⏳ Retrying in ${retryDelay}ms... (attempt ${attempt + 1}/${maxRetries})`);
-            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            // Exponential backoff: baseDelay * 2^(attempt-1) + jitter
+            const exponentialDelay = baseRetryDelay * Math.pow(2, attempt - 1);
+            const jitter = Math.random() * 1000; // Add up to 1 second of jitter
+            const totalDelay = Math.min(exponentialDelay + jitter, 10000); // Cap at 10 seconds
+            console.log(`⏳ Retrying in ${Math.round(totalDelay)}ms (exponential backoff)... (attempt ${attempt + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, totalDelay));
             continue;
           }
 
@@ -344,8 +382,12 @@ class SupabaseRestAdapter {
 
         // Retry on network errors or if we haven't exhausted retries
         if (attempt < maxRetries && (error.code === 'ECONNRESET' || error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.name === 'TypeError')) {
-          console.log(`⏳ Retrying in ${retryDelay}ms due to network error... (attempt ${attempt + 1}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          // Exponential backoff for network errors too
+          const exponentialDelay = baseRetryDelay * Math.pow(2, attempt - 1);
+          const jitter = Math.random() * 1000;
+          const totalDelay = Math.min(exponentialDelay + jitter, 10000);
+          console.log(`⏳ Retrying in ${Math.round(totalDelay)}ms due to network error (exponential backoff)... (attempt ${attempt + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, totalDelay));
           continue;
         }
 
