@@ -75,9 +75,17 @@ router.get('/version', (req, res) => {
     timestamp: process.env.VERCEL_GIT_COMMIT_AUTHOR_DATE || new Date().toISOString()
   };
 
+  console.log('Environment check - VERCEL:', !!process.env.VERCEL);
+  console.log('Vercel env vars:', {
+    VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
+    VERCEL_GIT_COMMIT_REF: process.env.VERCEL_GIT_COMMIT_REF,
+    VERCEL_GIT_COMMIT_AUTHOR_DATE: process.env.VERCEL_GIT_COMMIT_AUTHOR_DATE
+  });
+
   // Если не на Vercel, пытаемся получить git информацию локально
   if (!process.env.VERCEL) {
     try {
+      console.log('Trying to get git info locally...');
       // Получаем короткий хэш последнего коммита
       gitInfo.commit = execSync('git rev-parse --short HEAD').toString().trim();
       // Получаем текущую ветку
@@ -85,9 +93,12 @@ router.get('/version', (req, res) => {
       // Получаем timestamp последнего коммита
       const commitDate = execSync('git log -1 --format=%ci').toString().trim();
       gitInfo.timestamp = new Date(commitDate).toISOString();
+      console.log('Git info retrieved locally:', gitInfo);
     } catch (error) {
-      console.warn('Could not get git info:', error.message);
+      console.warn('Could not get git info locally:', error.message);
     }
+  } else {
+    console.log('On Vercel, using env vars for git info:', gitInfo);
   }
 
   res.json({
