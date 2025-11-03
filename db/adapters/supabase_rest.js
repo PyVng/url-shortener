@@ -269,7 +269,7 @@ class SupabaseRestAdapter {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`🔍 getUserLinks attempt ${attempt}/${maxRetries} with userId:`, userId);
-        const url = `${this.supabaseUrl}/rest/v1/${this.tableName}?user_id=eq.${encodeURIComponent(userId)}&select=id,short_code,original_url,title,click_count,created_at&order=created_at.desc`;
+        const url = `${this.supabaseUrl}/rest/v1/${this.tableName}?user_id=eq.${encodeURIComponent(userId)}&select=id,short_code,original_url,click_count,created_at&order=created_at.desc`;
         console.log('🔍 Supabase URL:', url);
 
         const authToken = options.authToken || this.supabaseKey;
@@ -354,7 +354,6 @@ class SupabaseRestAdapter {
           id: link.id,
           short_code: link.short_code,
           original_url: link.original_url,
-          title: link.title,
           clicks: link.click_count || 0,
           created_at: link.created_at,
         }));
