@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - URL Shortener</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Top Navigation Bar -->
+        <nav class="top-nav">
+            <div class="nav-container">
+                <div class="nav-left">
+                    <div class="language-selector">
+                        <label for="languageSelect">Language:</label>
+                        <select id="languageSelect">
+                            <option value="en">English</option>
+                            <option value="zh">中文</option>
+                            <option value="es">Español</option>
+                            <option value="ar">العربية</option>
+                            <option value="hi">हिन्दी</option>
+                            <option value="ru" selected>Русский</option>
+                            <option value="fr">Français</option>
+                            <option value="ja">日本語</option>
+                            <option value="de">Deutsch</option>
+                            <option value="pt">Português</option>
+                            <option value="it">Italiano</option>
+                            <option value="ko">한국어</option>
+                            <option value="tr">Türkçe</option>
+                            <option value="pl">Polski</option>
+                            <option value="nl">Nederlands</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="nav-right">
+                    <div class="nav-links">
+                        <a href="/" class="nav-link">Главная</a>
+                        <a href="/my-links" class="nav-link">Мои ссылки</a>
+                    </div>
+                    <div class="auth-section">
+                        <button id="loginBtn" class="btn btn-outline auth-btn">Войти</button>
+                        <button id="registerBtn" class="btn btn-primary auth-btn">Регистрация</button>
+                        <div id="userInfo" class="user-info" style="display: none;">
+                            <div class="user-avatar">👤</div>
+                            <div class="user-details">
+                                <div class="user-display-name" id="userDisplayName"></div>
+                                <div class="user-email" id="userEmail"></div>
+                            </div>
+                            <div class="user-menu-toggle">▼</div>
+                            <div class="user-dropdown" id="userDropdown">
+                                <a href="#" class="dropdown-item" id="myLinksLink">
+                                    <span class="dropdown-icon">🔗</span>
+                                    Мои ссылки
+                                </a>
+                                <a href="#" class="dropdown-item active" id="profileLink">
+                                    <span class="dropdown-icon">👤</span>
+                                    Профиль
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item logout-link" id="logoutBtn">
+                                    <span class="dropdown-icon">🚪</span>
+                                    Выйти
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="profile-main">
+            <div class="profile-header">
+                <div class="header-content">
+                    <h1>👤 Профиль пользователя</h1>
+                    <p>Управление настройками аккаунта</p>
+                </div>
+            </div>
+
+            <div class="profile-content">
+                <div class="profile-card">
+                    <div class="profile-avatar-section">
+                        <div class="profile-avatar">
+                            <span id="profileAvatar">👤</span>
+                        </div>
+                        <div class="profile-info">
+                            <h2 id="profileName">Загрузка...</h2>
+                            <p id="profileEmail">Загрузка...</p>
+                        </div>
+                    </div>
+
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalLinks">-</div>
+                            <div class="stat-label">Всего ссылок</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalClicks">-</div>
+                            <div class="stat-label">Всего кликов</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="accountAge">-</div>
+                            <div class="stat-label">Дней с регистрации</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-settings">
+                    <h3>⚙️ Настройки профиля</h3>
+
+                    <form id="profileForm" class="settings-form">
+                        <div class="form-group">
+                            <label for="userName">Отображаемое имя</label>
+                            <input type="text" id="userName" placeholder="Ваше имя">
+                            <small>Это имя будет отображаться в интерфейсе</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="userEmail">Email адрес</label>
+                            <input type="email" id="userEmailInput" readonly>
+                            <small>Email нельзя изменить. Для смены email обратитесь в поддержку.</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="saveProfileBtn">
+                                <span class="btn-text">Сохранить изменения</span>
+                                <span class="btn-loading" style="display: none;">Сохранение...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="profile-actions">
+                    <h3>🚪 Управление аккаунтом</h3>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-outline" onclick="window.location.href='/my-links'">
+                            <span class="btn-icon">🔗</span>
+                            Мои ссылки
+                        </button>
+                        <button class="btn btn-danger" id="logoutBtnMain">
+                            <span class="btn-icon">🚪</span>
+                            Выйти из аккаунта
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 URL Shortener. Создано с помощью Node.js и Express.</p>
+        </footer>
+    </div>
+
+    <script src="profile.js"></script>
+</body>
+</html>

@@ -573,23 +573,8 @@ class MyLinksManager {
     }
 
     showProfile() {
-        // Show user profile information
-        if (!this.currentUser) {
-            this.showToast('Пользователь не найден', 'error');
-            return;
-        }
-
-        const profileInfo = `
-👤 Профиль пользователя
-
-📧 Email: ${this.currentUser.email}
-👨‍💼 Имя: ${this.currentUser.name || 'Не указано'}
-📅 Дата регистрации: ${new Date(this.currentUser.created_at).toLocaleDateString('ru-RU')}
-
-⚠️ Функция полного редактирования профиля будет добавлена в следующих обновлениях.
-        `;
-
-        alert(profileInfo);
+        // Navigate to profile page
+        window.location.href = '/profile';
     }
 
     showAuthModal(tab = 'login') {

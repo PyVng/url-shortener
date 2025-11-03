@@ -66,6 +66,11 @@ app.get('/my-links', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'my-links.html'));
 });
 
+// Страница профиля
+app.get('/profile', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'profile.html'));
+});
+
 // Страница успеха аутентификации
 app.get('/auth/success', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'auth-success.html'));
