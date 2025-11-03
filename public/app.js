@@ -1309,9 +1309,7 @@ class UrlShortener {
         const tryAgainBtn = document.getElementById('tryAgainBtn');
         if (tryAgainBtn) tryAgainBtn.textContent = t.tryAgainBtn;
 
-        // Обновление футера
-        const footerElement = document.querySelector('footer p');
-        if (footerElement) footerElement.innerHTML = t.footer;
+        // Футер теперь управляется через components.js, не обновляем его здесь
 
         // Обновление атрибута lang в HTML
         document.documentElement.lang = this.currentLanguage;
