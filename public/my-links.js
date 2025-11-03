@@ -74,6 +74,23 @@ class MyLinksManager {
                         hasUser: !!sessionData.user
                     });
 
+                    // Double-check Supabase is ready before calling setSession
+                    if (!window.supabase) {
+                        console.log('MyLinks: Supabase still not ready for setSession, waiting...');
+                        await new Promise(resolve => {
+                            const checkSupabase = () => {
+                                if (window.supabase) {
+                                    resolve();
+                                } else {
+                                    setTimeout(checkSupabase, 50);
+                                }
+                            };
+                            checkSupabase();
+                        });
+                    }
+
+                    console.log('MyLinks: Supabase ready, setting session...');
+
                     // Try to set the session using Supabase
                     const { data, error } = await window.supabase.auth.setSession({
                         access_token: sessionData.access_token,
