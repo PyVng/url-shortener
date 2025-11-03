@@ -4,13 +4,26 @@
 const SUPABASE_URL = window.APP_CONFIG?.SUPABASE_URL || 'https://dkbvavfdjpamsmezfrrt.supabase.co';
 const SUPABASE_ANON_KEY = window.APP_CONFIG?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrYnZhdmZkanBhbXNtZXpmcnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxNDc0MzEsImV4cCI6MjA3NzcyMzQzMX0.4NBBusEGQyfikpidc8QCoqhIjWs_7FoJCCNwjJ8C-cI';
 
-window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true
+// Wait for Supabase to be loaded
+function initSupabase() {
+    if (typeof supabase !== 'undefined') {
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true
+            }
+        });
+        // Dispatch event to signal Supabase is ready
+        window.dispatchEvent(new Event('supabaseReady'));
     }
-});
+}
+
+// Listen for Supabase script load
+window.addEventListener('supabaseLoaded', initSupabase);
+
+// Also try to initialize immediately in case script is already loaded
+initSupabase();
 
 const translations = {
     ru: {
@@ -547,7 +560,15 @@ class AuthManager {
         const languageSelect = document.getElementById('languageSelect');
         const documentLang = document.documentElement?.lang;
         this.currentLanguage = languageSelect?.value || documentLang || 'en';
-        this.init();
+
+        // Wait for Supabase to be ready before initializing
+        if (window.supabase) {
+            this.init();
+        } else {
+            window.addEventListener('supabaseReady', () => {
+                this.init();
+            });
+        }
     }
 
     init() {
