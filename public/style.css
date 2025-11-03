@@ -126,8 +126,34 @@ main {
     background: white;
     border-radius: 12px;
     padding: 40px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     margin-bottom: 20px;
+}
+
+/* Hero section */
+.hero-section {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px 0;
+}
+
+.hero-section h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #202124;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-section p {
+    font-size: 1.2rem;
+    color: #5f6368;
+    margin: 0;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 /* Form styles */
