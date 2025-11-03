@@ -199,6 +199,149 @@ class SupabaseRestAdapter {
       throw error;
     }
   }
+
+  // User links operations
+  async getUserLinks(userId) {
+    try {
+      const response = await fetch(
+        `${this.supabaseUrl}/rest/v1/${this.tableName}?user_id=eq.${encodeURIComponent(userId)}&select=id,short_code,original_url,title,click_count,created_at&order=created_at.desc`,
+        {
+          headers: {
+            'apikey': this.supabaseKey,
+            'Authorization': `Bearer ${this.supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to get user links: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.map(link => ({
+        id: link.id,
+        short_code: link.short_code,
+        original_url: link.original_url,
+        title: link.title,
+        clicks: link.click_count || 0,
+        created_at: link.created_at,
+      }));
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getLinkById(id) {
+    try {
+      const response = await fetch(
+        `${this.supabaseUrl}/rest/v1/${this.tableName}?id=eq.${encodeURIComponent(id)}&select=id,short_code,original_url,title,click_count,created_at,user_id`,
+        {
+          headers: {
+            'apikey': this.supabaseKey,
+            'Authorization': `Bearer ${this.supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to get link by ID: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.length > 0 ? {
+        id: result[0].id,
+        short_code: result[0].short_code,
+        original_url: result[0].original_url,
+        title: result[0].title,
+        clicks: result[0].click_count || 0,
+        created_at: result[0].created_at,
+        user_id: result[0].user_id,
+      } : null;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserLink(id, updates) {
+    try {
+      const data = {};
+      if (updates.title !== undefined) data.title = updates.title;
+      if (updates.original_url !== undefined) data.original_url = updates.original_url;
+      if (updates.short_code !== undefined) data.short_code = updates.short_code;
+
+      const response = await fetch(
+        `${this.supabaseUrl}/rest/v1/${this.tableName}?id=eq.${encodeURIComponent(id)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': this.supabaseKey,
+            'Authorization': `Bearer ${this.supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update link: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      return result.length > 0 ? {
+        id: result[0].id,
+        short_code: result[0].short_code,
+        original_url: result[0].original_url,
+        title: result[0].title,
+        clicks: result[0].click_count || 0,
+        created_at: result[0].created_at,
+        user_id: result[0].user_id,
+      } : null;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deleteUserLink(id) {
+    try {
+      const response = await fetch(
+        `${this.supabaseUrl}/rest/v1/${this.tableName}?id=eq.${encodeURIComponent(id)}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': this.supabaseKey,
+            'Authorization': `Bearer ${this.supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete link: ${response.status}`);
+      }
+
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async ping() {
+    try {
+      const response = await fetch(`${this.supabaseUrl}/rest/v1/`, {
+        headers: {
+          'apikey': this.supabaseKey,
+          'Authorization': `Bearer ${this.supabaseKey}`,
+        },
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
 }
 
 module.exports = SupabaseRestAdapter;
