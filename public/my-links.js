@@ -111,17 +111,14 @@ class MyLinksManager {
                 }
             }
 
-            // If we get here, authentication failed
-            console.log('Authentication failed, redirecting to home');
-            localStorage.removeItem('supabase_auth_session');
-            localStorage.removeItem('supabase_auth_token');
-            window.location.href = '/';
+            // If we get here, authentication failed - show auth prompt instead of logging out
+            console.log('Authentication failed, showing auth prompt');
+            this.showAuthRequiredMessage();
 
         } catch (error) {
             console.error('Auth check failed:', error);
-            localStorage.removeItem('supabase_auth_session');
-            localStorage.removeItem('supabase_auth_token');
-            window.location.href = '/';
+            // Don't clear tokens on network errors - just show auth prompt
+            this.showAuthRequiredMessage();
         }
     }
 
