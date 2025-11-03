@@ -606,7 +606,7 @@ class AuthManager {
                     <button class="auth-tab" data-tab="register">${t.register}</button>
                 </div>
 
-                ${oauthProviders.length > 0 ? `
+                ${false ? ` <!-- OAuth providers temporarily hidden -->
                 <div class="oauth-section">
                     <div class="oauth-buttons">
                         ${oauthProviders.map(provider => `
