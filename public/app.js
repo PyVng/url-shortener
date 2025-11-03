@@ -1,5 +1,19 @@
 // URL Shortener Frontend JavaScript with Authentication
 
+// Initialize Supabase client
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL = window.APP_CONFIG?.SUPABASE_URL || 'https://dkbvavfdjpamsmezfrrt.supabase.co';
+const SUPABASE_ANON_KEY = window.APP_CONFIG?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrYnZhdmZkanBhbXNtZXpmcnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxNDc0MzEsImV4cCI6MjA3NzcyMzQzMX0.4NBBusEGQyfikpidc8QCoqhIjWs_7FoJCCNwjJ8C-cI';
+
+window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+    }
+});
+
 const translations = {
     ru: {
         title: "URL Shortener",
@@ -539,136 +553,60 @@ class AuthManager {
     }
 
     init() {
+        this.setupSupabaseAuthListener();
         this.checkAuthStatus();
         this.createAuthModal();
         this.setupEventListeners();
     }
 
+    setupSupabaseAuthListener() {
+        // Listen for authentication state changes
+        window.supabase?.auth.onAuthStateChange((event, session) => {
+            console.log('🔄 Auth state changed:', event, session?.user?.email);
+
+            if (event === 'SIGNED_IN' && session?.user) {
+                console.log('✅ User signed in:', session.user.email);
+                this.setCurrentUser(session.user);
+                window.dispatchEvent(new CustomEvent('auth:login', {
+                    detail: { user: session.user }
+                }));
+            } else if (event === 'SIGNED_OUT') {
+                console.log('ℹ️ User signed out');
+                this.setCurrentUser(null);
+                window.dispatchEvent(new Event('auth:logout'));
+            } else if (event === 'TOKEN_REFRESHED') {
+                console.log('🔄 Token refreshed');
+                if (session?.user) {
+                    this.setCurrentUser(session.user);
+                }
+            }
+        });
+    }
+
     async checkAuthStatus() {
         try {
-            // Try to get stored session first (new format)
-            let sessionStr = localStorage.getItem('supabase_auth_session');
-            let session = null;
+            console.log('🔍 Checking authentication status...');
 
-            if (sessionStr) {
-                try {
-                    session = JSON.parse(sessionStr);
-                } catch (e) {
-                    console.warn('Failed to parse session, removing:', e);
-                    localStorage.removeItem('supabase_auth_session');
-                }
-            }
+            // Get current session from Supabase (this handles token refresh automatically)
+            const { data: { session }, error } = await window.supabase?.auth.getSession();
 
-            // Fallback to old token format for backward compatibility
-            if (!session?.access_token) {
-                const oldToken = localStorage.getItem('supabase_auth_token');
-                if (oldToken) {
-                    console.log('Using legacy token format, migrating to session storage');
-                    session = { access_token: oldToken };
-                }
-            }
-
-            if (!session?.access_token) {
-                const oauthTokenRaw = localStorage.getItem('supabase.auth.token');
-                if (oauthTokenRaw) {
-                    try {
-                        const parsed = JSON.parse(oauthTokenRaw);
-                        if (parsed?.access_token) {
-                            console.log('Migrating OAuth token to session storage');
-                            session = {
-                                access_token: parsed.access_token,
-                                refresh_token: parsed.refresh_token,
-                                token_type: parsed.token_type || 'bearer',
-                                expires_in: parsed.expires_in || 3600,
-                                expires_at: parsed.expires_at || Math.floor(Date.now() / 1000) + 3600
-                            };
-                        }
-                    } catch (parseError) {
-                        console.warn('Failed to parse OAuth token, removing:', parseError);
-                        localStorage.removeItem('supabase.auth.token');
-                    }
-                }
-            }
-
-            if (session?.access_token) {
-                localStorage.setItem('supabase_auth_session', JSON.stringify(session));
-                localStorage.removeItem('supabase_auth_token');
-                localStorage.removeItem('supabase.auth.token');
-            }
-
-            if (!session?.access_token) {
+            if (error) {
+                console.error('❌ Error getting session:', error);
                 this.setCurrentUser(null);
                 return;
             }
 
-            // First try with current token
-            let response = await fetch('/api/auth/me', {
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                this.setCurrentUser(data.data.user);
-                return;
+            if (session?.user) {
+                console.log('✅ User authenticated:', session.user.email);
+                this.setCurrentUser(session.user);
+            } else {
+                console.log('ℹ️ No active session');
+                this.setCurrentUser(null);
             }
-
-            // If token is invalid, try to refresh it
-            if (session.refresh_token) {
-                console.log('Token expired, trying to refresh...');
-                try {
-                    const refreshResponse = await fetch('/api/auth/refresh', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            refresh_token: session.refresh_token
-                        })
-                    });
-
-                    if (refreshResponse.ok) {
-                        const refreshData = await refreshResponse.json();
-                        if (refreshData.success && refreshData.data?.session) {
-                            // Save new session
-                            localStorage.setItem('supabase_auth_session', JSON.stringify(refreshData.data.session));
-                            console.log('Session refreshed successfully');
-
-                            // Retry with new token
-                            const retryResponse = await fetch('/api/auth/me', {
-                                headers: {
-                                    'Authorization': `Bearer ${refreshData.data.session.access_token}`
-                                }
-                            });
-
-                            if (retryResponse.ok) {
-                                const retryData = await retryResponse.json();
-                                this.setCurrentUser(retryData.data.user);
-                                return;
-                            }
-                        }
-                    }
-                } catch (refreshError) {
-                    console.error('Failed to refresh token:', refreshError);
-                }
-            }
-
-            // If we get here, authentication failed
-            console.log('Authentication failed, clearing session');
-            localStorage.removeItem('supabase_auth_session');
-            localStorage.removeItem('supabase_auth_token');
-            localStorage.removeItem('supabase.auth.token');
-            this.setCurrentUser(null);
-            window.dispatchEvent(new Event('auth:logout'));
 
         } catch (error) {
-            console.error('Auth check failed:', error);
-            localStorage.removeItem('supabase_auth_session');
-            localStorage.removeItem('supabase_auth_token');
-            localStorage.removeItem('supabase.auth.token');
+            console.error('❌ Auth check failed:', error);
             this.setCurrentUser(null);
-            window.dispatchEvent(new Event('auth:logout'));
         }
     }
 
@@ -952,42 +890,30 @@ class AuthManager {
         const password = document.getElementById('loginPassword').value;
 
         try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+            console.log('🔐 Attempting login for:', email);
+            const { data, error } = await window.supabase.auth.signInWithPassword({
+                email: email,
+                password: password
             });
 
-            const data = await response.json();
+            if (error) {
+                console.error('❌ Login error:', error);
+                this.showMessage(error.message || 'Ошибка входа', 'error');
+                return;
+            }
 
-            if (response.ok && data.success) {
-                // Save session to localStorage for persistence
-                if (data.data?.session) {
-                    localStorage.setItem('supabase_auth_session', JSON.stringify(data.data.session));
-                    console.log('Session saved to localStorage');
-                } else if (data.data?.access_token) {
-                    // Fallback for old format
-                    const session = {
-                        access_token: data.data.access_token,
-                        refresh_token: data.data.refresh_token,
-                        user: data.data.user
-                    };
-                    localStorage.setItem('supabase_auth_session', JSON.stringify(session));
-                    console.log('Session saved to localStorage (fallback)');
-                } else {
-                    console.warn('No session found in response:', data);
-                }
-
-                this.setCurrentUser(data.data.user);
-                window.dispatchEvent(new CustomEvent('auth:login', {
-                    detail: { user: data.data.user }
-                }));
+            if (data?.user) {
+                console.log('✅ Login successful:', data.user.email);
+                // Supabase automatically handles session storage
+                // The auth state change listener will handle UI updates
                 this.hideModal();
                 this.showMessage('Успешный вход!', 'success');
             } else {
-                this.showMessage(data.error || 'Ошибка входа', 'error');
+                console.warn('⚠️ Login succeeded but no user data');
+                this.showMessage('Ошибка входа: нет данных пользователя', 'error');
             }
         } catch (error) {
+            console.error('❌ Login exception:', error);
             this.showMessage('Ошибка сети', 'error');
         }
     }
@@ -999,40 +925,56 @@ class AuthManager {
         const name = document.getElementById('registerName').value;
 
         try {
-            const response = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, name })
+            console.log('📝 Attempting registration for:', email);
+            const { data, error } = await window.supabase.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: {
+                        name: name || email.split('@')[0]
+                    }
+                }
             });
 
-            const data = await response.json();
+            if (error) {
+                console.error('❌ Registration error:', error);
+                this.showMessage(error.message || 'Ошибка регистрации', 'error');
+                return;
+            }
 
-            if (response.ok && data.success) {
-                // Registration successful - user needs to confirm email first
-                // Session will be created after email confirmation
+            if (data?.user) {
+                console.log('✅ Registration successful:', data.user.email);
                 this.hideModal();
                 this.showMessage('Регистрация успешна! Проверьте email для подтверждения.', 'success');
                 // Don't set current user yet - wait for email confirmation
             } else {
-                this.showMessage(data.error || 'Ошибка регистрации', 'error');
+                console.warn('⚠️ Registration succeeded but no user data');
+                this.showMessage('Регистрация прошла, но данные пользователя не получены', 'error');
             }
         } catch (error) {
+            console.error('❌ Registration exception:', error);
             this.showMessage('Ошибка сети', 'error');
         }
     }
 
     async logout() {
         try {
-            await fetch('/api/auth/logout', { method: 'POST' });
-            // Remove session from localStorage
-            localStorage.removeItem('supabase_auth_session');
-            localStorage.removeItem('supabase_auth_token');
-            localStorage.removeItem('supabase.auth.token');
-            this.setCurrentUser(null);
-            window.dispatchEvent(new Event('auth:logout'));
+            console.log('🚪 Attempting logout...');
+            const { error } = await window.supabase.auth.signOut();
+
+            if (error) {
+                console.error('❌ Logout error:', error);
+                this.showMessage('Ошибка выхода: ' + error.message, 'error');
+                return;
+            }
+
+            console.log('✅ Logout successful');
+            // Supabase automatically clears the session
+            // The auth state change listener will handle UI updates
             this.showMessage('Выход выполнен', 'success');
         } catch (error) {
-            console.error('Logout error:', error);
+            console.error('❌ Logout exception:', error);
+            this.showMessage('Ошибка сети при выходе', 'error');
         }
     }
 
