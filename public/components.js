@@ -189,7 +189,6 @@ class HeaderComponent {
         const t = componentTranslations[currentLang] || componentTranslations.ru;
 
         return `
-            <!-- Top Navigation Bar -->
             <nav class="top-nav">
                 <div class="nav-container">
                     <div class="nav-left">
@@ -333,13 +332,8 @@ function initCommonComponents(currentPage = '/', currentLang = 'ru') {
     const headerContainer = document.getElementById('header-container');
     console.log('Header container found:', !!headerContainer);
     if (headerContainer) {
-        // Очищаем контейнер
-        headerContainer.innerHTML = '';
-        // Создаем элементы безопасно
-        const nav = document.createElement('nav');
-        nav.className = 'top-nav';
-        nav.innerHTML = HeaderComponent.render(currentLang);
-        headerContainer.appendChild(nav);
+        // Устанавливаем HTML контент
+        headerContainer.innerHTML = HeaderComponent.render(currentLang);
     }
 
     // Рендерим footer с текущим языком

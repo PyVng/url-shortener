@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Управление вашими короткими ссылками - личный dashboard для создания, редактирования и отслеживания сокращенных URL">
     <title>Мои ссылки - URL Shortener</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -30,6 +31,7 @@
                     <button id="searchBtn" class="btn-icon">🔍</button>
                 </div>
                 <div class="filter-controls">
+                    <label for="sortSelect" class="sr-only">Сортировка ссылок</label>
                     <select id="sortSelect">
                         <option value="created_desc">Сначала новые</option>
                         <option value="created_asc">Сначала старые</option>
@@ -118,6 +120,6 @@
 
     <script src="components.js"></script>
     <script src="app.js"></script>
-    <script src="my-links.js"></script>
+    <script src="my-links.js" defer></script>
 </body>
 </html>
