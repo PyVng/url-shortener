@@ -43,6 +43,15 @@ class MyLinksManager {
 
             console.log('MyLinks: Supabase is ready, attempting to recover session...');
 
+            // Debug: Check all localStorage keys related to Supabase
+            console.log('MyLinks: Checking all localStorage keys...');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('supabase') || key.includes('sb-'))) {
+                    console.log('MyLinks: Found Supabase-related key:', key, '=', localStorage.getItem(key).substring(0, 50) + '...');
+                }
+            }
+
             // Try to recover session from localStorage first
             // Supabase uses different keys for different storage types
             const possibleKeys = [
@@ -98,6 +107,10 @@ class MyLinksManager {
                 }
             } else {
                 console.log('MyLinks: No session found in any localStorage key');
+                // Try to redirect to home page for authentication
+                console.log('MyLinks: Redirecting to home page for authentication...');
+                window.location.href = '/';
+                return;
             }
 
             // Now check for active session
