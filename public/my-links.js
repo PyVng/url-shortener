@@ -461,7 +461,7 @@ class MyLinksManager {
                 case 'created_asc':
                     return new Date(a.created_at) - new Date(b.created_at);
                 case 'clicks_desc':
-                    return (b.clicks || 0) - (a.clicks || 0);
+                    return (b.click_count || 0) - (a.click_count || 0);
                 case 'title_asc':
                     return (a.title || '').localeCompare(b.title || '');
                 default:
@@ -522,7 +522,7 @@ class MyLinksManager {
                 <div class="link-stats">
                     <div class="stat-item">
                         <span>🔗</span>
-                        <span>${link.clicks || 0} кликов</span>
+                        <span>${link.click_count || 0} кликов</span>
                     </div>
                     <div class="stat-item">
                         <span>📅</span>

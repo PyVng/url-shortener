@@ -323,7 +323,7 @@ class ProfileManager {
         }
 
         // Calculate total clicks
-        const clicks = links.reduce((sum, link) => sum + (link.clicks || 0), 0);
+        const clicks = links.reduce((sum, link) => sum + (link.click_count || 0), 0);
         if (totalClicks) {
             totalClicks.textContent = clicks;
         }
