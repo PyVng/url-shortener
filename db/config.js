@@ -84,7 +84,7 @@ const databaseConfigs = {
 
 // Get active database configuration
 function getActiveDatabaseConfig() {
-  const activeDB = process.env.ACTIVE_DATABASE || 'postgresql';
+  const activeDB = process.env.ACTIVE_DATABASE || 'supabase'; // Temporary change for testing
 
   console.log('🔍 ACTIVE_DATABASE:', activeDB);
   console.log('🔍 Available databases:', Object.keys(databaseConfigs));
