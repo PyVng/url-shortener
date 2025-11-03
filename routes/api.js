@@ -15,6 +15,16 @@ router.post('/shorten', UrlController.shortenUrl);
 // GET /api/info/:shortCode - получение информации о коротком URL (для отладки)
 router.get('/info/:shortCode', UrlController.getUrlInfo);
 
+// Пользовательские ссылки (требуют аутентификации)
+// GET /api/links - получение списка ссылок пользователя
+router.get('/links', AuthController.requireAuth, UrlController.getUserLinks);
+
+// PUT /api/links/:id - обновление ссылки пользователя
+router.put('/links/:id', AuthController.requireAuth, UrlController.updateUserLink);
+
+// DELETE /api/links/:id - удаление ссылки пользователя
+router.delete('/links/:id', AuthController.requireAuth, UrlController.deleteUserLink);
+
 // Аутентификация маршруты
 // POST /api/auth/register - регистрация пользователя
 router.post('/auth/register', AuthController.register);

@@ -7,6 +7,7 @@ const RedisAdapter = require('./adapters/redis');
 const MongoDBAdapter = require('./adapters/mongodb');
 const SQLiteAdapter = require('./adapters/sqlite');
 const EdgeConfigAdapter = require('./adapters/edge_config');
+const SupabaseRestAdapter = require('./adapters/supabase_rest');
 
 class DatabaseManager {
   constructor() {
@@ -16,6 +17,7 @@ class DatabaseManager {
       postgresql: PostgreSQLAdapter,
       neon: PostgreSQLAdapter,
       supabase: PostgreSQLAdapter,
+      supabase_rest: SupabaseRestAdapter,
       vercel_postgres: PostgreSQLAdapter,
       redis: RedisAdapter,
       vercel_kv: RedisAdapter,
@@ -246,6 +248,35 @@ class DatabaseManager {
   async bulkCreateShortUrls(urlMappings) {
     if (this.primaryAdapter.bulkCreateShortUrls) {
       return await this.primaryAdapter.bulkCreateShortUrls(urlMappings);
+    }
+    throw new Error('Method not supported by current database');
+  }
+
+  // User links operations
+  async getUserLinks(userId) {
+    if (this.primaryAdapter.getUserLinks) {
+      return await this.primaryAdapter.getUserLinks(userId);
+    }
+    throw new Error('Method not supported by current database');
+  }
+
+  async getLinkById(id) {
+    if (this.primaryAdapter.getLinkById) {
+      return await this.primaryAdapter.getLinkById(id);
+    }
+    throw new Error('Method not supported by current database');
+  }
+
+  async updateUserLink(id, updates) {
+    if (this.primaryAdapter.updateUserLink) {
+      return await this.primaryAdapter.updateUserLink(id, updates);
+    }
+    throw new Error('Method not supported by current database');
+  }
+
+  async deleteUserLink(id) {
+    if (this.primaryAdapter.deleteUserLink) {
+      return await this.primaryAdapter.deleteUserLink(id);
     }
     throw new Error('Method not supported by current database');
   }

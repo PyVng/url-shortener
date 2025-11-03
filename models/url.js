@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { createShortUrl, getOriginalUrl } = require('../db/database');
+const { createShortUrl, getOriginalUrl, getUserLinks: dbGetUserLinks, getLinkById: dbGetLinkById, updateUserLink: dbUpdateUserLink, deleteUserLink: dbDeleteUserLink } = require('../db/database');
 
 class UrlModel {
   // Генерация короткого кода
@@ -76,6 +76,62 @@ class UrlModel {
     }
 
     return originalUrl;
+  }
+
+  // Получение списка ссылок пользователя
+  static async getUserLinks(userId) {
+    if (!userId) {
+      throw new Error('Необходим userId');
+    }
+
+    return await dbGetUserLinks(userId);
+  }
+
+  // Получение ссылки по ID
+  static async getLinkById(id) {
+    if (!id) {
+      throw new Error('Необходим ID ссылки');
+    }
+
+    return await dbGetLinkById(id);
+  }
+
+  // Обновление ссылки пользователя
+  static async updateUserLink(id, updates) {
+    if (!id) {
+      throw new Error('Необходим ID ссылки');
+    }
+
+    const { title, original_url, short_code } = updates;
+
+    // Валидация URL если он обновляется
+    if (original_url) {
+      const validation = this.validateUrl(original_url);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
+    }
+
+    // Валидация short_code если он обновляется
+    if (short_code) {
+      if (short_code.length < 3 || short_code.length > 20) {
+        throw new Error('Короткий код должен содержать от 3 до 20 символов');
+      }
+      if (!/^[a-zA-Z0-9_-]+$/.test(short_code)) {
+        throw new Error('Короткий код может содержать только буквы, цифры, дефисы и подчеркивания');
+      }
+    }
+
+    return await dbUpdateUserLink(id, updates);
+  }
+
+  // Удаление ссылки пользователя
+  static async deleteUserLink(id) {
+    if (!id) {
+      throw new Error('Необходим ID ссылки');
+    }
+
+    return await dbDeleteUserLink(id);
   }
 }
 

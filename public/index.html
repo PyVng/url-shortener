@@ -38,8 +38,27 @@
                         <button id="loginBtn" class="btn btn-outline auth-btn">Войти</button>
                         <button id="registerBtn" class="btn btn-primary auth-btn">Регистрация</button>
                         <div id="userInfo" class="user-info" style="display: none;">
-                            <span>Привет, <span id="userName"></span></span>
-                            <button id="logoutBtn" class="btn btn-outline logout-btn">Выйти</button>
+                            <div class="user-avatar">👤</div>
+                            <div class="user-details">
+                                <div class="user-display-name" id="userDisplayName"></div>
+                                <div class="user-email" id="userEmail"></div>
+                            </div>
+                            <div class="user-menu-toggle">▼</div>
+                            <div class="user-dropdown" id="userDropdown">
+                                <a href="#" class="dropdown-item" id="myLinksLink">
+                                    <span class="dropdown-icon">🔗</span>
+                                    Мои ссылки
+                                </a>
+                                <a href="#" class="dropdown-item" id="profileLink">
+                                    <span class="dropdown-icon">👤</span>
+                                    Профиль
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item logout-link" id="logoutBtn">
+                                    <span class="dropdown-icon">🚪</span>
+                                    Выйти
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

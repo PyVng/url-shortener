@@ -16,10 +16,12 @@ class PostgreSQLAdapter {
         this.pool = neon(this.config.connectionString);
       } else {
         // Use regular pg Pool for Supabase and local PostgreSQL
-        // Add SSL options for development (allow self-signed certificates)
+        // Special SSL handling for Supabase
         const poolConfig = {
           ...this.config,
-          ssl: process.env.NODE_ENV === 'production'
+          ssl: this.config.name === 'supabase'
+            ? false // Disable SSL validation for Supabase entirely
+            : process.env.NODE_ENV === 'production'
             ? { rejectUnauthorized: true }
             : { rejectUnauthorized: false } // Allow self-signed certificates in development
         };

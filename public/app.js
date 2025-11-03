@@ -544,15 +544,30 @@ class AuthManager {
 
     async checkAuthStatus() {
         try {
-            const response = await fetch('/api/auth/me');
+            // Try to get stored token first
+            const token = localStorage.getItem('supabase_auth_token');
+            if (!token) {
+                this.setCurrentUser(null);
+                return;
+            }
+
+            const response = await fetch('/api/auth/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
             if (response.ok) {
                 const data = await response.json();
                 this.setCurrentUser(data.data.user);
             } else {
+                // Token is invalid, remove it
+                localStorage.removeItem('supabase_auth_token');
                 this.setCurrentUser(null);
             }
         } catch (error) {
             console.error('Auth check failed:', error);
+            localStorage.removeItem('supabase_auth_token');
             this.setCurrentUser(null);
         }
     }
@@ -563,17 +578,29 @@ class AuthManager {
     }
 
     updateUI() {
-        const authBtn = document.getElementById('authBtn');
+        const authBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
         const userInfo = document.getElementById('userInfo');
-        const userName = document.getElementById('userName');
-        const logoutBtn = document.getElementById('logoutBtn');
+        const userDisplayName = document.getElementById('userDisplayName');
+        const userEmail = document.getElementById('userEmail');
 
         if (this.currentUser) {
+            // Hide auth buttons for logged in users
             if (authBtn) authBtn.style.display = 'none';
-            if (userInfo) userInfo.style.display = 'block';
-            if (userName) userName.textContent = this.currentUser.email || this.currentUser.name;
+            if (registerBtn) registerBtn.style.display = 'none';
+            if (userInfo) userInfo.style.display = 'flex';
+
+            // Show user name and email
+            if (userDisplayName) {
+                userDisplayName.textContent = this.currentUser.name || this.currentUser.email?.split('@')[0] || 'Пользователь';
+            }
+            if (userEmail) {
+                userEmail.textContent = this.currentUser.email || '';
+            }
         } else {
-            if (authBtn) authBtn.style.display = 'block';
+            // Show auth buttons for non-logged users
+            if (authBtn) authBtn.style.display = 'inline-block';
+            if (registerBtn) registerBtn.style.display = 'inline-block';
             if (userInfo) userInfo.style.display = 'none';
         }
     }
@@ -685,6 +712,23 @@ class AuthManager {
         if (logoutBtn) {
             logoutBtn.removeEventListener('click', this.logout.bind(this));
             logoutBtn.addEventListener('click', () => this.logout());
+        }
+
+        // Dropdown menu items
+        const myLinksLink = document.getElementById('myLinksLink');
+        const profileLink = document.getElementById('profileLink');
+
+        if (myLinksLink) {
+            myLinksLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showMyLinks();
+            });
+        }
+        if (profileLink) {
+            profileLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showProfile();
+            });
         }
 
         // Modal events - only if modal exists
@@ -801,6 +845,24 @@ class AuthManager {
             const data = await response.json();
 
             if (response.ok && data.success) {
+                // Save token to localStorage for persistence
+                // Try different possible token locations
+                let token = null;
+                if (data.data?.session?.access_token) {
+                    token = data.data.session.access_token;
+                } else if (data.data?.access_token) {
+                    token = data.data.access_token;
+                } else if (data.data?.token) {
+                    token = data.data.token;
+                }
+
+                if (token) {
+                    localStorage.setItem('supabase_auth_token', token);
+                    console.log('Token saved to localStorage');
+                } else {
+                    console.warn('No token found in response:', data);
+                }
+
                 this.setCurrentUser(data.data.user);
                 this.hideModal();
                 this.showMessage('Успешный вход!', 'success');
@@ -828,9 +890,11 @@ class AuthManager {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                this.setCurrentUser(data.data.user);
+                // Registration successful - user needs to confirm email first
+                // Session will be created after email confirmation
                 this.hideModal();
-                this.showMessage('Регистрация успешна!', 'success');
+                this.showMessage('Регистрация успешна! Проверьте email для подтверждения.', 'success');
+                // Don't set current user yet - wait for email confirmation
             } else {
                 this.showMessage(data.error || 'Ошибка регистрации', 'error');
             }
@@ -842,6 +906,8 @@ class AuthManager {
     async logout() {
         try {
             await fetch('/api/auth/logout', { method: 'POST' });
+            // Remove token from localStorage
+            localStorage.removeItem('supabase_auth_token');
             this.setCurrentUser(null);
             this.showMessage('Выход выполнен', 'success');
         } catch (error) {
@@ -895,6 +961,18 @@ class AuthManager {
             console.error('OAuth login error:', error);
             this.showMessage('Network error during OAuth login', 'error');
         }
+    }
+
+    showMyLinks() {
+        // TODO: Navigate to user's links page
+        alert('Функция "Мои ссылки" будет реализована в следующем обновлении!');
+        console.log('Show My Links clicked');
+    }
+
+    showProfile() {
+        // TODO: Navigate to user profile page
+        alert('Функция "Профиль" будет реализована в следующем обновлении!');
+        console.log('Show Profile clicked');
     }
 
     updateLanguage(language) {

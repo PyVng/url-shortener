@@ -49,12 +49,15 @@ class SQLiteAdapter {
           short_code TEXT UNIQUE NOT NULL,
           original_url TEXT NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          click_count INTEGER DEFAULT 0
+          click_count INTEGER DEFAULT 0,
+          user_id TEXT,
+          title TEXT
         );
 
         CREATE INDEX IF NOT EXISTS idx_short_code ON urls(short_code);
         CREATE INDEX IF NOT EXISTS idx_created_at ON urls(created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_click_count ON urls(click_count DESC);
+        CREATE INDEX IF NOT EXISTS idx_user_id ON urls(user_id);
       `;
 
       if (this.isTurso) {
@@ -70,15 +73,19 @@ class SQLiteAdapter {
     }
   }
 
-  async createShortUrl(shortCode, originalUrl) {
+  async createShortUrl(shortCode, originalUrl, userId = null) {
     try {
-      const sql = 'INSERT INTO urls (short_code, original_url) VALUES (?, ?) RETURNING id, created_at';
+      const sql = userId
+        ? 'INSERT INTO urls (short_code, original_url, user_id) VALUES (?, ?, ?) RETURNING id, created_at'
+        : 'INSERT INTO urls (short_code, original_url) VALUES (?, ?) RETURNING id, created_at';
+
+      const params = userId ? [shortCode, originalUrl, userId] : [shortCode, originalUrl];
       let result;
 
       if (this.isTurso) {
         result = await this.db.execute({
           sql,
-          args: [shortCode, originalUrl],
+          args: params,
         });
         return {
           id: result.rows[0].id,
@@ -87,7 +94,7 @@ class SQLiteAdapter {
           createdAt: result.rows[0].created_at,
         };
       } else {
-        result = await this.run(sql, [shortCode, originalUrl]);
+        result = await this.run(sql, params);
         return {
           id: result.lastID,
           shortCode,
@@ -285,6 +292,118 @@ class SQLiteAdapter {
       }
     } catch (error) {
       return false;
+    }
+  }
+
+  // User links operations
+  async getUserLinks(userId) {
+    try {
+      const sql = `
+        SELECT id, short_code, original_url, title, created_at, click_count
+        FROM urls
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+      `;
+      let result;
+
+      if (this.isTurso) {
+        result = await this.db.execute({
+          sql,
+          args: [userId],
+        });
+        return result.rows;
+      } else {
+        result = await this.all(sql, [userId]);
+        return result;
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getLinkById(id) {
+    try {
+      const sql = 'SELECT * FROM urls WHERE id = ?';
+      let result;
+
+      if (this.isTurso) {
+        result = await this.db.execute({
+          sql,
+          args: [id],
+        });
+        return result.rows.length > 0 ? result.rows[0] : null;
+      } else {
+        result = await this.get(sql, [id]);
+        return result || null;
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserLink(id, updates) {
+    try {
+      const { title, original_url, short_code } = updates;
+      const updateFields = [];
+      const params = [];
+
+      if (title !== undefined) {
+        updateFields.push('title = ?');
+        params.push(title);
+      }
+
+      if (original_url !== undefined) {
+        updateFields.push('original_url = ?');
+        params.push(original_url);
+      }
+
+      if (short_code !== undefined) {
+        updateFields.push('short_code = ?');
+        params.push(short_code);
+      }
+
+      if (updateFields.length === 0) {
+        throw new Error('No fields to update');
+      }
+
+      const sql = `UPDATE urls SET ${updateFields.join(', ')} WHERE id = ?`;
+      params.push(id);
+
+      if (this.isTurso) {
+        await this.db.execute({
+          sql,
+          args: params,
+        });
+      } else {
+        await this.run(sql, params);
+      }
+
+      // Return updated link
+      return await this.getLinkById(id);
+    } catch (error) {
+      if (error.message && error.message.includes('UNIQUE constraint failed')) {
+        throw new Error('Short code already exists');
+      }
+      throw error;
+    }
+  }
+
+  async deleteUserLink(id) {
+    try {
+      const sql = 'DELETE FROM urls WHERE id = ?';
+
+      if (this.isTurso) {
+        await this.db.execute({
+          sql,
+          args: [id],
+        });
+      } else {
+        await this.run(sql, [id]);
+      }
+
+      return true;
+    } catch (error) {
+      throw error;
     }
   }
 }

@@ -61,6 +61,27 @@ const databaseOperations = {
     await initializeDatabase();
     return await dbManager.checkRateLimit(identifier, limit, window);
   },
+
+  // User links operations
+  getUserLinks: async (userId) => {
+    await initializeDatabase();
+    return await dbManager.getUserLinks(userId);
+  },
+
+  getLinkById: async (id) => {
+    await initializeDatabase();
+    return await dbManager.getLinkById(id);
+  },
+
+  updateUserLink: async (id, updates) => {
+    await initializeDatabase();
+    return await dbManager.updateUserLink(id, updates);
+  },
+
+  deleteUserLink: async (id) => {
+    await initializeDatabase();
+    return await dbManager.deleteUserLink(id);
+  },
 };
 
 // Auto-initialize on module load

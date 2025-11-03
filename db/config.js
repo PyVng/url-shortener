@@ -34,9 +34,16 @@ const databaseConfigs = {
   // Supabase PostgreSQL
   supabase: {
     type: 'postgresql',
-    connectionString: process.env.SUPABASE_DATABASE_URL,
-    ssl: { rejectUnauthorized: false }, // Allow self-signed certificates
-    native: false,
+    connectionString: process.env.SUPABASE_DATABASE_URL || process.env.POSTGRES_URL_NON_POOLING,
+    ssl: false, // Completely disable SSL
+  },
+
+  // Supabase REST API (recommended for Vercel)
+  supabase_rest: {
+    type: 'supabase_rest',
+    url: process.env.SUPABASE_URL,
+    anonKey: process.env.SUPABASE_ANON_KEY,
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   },
 
   // Supabase Auth configuration
@@ -84,7 +91,7 @@ const databaseConfigs = {
 
 // Get active database configuration
 function getActiveDatabaseConfig() {
-  const activeDB = process.env.ACTIVE_DATABASE || 'supabase'; // Temporary change for testing
+  const activeDB = process.env.ACTIVE_DATABASE || 'sqlite';
 
   console.log('🔍 ACTIVE_DATABASE:', activeDB);
   console.log('🔍 Available databases:', Object.keys(databaseConfigs));

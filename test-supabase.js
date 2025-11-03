@@ -27,19 +27,20 @@ async function testSupabaseConnection() {
     // Test creating a URL
     console.log('🧪 Testing URL creation...');
     const testUrl = 'https://example.com/test-url-' + Date.now();
-    const result = await dbManager.createShortUrl('test123', testUrl);
+    const uniqueCode = 'test' + Date.now();
+    const result = await dbManager.createShortUrl(uniqueCode, testUrl);
     console.log('✅ URL created:', result);
     console.log('');
 
     // Test getting URL
     console.log('🔍 Testing URL retrieval...');
-    const retrievedUrl = await dbManager.getOriginalUrl('test123');
+    const retrievedUrl = await dbManager.getOriginalUrl(uniqueCode);
     console.log('✅ URL retrieved:', retrievedUrl);
     console.log('');
 
     // Test getting stats
     console.log('📊 Testing URL stats...');
-    const stats = await dbManager.getUrlStats('test123');
+    const stats = await dbManager.getUrlStats(uniqueCode);
     console.log('✅ URL stats:', stats);
     console.log('');
 
