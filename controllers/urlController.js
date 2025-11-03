@@ -109,7 +109,12 @@ class UrlController {
   // Получение списка ссылок пользователя
   static async getUserLinks(req, res) {
     try {
+      console.log('🔍 getUserLinks controller called');
+      console.log('🔍 req.user exists:', !!req.user);
+      console.log('🔍 req.supabaseAuth exists:', !!req.supabaseAuth);
+
       if (!req.user) {
+        console.log('❌ No user in request');
         return res.status(401).json({
           success: false,
           error: 'Необходима аутентификация'
@@ -117,10 +122,22 @@ class UrlController {
       }
 
       const userId = req.user.id;
-      const links = await UrlModel.getUserLinks(userId, {
+      console.log('🔍 User ID:', userId);
+      console.log('🔍 User object:', req.user);
+
+      const options = {
         authToken: req.supabaseAuth?.token,
         supabaseClient: req.supabaseAuth?.client,
+      };
+
+      console.log('🔍 Options for getUserLinks:', {
+        hasAuthToken: !!options.authToken,
+        hasSupabaseClient: !!options.supabaseClient
       });
+
+      const links = await UrlModel.getUserLinks(userId, options);
+
+      console.log('✅ getUserLinks successful, returning', links.length, 'links');
 
       res.json({
         success: true,
@@ -130,7 +147,13 @@ class UrlController {
       });
 
     } catch (error) {
-      console.error('Ошибка при получении ссылок пользователя:', error);
+      console.error('❌ Error in getUserLinks controller:', error.message);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split('\n')[0]
+      });
+
       res.status(500).json({
         success: false,
         error: 'Внутренняя ошибка сервера'

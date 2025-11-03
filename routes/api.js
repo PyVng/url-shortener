@@ -111,6 +111,38 @@ router.get('/version', (req, res) => {
   });
 });
 
+// GET /api/env-check - проверка переменных окружения (для отладки)
+router.get('/env-check', (req, res) => {
+  const envVars = {
+    // Database
+    ACTIVE_DATABASE: process.env.ACTIVE_DATABASE,
+    // Supabase
+    SUPABASE_URL: process.env.SUPABASE_URL ? 'SET' : 'NOT SET',
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET',
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET',
+    // Vercel
+    VERCEL: process.env.VERCEL ? 'TRUE' : 'FALSE',
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_URL: process.env.VERCEL_URL,
+    // Other
+    NODE_ENV: process.env.NODE_ENV,
+  };
+
+  console.log('🔍 Environment check requested');
+  console.log('🔍 Environment variables:', envVars);
+
+  res.json({
+    success: true,
+    data: {
+      environment: envVars,
+      timestamp: new Date().toISOString(),
+      hostname: require('os').hostname(),
+      platform: process.platform,
+      nodeVersion: process.version
+    }
+  });
+});
+
 // POST /api/auth/oauth/:provider - инициация OAuth входа
 router.post('/auth/oauth/:provider', AuthController.oauthLogin);
 

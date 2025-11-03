@@ -18,22 +18,49 @@ class SupabaseRestAdapter {
 
   async initialize() {
     try {
+      console.log('🔧 Initializing Supabase REST API...');
+      console.log('🔧 Supabase URL:', this.supabaseUrl);
+      console.log('🔧 Table name:', this.tableName);
+
       // Check if table exists by trying to select from it
-      const response = await fetch(`${this.supabaseUrl}/rest/v1/${this.tableName}?limit=1`, {
+      const initUrl = `${this.supabaseUrl}/rest/v1/${this.tableName}?limit=1`;
+      console.log('🔧 Testing connection with URL:', initUrl);
+
+      const response = await fetch(initUrl, {
         headers: {
           'apikey': this.supabaseKey,
           'Authorization': `Bearer ${this.supabaseKey}`,
           'Content-Type': 'application/json',
         },
+        // Add timeout for Vercel
+        signal: AbortSignal.timeout(10000), // 10 second timeout
       });
 
+      console.log('🔧 Initialization response status:', response.status);
+
       if (!response.ok && response.status !== 404) {
-        throw new Error(`Failed to check table existence: ${response.status}`);
+        const errorText = await response.text().catch(() => 'Unable to read response');
+        console.error('🔧 Initialization failed with status:', response.status, 'Response:', errorText);
+        throw new Error(`Failed to check table existence: ${response.status} - ${errorText}`);
       }
 
-      console.log('Supabase REST API initialized');
+      console.log('✅ Supabase REST API initialized successfully');
     } catch (error) {
-      console.error('Supabase REST API initialization error:', error);
+      console.error('❌ Supabase REST API initialization error:', error.message);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        cause: error.cause,
+        stack: error.stack?.split('\n')[0] // First line of stack trace
+      });
+
+      // Don't throw error on Vercel - allow graceful degradation
+      if (process.env.VERCEL) {
+        console.warn('⚠️ Running on Vercel - continuing despite initialization error');
+        return;
+      }
+
       throw error;
     }
   }
@@ -202,72 +229,129 @@ class SupabaseRestAdapter {
 
   // User links operations
   async getUserLinks(userId, options = {}) {
-    try {
-      console.log('🔍 getUserLinks called with userId:', userId);
-      const url = `${this.supabaseUrl}/rest/v1/${this.tableName}?user_id=eq.${encodeURIComponent(userId)}&select=id,short_code,original_url,title,click_count,created_at&order=created_at.desc`;
-      console.log('🔍 Supabase URL:', url);
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
 
-      const authToken = options.authToken || this.supabaseKey;
-      const headers = {
-        'apikey': this.supabaseKey,
-        'Authorization': `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
-      };
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔍 getUserLinks attempt ${attempt}/${maxRetries} with userId:`, userId);
+        const url = `${this.supabaseUrl}/rest/v1/${this.tableName}?user_id=eq.${encodeURIComponent(userId)}&select=id,short_code,original_url,title,click_count,created_at&order=created_at.desc`;
+        console.log('🔍 Supabase URL:', url);
 
-      const response = await fetch(url, {
-        headers,
-      });
+        const authToken = options.authToken || this.supabaseKey;
+        const headers = {
+          'apikey': this.supabaseKey,
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        };
 
-      console.log('🔍 getUserLinks response status:', response.status);
+        console.log('🔍 Making request with headers:', {
+          apikey: '***',
+          Authorization: authToken ? 'Bearer ***' : 'Service Role',
+          'Content-Type': headers['Content-Type']
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log('❌ getUserLinks error response:', errorText);
-        // Attempt fallback with Supabase client if available and we got an auth error
-        if ((response.status === 401 || response.status === 403) && options.supabaseClient) {
-          console.log('🔄 Falling back to Supabase client for getUserLinks');
-          const { data, error } = await options.supabaseClient
-            .from(this.tableName)
-            .select('id, short_code, original_url, title, click_count, created_at')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+        const response = await fetch(url, {
+          headers,
+          signal: AbortSignal.timeout(15000), // 15 second timeout for Vercel
+        });
 
-          if (error) {
-            console.error('❌ Supabase client fallback error:', error);
-            throw error;
+        console.log('🔍 getUserLinks response status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unable to read error response');
+          console.log('❌ getUserLinks error response:', errorText);
+
+          // Don't retry on client errors (4xx), except for specific cases
+          if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+            // Attempt fallback with Supabase client if available and we got an auth error
+            if ((response.status === 401 || response.status === 403) && options.supabaseClient) {
+              console.log('🔄 Falling back to Supabase client for getUserLinks');
+              try {
+                const { data, error } = await options.supabaseClient
+                  .from(this.tableName)
+                  .select('id, short_code, original_url, title, click_count, created_at')
+                  .eq('user_id', userId)
+                  .order('created_at', { ascending: false });
+
+                if (error) {
+                  console.error('❌ Supabase client fallback error:', error);
+                  throw error;
+                }
+
+                const fallbackResult = (data || []).map(link => ({
+                  id: link.id,
+                  short_code: link.short_code,
+                  original_url: link.original_url,
+                  title: link.title,
+                  clicks: link.click_count || 0,
+                  created_at: link.created_at,
+                }));
+
+                console.log('✅ Fallback successful, returning', fallbackResult.length, 'links');
+                return fallbackResult;
+              } catch (fallbackError) {
+                console.error('❌ Fallback also failed:', fallbackError);
+              }
+            }
+
+            throw new Error(`Failed to get user links: ${response.status} - ${errorText}`);
           }
 
-          return (data || []).map(link => ({
-            id: link.id,
-            short_code: link.short_code,
-            original_url: link.original_url,
-            title: link.title,
-            clicks: link.click_count || 0,
-            created_at: link.created_at,
-          }));
+          // Retry on server errors (5xx) or rate limiting (429)
+          if (attempt < maxRetries) {
+            console.log(`⏳ Retrying in ${retryDelay}ms... (attempt ${attempt + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            continue;
+          }
+
+          throw new Error(`Failed to get user links after ${maxRetries} attempts: ${response.status} - ${errorText}`);
         }
 
-        throw new Error(`Failed to get user links: ${response.status} - ${errorText}`);
+        const result = await response.json();
+        console.log('🔍 getUserLinks raw result:', result);
+        console.log('🔍 getUserLinks result length:', result.length);
+
+        const mappedResult = result.map(link => ({
+          id: link.id,
+          short_code: link.short_code,
+          original_url: link.original_url,
+          title: link.title,
+          clicks: link.click_count || 0,
+          created_at: link.created_at,
+        }));
+
+        console.log('✅ getUserLinks successful, returning', mappedResult.length, 'links');
+        return mappedResult;
+
+      } catch (error) {
+        console.error(`❌ getUserLinks attempt ${attempt} failed:`, error.message);
+
+        // Log detailed error information
+        console.error('❌ Error details:', {
+          name: error.name,
+          message: error.message,
+          code: error.code,
+          cause: error.cause?.message || error.cause,
+          stack: error.stack?.split('\n')[0]
+        });
+
+        // Don't retry on certain errors
+        if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+          console.log('⏹️ Not retrying due to timeout error');
+          throw error;
+        }
+
+        // Retry on network errors or if we haven't exhausted retries
+        if (attempt < maxRetries && (error.code === 'ECONNRESET' || error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.name === 'TypeError')) {
+          console.log(`⏳ Retrying in ${retryDelay}ms due to network error... (attempt ${attempt + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          continue;
+        }
+
+        // If this was the last attempt or not a retryable error, throw
+        throw error;
       }
-
-      const result = await response.json();
-      console.log('🔍 getUserLinks raw result:', result);
-      console.log('🔍 getUserLinks result length:', result.length);
-
-      const mappedResult = result.map(link => ({
-        id: link.id,
-        short_code: link.short_code,
-        original_url: link.original_url,
-        title: link.title,
-        clicks: link.click_count || 0,
-        created_at: link.created_at,
-      }));
-
-      console.log('🔍 getUserLinks mapped result:', mappedResult);
-      return mappedResult;
-    } catch (error) {
-      console.error('❌ getUserLinks exception:', error);
-      throw error;
     }
   }
 
