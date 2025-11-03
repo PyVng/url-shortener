@@ -360,8 +360,22 @@ class AuthController {
 
       const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
+      // Создаем временный клиент Supabase с токеном пользователя
+      const { createClient } = require('@supabase/supabase-js');
+      const tempSupabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_ANON_KEY,
+        {
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        }
+      );
+
       // Verify the JWT token with Supabase
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+      const { data: { user }, error } = await tempSupabase.auth.getUser();
 
       if (error || !user) {
         return res.status(401).json({
