@@ -35,9 +35,7 @@ const databaseConfigs = {
   supabase: {
     type: 'postgresql',
     connectionString: process.env.SUPABASE_DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: true }
-      : { rejectUnauthorized: false }, // Allow self-signed certificates in development
+    ssl: { rejectUnauthorized: false }, // Allow self-signed certificates
     native: false,
   },
 
