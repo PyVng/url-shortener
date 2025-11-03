@@ -124,6 +124,62 @@ class MyLinksManager {
         }
     }
 
+    async handleTokenRefresh() {
+        try {
+            const sessionStr = localStorage.getItem('supabase_auth_session');
+            if (!sessionStr) {
+                console.log('No session found, redirecting to login');
+                window.location.href = '/';
+                return;
+            }
+
+            const session = JSON.parse(sessionStr);
+            if (!session?.refresh_token) {
+                console.log('No refresh token found, redirecting to login');
+                window.location.href = '/';
+                return;
+            }
+
+            console.log('Attempting to refresh token...');
+            const refreshResponse = await fetch('/api/auth/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    refresh_token: session.refresh_token
+                })
+            });
+
+            if (refreshResponse.ok) {
+                const refreshData = await refreshResponse.json();
+                if (refreshData.success && refreshData.data?.session) {
+                    // Save new session
+                    localStorage.setItem('supabase_auth_session', JSON.stringify(refreshData.data.session));
+                    console.log('Token refreshed successfully, retrying request');
+
+                    // Retry the original request
+                    await this.loadUserLinks();
+                    return;
+                }
+            }
+
+            console.log('Token refresh failed, redirecting to login');
+            // Clear invalid session
+            localStorage.removeItem('supabase_auth_session');
+            localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
+            window.location.href = '/';
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            // Clear invalid session and redirect
+            localStorage.removeItem('supabase_auth_session');
+            localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
+            window.location.href = '/';
+        }
+    }
+
     async refreshSession(refreshToken) {
         // For now, we don't refresh sessions on the client side
         // The server should handle token validation and refresh
