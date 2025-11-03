@@ -76,8 +76,8 @@ app.get('/auth/success', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'auth-success.html'));
 });
 
-// Маршрут для перенаправления коротких URL (должен быть последним)
-app.get('/:shortCode', UrlController.redirectToOriginal);
+// Маршрут для перенаправления коротких URL (используем /s/ префикс)
+app.get('/s/:shortCode', UrlController.redirectToOriginal);
 
 // Обработка 404 для остальных маршрутов
 app.use((req, res) => {

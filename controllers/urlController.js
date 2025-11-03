@@ -85,7 +85,7 @@ class UrlController {
         data: {
           shortCode,
           originalUrl,
-          shortUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/${shortCode}`
+          shortUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/s/${shortCode}`
         }
       });
 

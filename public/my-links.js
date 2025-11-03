@@ -400,7 +400,7 @@ class MyLinksManager {
 
     createLinkCard(link) {
         const createdDate = new Date(link.created_at).toLocaleDateString('ru-RU');
-        const shortUrl = `${window.location.origin}/${link.short_code}`;
+        const shortUrl = `${window.location.origin}/s/${link.short_code}`;
 
         return `
             <div class="link-card" data-id="${link.id}">

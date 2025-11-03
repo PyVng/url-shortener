@@ -50,7 +50,7 @@ class UrlModel {
           id: result.id,
           shortCode: result.shortCode,
           originalUrl: result.originalUrl,
-          shortUrl: `${finalBaseUrl}/${result.shortCode}`
+          shortUrl: `${finalBaseUrl}/s/${result.shortCode}`
         };
       } catch (error) {
         // Если код уже существует, попробуем сгенерировать новый
