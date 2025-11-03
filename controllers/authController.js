@@ -372,6 +372,52 @@ class AuthController {
     }
   }
 
+  // Обновление токена с помощью refresh token
+  async refreshToken(req, res) {
+    try {
+      const { refresh_token } = req.body;
+
+      if (!refresh_token) {
+        return res.status(400).json({
+          success: false,
+          error: 'Refresh token is required'
+        });
+      }
+
+      if (!supabase) {
+        return res.status(503).json({
+          success: false,
+          error: 'Authentication service not configured'
+        });
+      }
+
+      const { data, error } = await supabase.auth.refreshSession({
+        refresh_token: refresh_token
+      });
+
+      if (error) {
+        return res.status(401).json({
+          success: false,
+          error: error.message
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          session: data.session,
+          user: data.user
+        }
+      });
+    } catch (error) {
+      console.error('Refresh token error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
   // Получение доступных OAuth провайдеров
   async getOAuthProviders(req, res) {
     try {

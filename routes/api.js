@@ -41,6 +41,9 @@ router.get('/auth/me', AuthController.getCurrentUser);
 // PUT /api/auth/profile - обновление профиля пользователя
 router.put('/auth/profile', AuthController.requireAuth, AuthController.updateProfile);
 
+// POST /api/auth/refresh - обновление токена
+router.post('/auth/refresh', AuthController.refreshToken);
+
 // OAuth аутентификация
 // GET /api/auth/providers - получение доступных OAuth провайдеров
 router.get('/auth/providers', AuthController.getOAuthProviders);

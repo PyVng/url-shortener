@@ -16,12 +16,11 @@ class ProfileManager {
         try {
             // Try to get stored session first (new format)
             let sessionStr = localStorage.getItem('supabase_auth_session');
-            let token = null;
+            let session = null;
 
             if (sessionStr) {
                 try {
-                    const session = JSON.parse(sessionStr);
-                    token = session?.access_token;
+                    session = JSON.parse(sessionStr);
                 } catch (e) {
                     console.warn('Failed to parse session, removing:', e);
                     localStorage.removeItem('supabase_auth_session');
@@ -29,21 +28,23 @@ class ProfileManager {
             }
 
             // Fallback to old token format for backward compatibility
-            if (!token) {
-                token = localStorage.getItem('supabase_auth_token');
-                if (token) {
+            if (!session?.access_token) {
+                const oldToken = localStorage.getItem('supabase_auth_token');
+                if (oldToken) {
                     console.log('Using old token format, will migrate on next login');
+                    session = { access_token: oldToken };
                 }
             }
 
-            if (!token) {
+            if (!session?.access_token) {
                 window.location.href = '/';
                 return;
             }
 
-            const response = await fetch('/api/auth/me', {
+            // First try with current token
+            let response = await fetch('/api/auth/me', {
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${session.access_token}`
                 }
             });
 
@@ -52,12 +53,57 @@ class ProfileManager {
                 this.currentUser = data.data.user;
                 this.loadProfileData();
                 this.updateAuthUI();
-            } else {
-                // Token is invalid, remove it
-                localStorage.removeItem('supabase_auth_session');
-                localStorage.removeItem('supabase_auth_token'); // Also remove old format
-                window.location.href = '/';
+                return;
             }
+
+            // If token is invalid, try to refresh it
+            if (session.refresh_token) {
+                console.log('Token expired, trying to refresh...');
+                try {
+                    const refreshResponse = await fetch('/api/auth/refresh', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            refresh_token: session.refresh_token
+                        })
+                    });
+
+                    if (refreshResponse.ok) {
+                        const refreshData = await refreshResponse.json();
+                        if (refreshData.success && refreshData.data?.session) {
+                            // Save new session
+                            localStorage.setItem('supabase_auth_session', JSON.stringify(refreshData.data.session));
+                            console.log('Session refreshed successfully');
+
+                            // Retry with new token
+                            const retryResponse = await fetch('/api/auth/me', {
+                                headers: {
+                                    'Authorization': `Bearer ${refreshData.data.session.access_token}`
+                                }
+                            });
+
+                            if (retryResponse.ok) {
+                                const retryData = await retryResponse.json();
+                                this.currentUser = retryData.data.user;
+                                this.loadProfileData();
+                                this.updateAuthUI();
+                                return;
+                            }
+                        }
+                    }
+                } catch (refreshError) {
+                    console.error('Failed to refresh token:', refreshError);
+                }
+            }
+
+            // If we get here, authentication failed
+            console.log('Authentication failed, redirecting to home');
+            localStorage.removeItem('supabase_auth_session');
+            localStorage.removeItem('supabase_auth_token');
+            window.location.href = '/';
+
         } catch (error) {
             console.error('Auth check failed:', error);
             localStorage.removeItem('supabase_auth_session');
