@@ -277,19 +277,32 @@ class FooterComponent {
 // Функция для загрузки и отображения версии (общая для всех страниц)
 async function loadVersion(currentLang = 'ru') {
     const t = componentTranslations[currentLang] || componentTranslations.ru;
+    console.log('loadVersion called with lang:', currentLang);
 
     try {
+        console.log('Fetching /api/version...');
         const response = await fetch('/api/version');
+        console.log('Version API response status:', response.status);
+
         if (response.ok) {
             const data = await response.json();
+            console.log('Version API data:', data);
+
             const versionElement = document.getElementById('version-info');
+            console.log('Version element found:', !!versionElement);
+
             if (versionElement) {
                 // Форматируем версию с git информацией
                 const commitShort = data.git?.commit?.substring(0, 7) || 'unknown';
                 const commitDate = data.git?.timestamp ? new Date(data.git.timestamp).toLocaleDateString(currentLang === 'ru' ? 'ru-RU' : 'en-US') : 'unknown';
-                versionElement.textContent = `${t.version}: ${data.version} (${commitShort} ${commitDate})`;
-                console.log('Version loaded:', data);
+                const versionText = `${t.version}: ${data.version} (${commitShort} ${commitDate})`;
+                versionElement.textContent = versionText;
+                console.log('Version set to:', versionText);
+            } else {
+                console.error('Version element #version-info not found!');
             }
+        } else {
+            console.error('Version API failed with status:', response.status);
         }
     } catch (error) {
         console.error('Failed to load version:', error);
@@ -302,16 +315,26 @@ async function loadVersion(currentLang = 'ru') {
 
 // Функция для инициализации общих компонентов
 function initCommonComponents(currentPage = '/', currentLang = 'ru') {
+    console.log('initCommonComponents called with page:', currentPage, 'lang:', currentLang);
+
     // Рендерим header с текущим языком
     const headerContainer = document.getElementById('header-container');
+    console.log('Header container found:', !!headerContainer);
     if (headerContainer) {
         headerContainer.innerHTML = HeaderComponent.render(currentLang);
     }
 
     // Рендерим footer с текущим языком
     const footerContainer = document.getElementById('footer-container');
+    console.log('Footer container found:', !!footerContainer);
     if (footerContainer) {
         footerContainer.innerHTML = FooterComponent.render(currentLang);
+        console.log('Footer rendered, checking for version-info element...');
+        // Проверяем, появился ли элемент версии сразу после рендеринга
+        setTimeout(() => {
+            const versionElement = document.getElementById('version-info');
+            console.log('Version element exists after footer render:', !!versionElement);
+        }, 10);
     }
 
     // Устанавливаем активную ссылку в навигации
