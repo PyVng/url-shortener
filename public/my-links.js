@@ -753,12 +753,6 @@ async function loadVersion() {
 // Initialize the manager when DOM is loaded
 let myLinksManager;
 document.addEventListener('DOMContentLoaded', () => {
-    // Инициализируем общие компоненты для страницы "Мои ссылки"
-    const footerContainer = document.getElementById('footer-container');
-    if (footerContainer) {
-        footerContainer.innerHTML = FooterComponent.render();
-    }
-
     initCommonComponents('/my-links', 'ru');
 
     myLinksManager = new MyLinksManager();

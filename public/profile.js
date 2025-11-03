@@ -470,12 +470,6 @@ async function loadVersion() {
 // Initialize the profile manager when DOM is loaded
 let profileManager;
 document.addEventListener('DOMContentLoaded', () => {
-    // Инициализируем общие компоненты для страницы профиля
-    const footerContainer = document.getElementById('footer-container');
-    if (footerContainer) {
-        footerContainer.innerHTML = FooterComponent.render();
-    }
-
     initCommonComponents('/profile', 'ru');
 
     profileManager = new ProfileManager();

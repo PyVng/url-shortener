@@ -9,7 +9,10 @@ const componentTranslations = {
         profile: "Профиль",
         login: "Войти",
         register: "Регистрация",
-        logout: "Выйти"
+        logout: "Выйти",
+        version: "Версия",
+        versionLoading: "загружается",
+        versionUnknown: "неизвестна"
     },
     en: {
         languageLabel: "Language:",
@@ -18,7 +21,10 @@ const componentTranslations = {
         profile: "Profile",
         login: "Login",
         register: "Register",
-        logout: "Logout"
+        logout: "Logout",
+        version: "Version",
+        versionLoading: "loading",
+        versionUnknown: "unknown"
     },
     es: {
         languageLabel: "Idioma:",
@@ -27,7 +33,10 @@ const componentTranslations = {
         profile: "Perfil",
         login: "Iniciar sesión",
         register: "Registrarse",
-        logout: "Cerrar sesión"
+        logout: "Cerrar sesión",
+        version: "Versión",
+        versionLoading: "cargando",
+        versionUnknown: "desconocida"
     },
     fr: {
         languageLabel: "Langue:",
@@ -36,7 +45,10 @@ const componentTranslations = {
         profile: "Profil",
         login: "Se connecter",
         register: "S'inscrire",
-        logout: "Se déconnecter"
+        logout: "Se déconnecter",
+        version: "Version",
+        versionLoading: "chargement",
+        versionUnknown: "inconnue"
     },
     de: {
         languageLabel: "Sprache:",
@@ -45,7 +57,10 @@ const componentTranslations = {
         profile: "Profil",
         login: "Anmelden",
         register: "Registrieren",
-        logout: "Abmelden"
+        logout: "Abmelden",
+        version: "Version",
+        versionLoading: "lädt",
+        versionUnknown: "unbekannt"
     },
     zh: {
         languageLabel: "语言:",
@@ -54,7 +69,10 @@ const componentTranslations = {
         profile: "个人资料",
         login: "登录",
         register: "注册",
-        logout: "登出"
+        logout: "登出",
+        version: "版本",
+        versionLoading: "加载中",
+        versionUnknown: "未知"
     },
     ja: {
         languageLabel: "言語:",
@@ -63,7 +81,10 @@ const componentTranslations = {
         profile: "プロフィール",
         login: "ログイン",
         register: "登録",
-        logout: "ログアウト"
+        logout: "ログアウト",
+        version: "バージョン",
+        versionLoading: "読み込み中",
+        versionUnknown: "不明"
     },
     ar: {
         languageLabel: "اللغة:",
@@ -72,7 +93,10 @@ const componentTranslations = {
         profile: "الملف الشخصي",
         login: "تسجيل الدخول",
         register: "التسجيل",
-        logout: "تسجيل الخروج"
+        logout: "تسجيل الخروج",
+        version: "الإصدار",
+        versionLoading: "جارٍ التحميل",
+        versionUnknown: "غير معروف"
     },
     pt: {
         languageLabel: "Idioma:",
@@ -81,7 +105,10 @@ const componentTranslations = {
         profile: "Perfil",
         login: "Entrar",
         register: "Registrar",
-        logout: "Sair"
+        logout: "Sair",
+        version: "Versão",
+        versionLoading: "carregando",
+        versionUnknown: "desconhecida"
     },
     it: {
         languageLabel: "Lingua:",
@@ -90,7 +117,10 @@ const componentTranslations = {
         profile: "Profilo",
         login: "Accedi",
         register: "Registrati",
-        logout: "Esci"
+        logout: "Esci",
+        version: "Versione",
+        versionLoading: "caricamento",
+        versionUnknown: "sconosciuta"
     },
     hi: {
         languageLabel: "भाषा:",
@@ -99,7 +129,10 @@ const componentTranslations = {
         profile: "प्रोफ़ाइल",
         login: "लॉग इन",
         register: "पंजीकरण",
-        logout: "लॉग आउट"
+        logout: "लॉग आउट",
+        version: "संस्करण",
+        versionLoading: "लोड हो रहा है",
+        versionUnknown: "अज्ञात"
     },
     ko: {
         languageLabel: "언어:",
@@ -108,7 +141,10 @@ const componentTranslations = {
         profile: "프로필",
         login: "로그인",
         register: "등록",
-        logout: "로그아웃"
+        logout: "로그아웃",
+        version: "버전",
+        versionLoading: "로딩 중",
+        versionUnknown: "알 수 없음"
     },
     tr: {
         languageLabel: "Dil:",
@@ -117,7 +153,10 @@ const componentTranslations = {
         profile: "Profil",
         login: "Giriş",
         register: "Kayıt",
-        logout: "Çıkış"
+        logout: "Çıkış",
+        version: "Sürüm",
+        versionLoading: "yükleniyor",
+        versionUnknown: "bilinmiyor"
     },
     pl: {
         languageLabel: "Język:",
@@ -126,7 +165,10 @@ const componentTranslations = {
         profile: "Profil",
         login: "Zaloguj się",
         register: "Zarejestruj się",
-        logout: "Wyloguj się"
+        logout: "Wyloguj się",
+        version: "Wersja",
+        versionLoading: "ładowanie",
+        versionUnknown: "nieznana"
     },
     nl: {
         languageLabel: "Taal:",
@@ -135,7 +177,10 @@ const componentTranslations = {
         profile: "Profiel",
         login: "Inloggen",
         register: "Registreren",
-        logout: "Uitloggen"
+        logout: "Uitloggen",
+        version: "Versie",
+        versionLoading: "laden",
+        versionUnknown: "onbekend"
     }
 };
 
@@ -219,24 +264,27 @@ class HeaderComponent {
 }
 
 class FooterComponent {
-    static render() {
+    static render(currentLang = 'ru') {
+        const t = componentTranslations[currentLang] || componentTranslations.ru;
         return `
             <footer>
-                <p>&copy; 2025 URL Shortener. Создано с помощью Node.js и Express. <span id="version-info">Версия: загружается...</span></p>
+                <p>&copy; 2025 URL Shortener. Created with Node.js and Express. <span id="version-info">${t.version}: ${t.versionLoading}...</span></p>
             </footer>
         `;
     }
 }
 
 // Функция для загрузки и отображения версии (общая для всех страниц)
-async function loadVersion() {
+async function loadVersion(currentLang = 'ru') {
+    const t = componentTranslations[currentLang] || componentTranslations.ru;
+
     try {
         const response = await fetch('/api/version');
         if (response.ok) {
             const data = await response.json();
             const versionElement = document.getElementById('version-info');
             if (versionElement) {
-                versionElement.textContent = `Версия: ${data.version} (${data.lastUpdated})`;
+                versionElement.textContent = `${t.version}: ${data.version} (${data.lastUpdated})`;
                 console.log('Version loaded:', data);
             }
         }
@@ -244,7 +292,7 @@ async function loadVersion() {
         console.error('Failed to load version:', error);
         const versionElement = document.getElementById('version-info');
         if (versionElement) {
-            versionElement.textContent = 'Версия: неизвестна';
+            versionElement.textContent = `${t.version}: ${t.versionUnknown}`;
         }
     }
 }
@@ -257,9 +305,15 @@ function initCommonComponents(currentPage = '/', currentLang = 'ru') {
         headerContainer.innerHTML = HeaderComponent.render(currentLang);
     }
 
+    // Рендерим footer с текущим языком
+    const footerContainer = document.getElementById('footer-container');
+    if (footerContainer) {
+        footerContainer.innerHTML = FooterComponent.render(currentLang);
+    }
+
     // Устанавливаем активную ссылку в навигации
     HeaderComponent.setActiveLink(currentPage);
 
-    // Загружаем версию
-    loadVersion();
+    // Загружаем версию с текущим языком
+    loadVersion(currentLang);
 }

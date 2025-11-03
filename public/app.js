@@ -1301,12 +1301,6 @@ class UrlShortener {
 
 // Инициализация приложения при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
-    // Инициализируем общие компоненты для главной страницы
-    const footerContainer = document.getElementById('footer-container');
-    if (footerContainer) {
-        footerContainer.innerHTML = FooterComponent.render();
-    }
-
     initCommonComponents('/', 'ru');
 
     // Инициализируем менеджеры
