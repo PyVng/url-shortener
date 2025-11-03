@@ -61,45 +61,20 @@ class MyLinksManager {
             }
 
             // Try to recover session from localStorage first
-            // Supabase uses different keys for different storage types
-            const possibleKeys = [
-                'sb-' + window.supabase.supabaseKey + '-auth-token',
-                'supabase.auth.token',
-                'supabase_auth_session'
-            ];
-
-            let storedSession = null;
-            let foundKey = null;
-
-            for (const key of possibleKeys) {
-                const value = localStorage.getItem(key);
-                if (value) {
-                    console.log('MyLinks: Found session in localStorage with key:', key);
-                    storedSession = value;
-                    foundKey = key;
-                    break;
-                }
-            }
+            // Use the correct key that we found in logs: sb-dkbvavfdjpamsmezfrrt-auth-token
+            const sessionKey = 'sb-dkbvavfdjpamsmezfrrt-auth-token';
+            const storedSession = localStorage.getItem(sessionKey);
 
             if (storedSession) {
                 try {
-                    let sessionData;
-                    if (foundKey.includes('supabase_auth_session')) {
-                        sessionData = JSON.parse(storedSession);
-                        console.log('MyLinks: Parsed session data from supabase_auth_session');
-                    } else {
-                        // For sb-* keys, the data is nested
-                        const parsed = JSON.parse(storedSession);
-                        sessionData = parsed;
-                        console.log('MyLinks: Parsed session data from sb-* key');
-                    }
-
-                    console.log('MyLinks: Attempting to set session with tokens:', {
+                    const sessionData = JSON.parse(storedSession);
+                    console.log('MyLinks: Found session data:', {
                         hasAccessToken: !!sessionData.access_token,
-                        hasRefreshToken: !!sessionData.refresh_token
+                        hasRefreshToken: !!sessionData.refresh_token,
+                        hasUser: !!sessionData.user
                     });
 
-                    // Try to set the session
+                    // Try to set the session using Supabase
                     const { data, error } = await window.supabase.auth.setSession({
                         access_token: sessionData.access_token,
                         refresh_token: sessionData.refresh_token
@@ -114,9 +89,7 @@ class MyLinksManager {
                     console.warn('MyLinks: Failed to parse stored session:', parseError);
                 }
             } else {
-                console.log('MyLinks: No session found in any localStorage key');
-                // Don't redirect - let user authenticate on this page
-                console.log('MyLinks: No session found, showing auth prompt');
+                console.log('MyLinks: No session found in localStorage');
             }
 
             // Now check for active session
