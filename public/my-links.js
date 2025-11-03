@@ -36,20 +36,48 @@ class MyLinksManager {
                 }
             }
 
-            // Fallback to old token format for backward compatibility
-            if (!session?.access_token) {
-                const oldToken = localStorage.getItem('supabase_auth_token');
-                if (oldToken) {
-                    console.log('Using old token format, will migrate on next login');
-                    session = { access_token: oldToken };
+        // Fallback to old token format for backward compatibility
+        if (!session?.access_token) {
+            const oldToken = localStorage.getItem('supabase_auth_token');
+            if (oldToken) {
+                console.log('Using old token format, will migrate on next login');
+                session = { access_token: oldToken };
+            }
+        }
+
+        if (!session?.access_token) {
+            const oauthTokenRaw = localStorage.getItem('supabase.auth.token');
+            if (oauthTokenRaw) {
+                try {
+                    const parsed = JSON.parse(oauthTokenRaw);
+                    if (parsed?.access_token) {
+                        console.log('Migrating OAuth token from legacy storage');
+                        session = {
+                            access_token: parsed.access_token,
+                            refresh_token: parsed.refresh_token,
+                            token_type: parsed.token_type || 'bearer',
+                            expires_in: parsed.expires_in || 3600,
+                            expires_at: parsed.expires_at || Math.floor(Date.now() / 1000) + 3600
+                        };
+                    }
+                } catch (parseError) {
+                    console.warn('Failed to parse legacy OAuth token:', parseError);
+                    localStorage.removeItem('supabase.auth.token');
                 }
             }
+        }
 
-            if (!session?.access_token) {
-                console.log('MyLinks: No access token found, showing auth prompt');
-                this.showAuthRequiredMessage();
-                return;
-            }
+        if (session?.access_token) {
+            localStorage.setItem('supabase_auth_session', JSON.stringify(session));
+            localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
+        }
+
+        if (!session?.access_token) {
+            console.log('MyLinks: No access token found, showing auth prompt');
+            this.showAuthRequiredMessage();
+            return;
+        }
 
             console.log('MyLinks: Token found, checking with server...');
 

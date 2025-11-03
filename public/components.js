@@ -365,4 +365,14 @@ function initCommonComponents(currentPage = '/', currentLang = 'ru') {
 
     // Загружаем версию с небольшой задержкой, чтобы DOM обновился
     setTimeout(() => loadVersion(currentLang), 100);
+
+    // После перестройки общего UI пересоединяем обработчики авторизации
+    if (window.authManager) {
+        try {
+            window.authManager.setupEventListeners();
+            window.authManager.updateUI();
+        } catch (error) {
+            console.error('Failed to refresh auth event listeners:', error);
+        }
+    }
 }
