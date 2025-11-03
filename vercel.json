@@ -24,8 +24,6 @@
   "env": {
     "NODE_ENV": "production",
     "ACTIVE_DATABASE": "supabase_rest",
-    "PGSSLMODE": "require",
-    "SUPABASE_INIT_TIMEOUT": "20000",
-    "SUPABASE_REQUEST_TIMEOUT": "18000"
+    "PGSSLMODE": "require"
   }
 }
