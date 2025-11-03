@@ -13,6 +13,49 @@ class AuthController {
         });
       }
 
+      // Для локальной разработки используем mock аутентификацию
+      if (process.env.NODE_ENV === 'development' && !supabase) {
+        console.log('🔧 Using mock authentication for development');
+
+        // Простая валидация email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid email format'
+          });
+        }
+
+        if (password.length < 6) {
+          return res.status(400).json({
+            success: false,
+            error: 'Password must be at least 6 characters long'
+          });
+        }
+
+        // Mock успешной регистрации
+        const mockUser = {
+          id: 'mock-user-' + Date.now(),
+          email: email,
+          name: name || email.split('@')[0],
+          created_at: new Date().toISOString()
+        };
+
+        const mockSession = {
+          access_token: 'mock-access-token-' + Date.now(),
+          refresh_token: 'mock-refresh-token-' + Date.now(),
+          expires_at: Date.now() + (60 * 60 * 1000) // 1 hour
+        };
+
+        return res.json({
+          success: true,
+          data: {
+            user: mockUser,
+            session: mockSession
+          }
+        });
+      }
+
       if (!supabase) {
         return res.status(503).json({
           success: false,

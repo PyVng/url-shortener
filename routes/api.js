@@ -35,6 +35,21 @@ router.put('/auth/profile', AuthController.requireAuth, AuthController.updatePro
 // GET /api/auth/providers - получение доступных OAuth провайдеров
 router.get('/auth/providers', AuthController.getOAuthProviders);
 
+// GET /api/auth/status - проверка статуса аутентификации (для отладки)
+router.get('/auth/status', (req, res) => {
+  const { supabase } = require('../db/supabase');
+  res.json({
+    success: true,
+    data: {
+      supabaseConfigured: !!supabase,
+      hasUrl: !!process.env.SUPABASE_URL,
+      hasAnonKey: !!process.env.SUPABASE_ANON_KEY,
+      hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      activeDatabase: process.env.ACTIVE_DATABASE
+    }
+  });
+});
+
 // POST /api/auth/oauth/:provider - инициация OAuth входа
 router.post('/auth/oauth/:provider', AuthController.oauthLogin);
 
