@@ -107,10 +107,8 @@ class MyLinksManager {
                 }
             } else {
                 console.log('MyLinks: No session found in any localStorage key');
-                // Try to redirect to home page for authentication
-                console.log('MyLinks: Redirecting to home page for authentication...');
-                window.location.href = '/';
-                return;
+                // Don't redirect - let user authenticate on this page
+                console.log('MyLinks: No session found, showing auth prompt');
             }
 
             // Now check for active session
