@@ -63,6 +63,19 @@ router.get('/auth/status', (req, res) => {
   });
 });
 
+// GET /api/version - получение версии приложения
+router.get('/version', (req, res) => {
+  const packageJson = require('../package.json');
+  const lastUpdated = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+  res.json({
+    success: true,
+    version: packageJson.version,
+    lastUpdated: lastUpdated,
+    name: packageJson.name
+  });
+});
+
 // POST /api/auth/oauth/:provider - инициация OAuth входа
 router.post('/auth/oauth/:provider', AuthController.oauthLogin);
 
