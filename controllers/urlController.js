@@ -109,9 +109,11 @@ class UrlController {
   // Получение списка ссылок пользователя
   static async getUserLinks(req, res) {
     try {
+      console.log('🔍🔍🔍 getUserLinks CONTROLLER CALLED - SERVER LOGS 🔍🔍🔍');
       console.log('🔍 getUserLinks controller called');
       console.log('🔍 req.user exists:', !!req.user);
       console.log('🔍 req.supabaseAuth exists:', !!req.supabaseAuth);
+      console.log('🔍 req.headers.authorization exists:', !!req.headers.authorization);
 
       if (!req.user) {
         console.log('❌ No user in request');
