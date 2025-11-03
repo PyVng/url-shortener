@@ -284,7 +284,10 @@ async function loadVersion(currentLang = 'ru') {
             const data = await response.json();
             const versionElement = document.getElementById('version-info');
             if (versionElement) {
-                versionElement.textContent = `${t.version}: ${data.version} (${data.lastUpdated})`;
+                // Форматируем версию с git информацией
+                const commitShort = data.git?.commit?.substring(0, 7) || 'unknown';
+                const commitDate = data.git?.timestamp ? new Date(data.git.timestamp).toLocaleDateString(currentLang === 'ru' ? 'ru-RU' : 'en-US') : 'unknown';
+                versionElement.textContent = `${t.version}: ${data.version} (${commitShort} ${commitDate})`;
                 console.log('Version loaded:', data);
             }
         }

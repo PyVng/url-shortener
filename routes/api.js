@@ -66,12 +66,32 @@ router.get('/auth/status', (req, res) => {
 // GET /api/version - получение версии приложения
 router.get('/version', (req, res) => {
   const packageJson = require('../package.json');
-  const lastUpdated = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+  // Получаем информацию о git коммите
+  const { execSync } = require('child_process');
+  let gitInfo = {
+    commit: 'unknown',
+    branch: 'unknown',
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    // Получаем короткий хэш последнего коммита
+    gitInfo.commit = execSync('git rev-parse --short HEAD').toString().trim();
+    // Получаем текущую ветку
+    gitInfo.branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
+    // Получаем timestamp последнего коммита
+    const commitDate = execSync('git log -1 --format=%ci').toString().trim();
+    gitInfo.timestamp = new Date(commitDate).toISOString();
+  } catch (error) {
+    console.warn('Could not get git info:', error.message);
+  }
 
   res.json({
     success: true,
     version: packageJson.version,
-    lastUpdated: lastUpdated,
+    git: gitInfo,
+    buildTime: new Date().toISOString(),
     name: packageJson.name
   });
 });
