@@ -218,14 +218,17 @@ class AuthController {
   // Получение текущего пользователя
   async getCurrentUser(req, res) {
     try {
+      console.log('Get current user - checking auth context...');
       const context = await this.getAuthContext(req);
       if (context.error) {
+        console.log('Auth context error:', context.error, 'Status:', context.status);
         return res.status(context.status).json({
           success: false,
           error: context.error
         });
       }
 
+      console.log('Auth successful for user:', context.user.email);
       res.json({
         success: true,
         data: { user: context.user }

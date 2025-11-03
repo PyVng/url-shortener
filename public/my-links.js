@@ -20,6 +20,8 @@ class MyLinksManager {
 
     async checkAuth() {
         try {
+            console.log('MyLinks: Starting auth check...');
+
             // Try to get stored session first (new format)
             let sessionStr = localStorage.getItem('supabase_auth_session');
             let session = null;
@@ -27,6 +29,7 @@ class MyLinksManager {
             if (sessionStr) {
                 try {
                     session = JSON.parse(sessionStr);
+                    console.log('MyLinks: Found session in localStorage');
                 } catch (e) {
                     console.warn('Failed to parse session, removing:', e);
                     localStorage.removeItem('supabase_auth_session');
@@ -43,9 +46,12 @@ class MyLinksManager {
             }
 
             if (!session?.access_token) {
+                console.log('MyLinks: No access token found, redirecting to home');
                 window.location.href = '/';
                 return;
             }
+
+            console.log('MyLinks: Token found, checking with server...');
 
             // First try with current token
             let response = await fetch('/api/auth/me', {
@@ -729,26 +735,7 @@ const style = document.createElement('style');
 style.textContent = toastStyles;
 document.head.appendChild(style);
 
-// Функция для загрузки и отображения версии
-async function loadVersion() {
-    try {
-        const response = await fetch('/api/version');
-        if (response.ok) {
-            const data = await response.json();
-            const versionElement = document.getElementById('version-info');
-            if (versionElement) {
-                versionElement.textContent = `Версия: ${data.version} (${data.lastUpdated})`;
-                console.log('Version loaded:', data);
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load version:', error);
-        const versionElement = document.getElementById('version-info');
-        if (versionElement) {
-            versionElement.textContent = 'Версия: неизвестна';
-        }
-    }
-}
+// Функция для загрузки и отображения версии (используется из components.js)
 
 // Initialize the manager when DOM is loaded
 let myLinksManager;
