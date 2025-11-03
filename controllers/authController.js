@@ -222,7 +222,7 @@ class AuthController {
       console.log('Headers:', req.headers.authorization ? 'Bearer token present' : 'No auth header');
       console.log('Environment:', process.env.VERCEL ? 'Vercel' : 'Local');
 
-      const context = await this.getAuthContext(req);
+      const context = await getAuthContext(req);
       if (context.error) {
         console.log('❌ Auth context error:', context.error, 'Status:', context.status);
         return res.status(context.status).json({
@@ -250,7 +250,7 @@ class AuthController {
     try {
       const { name } = req.body;
 
-      const context = req.supabaseAuth || await this.getAuthContext(req);
+      const context = req.supabaseAuth || await getAuthContext(req);
       if (context.error) {
         return res.status(context.status).json({
           success: false,
