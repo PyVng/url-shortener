@@ -266,11 +266,23 @@ class HeaderComponent {
 class FooterComponent {
     static render(currentLang = 'ru') {
         const t = componentTranslations[currentLang] || componentTranslations.ru;
-        return `
-            <footer>
-                <p>&copy; 2025 URL Shortener. Created with Node.js and Express. <span id="version-info">${t.version}: ${t.versionLoading}...</span></p>
-            </footer>
-        `;
+
+        // Создаем footer элемент
+        const footer = document.createElement('footer');
+        const p = document.createElement('p');
+
+        // Создаем текстовый узел для копирайта
+        const copyrightText = document.createTextNode('© 2025 URL Shortener. Created with Node.js and Express. ');
+        p.appendChild(copyrightText);
+
+        // Создаем span для версии
+        const versionSpan = document.createElement('span');
+        versionSpan.id = 'version-info';
+        versionSpan.textContent = `${t.version}: ${t.versionLoading}...`;
+        p.appendChild(versionSpan);
+
+        footer.appendChild(p);
+        return footer;
     }
 }
 
@@ -321,14 +333,25 @@ function initCommonComponents(currentPage = '/', currentLang = 'ru') {
     const headerContainer = document.getElementById('header-container');
     console.log('Header container found:', !!headerContainer);
     if (headerContainer) {
-        headerContainer.innerHTML = HeaderComponent.render(currentLang);
+        // Очищаем контейнер
+        headerContainer.innerHTML = '';
+        // Создаем элементы безопасно
+        const nav = document.createElement('nav');
+        nav.className = 'top-nav';
+        nav.innerHTML = HeaderComponent.render(currentLang);
+        headerContainer.appendChild(nav);
     }
 
     // Рендерим footer с текущим языком
     const footerContainer = document.getElementById('footer-container');
     console.log('Footer container found:', !!footerContainer);
     if (footerContainer) {
-        footerContainer.innerHTML = FooterComponent.render(currentLang);
+        // Очищаем контейнер
+        footerContainer.innerHTML = '';
+        // Создаем footer элемент безопасно через DOM API
+        const footer = FooterComponent.render(currentLang);
+        footerContainer.appendChild(footer);
+
         console.log('Footer rendered, checking for version-info element...');
         // Проверяем, появился ли элемент версии сразу после рендеринга
         setTimeout(() => {
