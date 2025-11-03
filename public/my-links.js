@@ -841,5 +841,10 @@ let myLinksManager;
 document.addEventListener('DOMContentLoaded', () => {
     initCommonComponents('/my-links', 'ru');
 
+    // Initialize AuthManager for authentication on internal pages
+    if (typeof AuthManager !== 'undefined') {
+        window.authManager = new AuthManager();
+    }
+
     myLinksManager = new MyLinksManager();
 });

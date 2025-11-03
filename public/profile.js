@@ -498,5 +498,10 @@ let profileManager;
 document.addEventListener('DOMContentLoaded', () => {
     initCommonComponents('/profile', 'ru');
 
+    // Initialize AuthManager for authentication on internal pages
+    if (typeof AuthManager !== 'undefined') {
+        window.authManager = new AuthManager();
+    }
+
     profileManager = new ProfileManager();
 });
