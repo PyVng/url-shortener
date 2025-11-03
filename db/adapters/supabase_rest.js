@@ -203,23 +203,31 @@ class SupabaseRestAdapter {
   // User links operations
   async getUserLinks(userId) {
     try {
-      const response = await fetch(
-        `${this.supabaseUrl}/rest/v1/${this.tableName}?user_id=eq.${encodeURIComponent(userId)}&select=id,short_code,original_url,title,click_count,created_at&order=created_at.desc`,
-        {
-          headers: {
-            'apikey': this.supabaseKey,
-            'Authorization': `Bearer ${this.supabaseKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      console.log('🔍 getUserLinks called with userId:', userId);
+      const url = `${this.supabaseUrl}/rest/v1/${this.tableName}?user_id=eq.${encodeURIComponent(userId)}&select=id,short_code,original_url,title,click_count,created_at&order=created_at.desc`;
+      console.log('🔍 Supabase URL:', url);
+
+      const response = await fetch(url, {
+        headers: {
+          'apikey': this.supabaseKey,
+          'Authorization': `Bearer ${this.supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('🔍 getUserLinks response status:', response.status);
 
       if (!response.ok) {
-        throw new Error(`Failed to get user links: ${response.status}`);
+        const errorText = await response.text();
+        console.log('❌ getUserLinks error response:', errorText);
+        throw new Error(`Failed to get user links: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
-      return result.map(link => ({
+      console.log('🔍 getUserLinks raw result:', result);
+      console.log('🔍 getUserLinks result length:', result.length);
+
+      const mappedResult = result.map(link => ({
         id: link.id,
         short_code: link.short_code,
         original_url: link.original_url,
@@ -227,7 +235,11 @@ class SupabaseRestAdapter {
         clicks: link.click_count || 0,
         created_at: link.created_at,
       }));
+
+      console.log('🔍 getUserLinks mapped result:', mappedResult);
+      return mappedResult;
     } catch (error) {
+      console.error('❌ getUserLinks exception:', error);
       throw error;
     }
   }
