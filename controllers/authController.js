@@ -45,7 +45,7 @@ class AuthController {
       return { error: 'Authentication service not configured', status: 503 };
     }
 
-    const { data, error } = await client.auth.getUser();
+    const { data, error } = await client.auth.getUser(token);
     if (error || !data?.user) {
       return {
         error: error?.message || 'Invalid or expired token',
@@ -224,24 +224,31 @@ class AuthController {
         });
       }
 
-      const { data, error } = await context.client.auth.updateUser({
-        data: { name }
+      const updateResponse = await fetch(`${supabaseConfig.url}/auth/v1/user`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${context.token}`,
+          apikey: supabaseConfig.anonKey
+        },
+        body: JSON.stringify({ data: { name } })
       });
 
-      if (error) {
-        return res.status(400).json({
+      if (!updateResponse.ok) {
+        const errorBody = await updateResponse.json().catch(() => ({}));
+        return res.status(updateResponse.status).json({
           success: false,
-          error: error.message
+          error: errorBody?.error_description || errorBody?.message || 'Failed to update profile'
         });
       }
 
-      if (data?.user) {
-        req.user = data.user;
-      }
+      const updatedData = await updateResponse.json();
+      const updatedUser = updatedData?.user || context.user;
+      req.user = updatedUser;
 
       res.json({
         success: true,
-        data: { user: data?.user || context.user }
+        data: { user: updatedUser }
       });
     } catch (error) {
       console.error('Update profile error:', error);
