@@ -46,8 +46,8 @@ class MyLinksManager {
             }
 
             if (!session?.access_token) {
-                console.log('MyLinks: No access token found, redirecting to home');
-                window.location.href = '/';
+                console.log('MyLinks: No access token found, showing auth prompt');
+                this.showAuthRequiredMessage();
                 return;
             }
 
@@ -687,6 +687,43 @@ class MyLinksManager {
     showProfile() {
         // Navigate to profile page
         window.location.href = '/profile';
+    }
+
+    showAuthRequiredMessage() {
+        // Hide the main content and show auth required message
+        const mainContent = document.querySelector('main');
+        const authRequired = document.createElement('div');
+        authRequired.id = 'auth-required';
+        authRequired.innerHTML = `
+            <div class="auth-required-container">
+                <div class="auth-required-icon">🔒</div>
+                <h2>Требуется авторизация</h2>
+                <p>Чтобы просмотреть свои ссылки, необходимо войти в систему.</p>
+                <div class="auth-required-actions">
+                    <button id="goToLogin" class="btn btn-primary">Войти</button>
+                    <button id="goToRegister" class="btn btn-outline">Зарегистрироваться</button>
+                </div>
+                <p class="auth-required-note">У вас нет аккаунта? <a href="#" id="registerLink">Создайте его бесплатно</a></p>
+            </div>
+        `;
+
+        // Hide main content
+        if (mainContent) mainContent.style.display = 'none';
+
+        // Add auth required message
+        document.querySelector('.container').appendChild(authRequired);
+
+        // Add event listeners
+        document.getElementById('goToLogin').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+        document.getElementById('goToRegister').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+        document.getElementById('registerLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = '/';
+        });
     }
 
     showAuthModal(tab = 'login') {

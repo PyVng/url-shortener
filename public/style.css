@@ -1629,3 +1629,72 @@ footer {
         font-size: 1.1rem;
     }
 }
+
+/* Auth Required Message */
+.auth-required-container {
+    text-align: center;
+    padding: 60px 20px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.auth-required-icon {
+    font-size: 4rem;
+    margin-bottom: 24px;
+    opacity: 0.7;
+}
+
+.auth-required-container h2 {
+    font-size: 1.8rem;
+    color: #202124;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.auth-required-container p {
+    color: #5f6368;
+    margin-bottom: 32px;
+    line-height: 1.6;
+}
+
+.auth-required-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.auth-required-actions .btn {
+    width: 100%;
+    max-width: 250px;
+    margin: 0 auto;
+}
+
+.auth-required-note {
+    font-size: 0.9rem;
+    color: #5f6368;
+}
+
+.auth-required-note a {
+    color: #1a73e8;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-required-note a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .auth-required-container {
+        padding: 40px 20px;
+    }
+
+    .auth-required-container h2 {
+        font-size: 1.5rem;
+    }
+
+    .auth-required-actions {
+        gap: 8px;
+    }
+}
