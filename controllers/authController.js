@@ -510,19 +510,25 @@ class AuthController {
   // Middleware для проверки аутентификации
   requireAuth = async (req, res, next) => {
     try {
+      console.log('🔐🔐🔐 REQUIRE AUTH MIDDLEWARE CALLED 🔐🔐🔐');
+      console.log('🔐 Request path:', req.path);
+      console.log('🔐 Headers present:', !!req.headers.authorization);
+
       const context = await getAuthContext(req);
       if (context.error) {
+        console.log('❌ Auth middleware failed:', context.error, 'Status:', context.status);
         return res.status(context.status).json({
           success: false,
           error: context.error
         });
       }
 
+      console.log('✅ Auth middleware passed for user:', context.user.email);
       req.user = context.user;
       req.supabaseAuth = context;
       next();
     } catch (error) {
-      console.error('Auth middleware error:', error);
+      console.error('❌ Auth middleware exception:', error);
       res.status(500).json({
         success: false,
         error: 'Authentication error'
