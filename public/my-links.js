@@ -22,21 +22,9 @@ class MyLinksManager {
         try {
             console.log('MyLinks: Starting auth check...');
 
-            // Wait for Supabase to be ready
+            // Supabase should be ready now (initialized synchronously)
             if (!window.supabase) {
-                console.log('MyLinks: Supabase not ready, waiting...');
-                if (window.supabaseReadyPromise) {
-                    await window.supabaseReadyPromise;
-                } else {
-                    // Wait for supabaseReady event
-                    await new Promise(resolve => {
-                        window.addEventListener('supabaseReady', resolve, { once: true });
-                    });
-                }
-            }
-
-            if (!window.supabase) {
-                console.error('MyLinks: Supabase still not available');
+                console.error('MyLinks: Supabase not available');
                 this.showAuthRequiredMessage();
                 return;
             }

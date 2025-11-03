@@ -118,34 +118,25 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="components.js"></script>
     <script>
-        // Initialize Supabase client (same as main page)
+        // Initialize Supabase client immediately (synchronous approach)
         const SUPABASE_URL = window.APP_CONFIG?.SUPABASE_URL || 'https://dkbvavfdjpamsmezfrrt.supabase.co';
         const SUPABASE_ANON_KEY = window.APP_CONFIG?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrYnZhdmZkanBhbXNtZXpmcnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxNDc0MzEsImV4cCI6MjA3NzcyMzQzMX0.4NBBusEGQyfikpidc8QCoqhIjWs_7FoJCCNwjJ8C-cI';
 
-        // Wait for Supabase to be loaded
-        function initSupabase() {
-            if (typeof supabase !== 'undefined') {
-                window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                    auth: {
-                        autoRefreshToken: true,
-                        persistSession: true,
-                        detectSessionInUrl: true
-                    }
-                });
-                // Dispatch event to signal Supabase is ready
-                window.dispatchEvent(new Event('supabaseReady'));
+        // Initialize Supabase synchronously
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true
             }
-        }
+        });
 
-        // Listen for Supabase script load
-        window.addEventListener('supabaseLoaded', initSupabase);
-
-        // Also try to initialize immediately in case script is already loaded
-        initSupabase();
+        // Dispatch event to signal Supabase is ready
+        window.dispatchEvent(new Event('supabaseReady'));
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="my-links.js"></script>
 </body>
 </html>
