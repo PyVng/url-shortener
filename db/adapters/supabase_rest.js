@@ -201,18 +201,21 @@ class SupabaseRestAdapter {
   }
 
   // User links operations
-  async getUserLinks(userId) {
+  async getUserLinks(userId, options = {}) {
     try {
       console.log('🔍 getUserLinks called with userId:', userId);
       const url = `${this.supabaseUrl}/rest/v1/${this.tableName}?user_id=eq.${encodeURIComponent(userId)}&select=id,short_code,original_url,title,click_count,created_at&order=created_at.desc`;
       console.log('🔍 Supabase URL:', url);
 
+      const authToken = options.authToken || this.supabaseKey;
+      const headers = {
+        'apikey': this.supabaseKey,
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      };
+
       const response = await fetch(url, {
-        headers: {
-          'apikey': this.supabaseKey,
-          'Authorization': `Bearer ${this.supabaseKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
 
       console.log('🔍 getUserLinks response status:', response.status);
@@ -220,6 +223,30 @@ class SupabaseRestAdapter {
       if (!response.ok) {
         const errorText = await response.text();
         console.log('❌ getUserLinks error response:', errorText);
+        // Attempt fallback with Supabase client if available and we got an auth error
+        if ((response.status === 401 || response.status === 403) && options.supabaseClient) {
+          console.log('🔄 Falling back to Supabase client for getUserLinks');
+          const { data, error } = await options.supabaseClient
+            .from(this.tableName)
+            .select('id, short_code, original_url, title, click_count, created_at')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            console.error('❌ Supabase client fallback error:', error);
+            throw error;
+          }
+
+          return (data || []).map(link => ({
+            id: link.id,
+            short_code: link.short_code,
+            original_url: link.original_url,
+            title: link.title,
+            clicks: link.click_count || 0,
+            created_at: link.created_at,
+          }));
+        }
+
         throw new Error(`Failed to get user links: ${response.status} - ${errorText}`);
       }
 

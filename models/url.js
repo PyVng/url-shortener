@@ -79,12 +79,12 @@ class UrlModel {
   }
 
   // Получение списка ссылок пользователя
-  static async getUserLinks(userId) {
+  static async getUserLinks(userId, options = {}) {
     if (!userId) {
       throw new Error('Необходим userId');
     }
 
-    return await dbGetUserLinks(userId);
+    return await dbGetUserLinks(userId, options);
   }
 
   // Получение ссылки по ID

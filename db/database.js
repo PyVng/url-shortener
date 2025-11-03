@@ -63,9 +63,9 @@ const databaseOperations = {
   },
 
   // User links operations
-  getUserLinks: async (userId) => {
+  getUserLinks: async (userId, options = {}) => {
     await initializeDatabase();
-    return await dbManager.getUserLinks(userId);
+    return await dbManager.getUserLinks(userId, options);
   },
 
   getLinkById: async (id) => {

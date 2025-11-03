@@ -253,9 +253,9 @@ class DatabaseManager {
   }
 
   // User links operations
-  async getUserLinks(userId) {
+  async getUserLinks(userId, options = {}) {
     if (this.primaryAdapter.getUserLinks) {
-      return await this.primaryAdapter.getUserLinks(userId);
+      return await this.primaryAdapter.getUserLinks(userId, options);
     }
     throw new Error('Method not supported by current database');
   }

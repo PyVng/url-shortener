@@ -296,7 +296,7 @@ class SQLiteAdapter {
   }
 
   // User links operations
-  async getUserLinks(userId) {
+  async getUserLinks(userId, _options = {}) {
     try {
       const sql = `
         SELECT id, short_code, original_url, title, created_at, click_count

@@ -117,7 +117,10 @@ class UrlController {
       }
 
       const userId = req.user.id;
-      const links = await UrlModel.getUserLinks(userId);
+      const links = await UrlModel.getUserLinks(userId, {
+        authToken: req.supabaseAuth?.token,
+        supabaseClient: req.supabaseAuth?.client,
+      });
 
       res.json({
         success: true,
