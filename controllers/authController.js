@@ -1,6 +1,61 @@
-const { supabase, supabaseAdmin } = require('../db/supabase');
+const { createClient } = require('@supabase/supabase-js');
+const { supabase, supabaseAdmin, supabaseConfig } = require('../db/supabase');
+
+const getBearerToken = (req) => {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (!authHeader) {
+    return null;
+  }
+
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : null;
+};
+
+const createUserSupabaseClient = (token) => {
+  if (!token || !supabaseConfig.url || !supabaseConfig.anonKey) {
+    return null;
+  }
+
+  return createClient(supabaseConfig.url, supabaseConfig.anonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+};
 
 class AuthController {
+  async getAuthContext(req) {
+    if (!supabaseConfig.url || !supabaseConfig.anonKey) {
+      return { error: 'Authentication service not configured', status: 503 };
+    }
+
+    const token = getBearerToken(req);
+    if (!token) {
+      return { error: 'No authorization token provided', status: 401 };
+    }
+
+    const client = createUserSupabaseClient(token);
+    if (!client) {
+      return { error: 'Authentication service not configured', status: 503 };
+    }
+
+    const { data, error } = await client.auth.getUser();
+    if (error || !data?.user) {
+      return {
+        error: error?.message || 'Invalid or expired token',
+        status: 401
+      };
+    }
+
+    return { token, client, user: data.user };
+  }
+
   // Регистрация пользователя
   async register(req, res) {
     try {
@@ -135,25 +190,17 @@ class AuthController {
   // Получение текущего пользователя
   async getCurrentUser(req, res) {
     try {
-      if (!supabase) {
-        return res.status(503).json({
+      const context = await this.getAuthContext(req);
+      if (context.error) {
+        return res.status(context.status).json({
           success: false,
-          error: 'Authentication service not configured'
-        });
-      }
-
-      const { data: { user }, error } = await supabase.auth.getUser();
-
-      if (error) {
-        return res.status(401).json({
-          success: false,
-          error: error.message
+          error: context.error
         });
       }
 
       res.json({
         success: true,
-        data: { user }
+        data: { user: context.user }
       });
     } catch (error) {
       console.error('Get current user error:', error);
@@ -169,14 +216,15 @@ class AuthController {
     try {
       const { name } = req.body;
 
-      if (!supabase) {
-        return res.status(503).json({
+      const context = req.supabaseAuth || await this.getAuthContext(req);
+      if (context.error) {
+        return res.status(context.status).json({
           success: false,
-          error: 'Authentication service not configured'
+          error: context.error
         });
       }
 
-      const { data, error } = await supabase.auth.updateUser({
+      const { data, error } = await context.client.auth.updateUser({
         data: { name }
       });
 
@@ -187,9 +235,13 @@ class AuthController {
         });
       }
 
+      if (data?.user) {
+        req.user = data.user;
+      }
+
       res.json({
         success: true,
-        data: { user: data.user }
+        data: { user: data?.user || context.user }
       });
     } catch (error) {
       console.error('Update profile error:', error);
@@ -343,48 +395,16 @@ class AuthController {
   // Middleware для проверки аутентификации
   async requireAuth(req, res, next) {
     try {
-      if (!supabase) {
-        return res.status(503).json({
+      const context = await this.getAuthContext(req);
+      if (context.error) {
+        return res.status(context.status).json({
           success: false,
-          error: 'Authentication service not configured'
+          error: context.error
         });
       }
 
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({
-          success: false,
-          error: 'No authorization token provided'
-        });
-      }
-
-      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-      // Создаем временный клиент Supabase с токеном пользователя
-      const { createClient } = require('@supabase/supabase-js');
-      const tempSupabase = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_ANON_KEY,
-        {
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        }
-      );
-
-      // Verify the JWT token with Supabase
-      const { data: { user }, error } = await tempSupabase.auth.getUser();
-
-      if (error || !user) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid or expired token'
-        });
-      }
-
-      req.user = user;
+      req.user = context.user;
+      req.supabaseAuth = context;
       next();
     } catch (error) {
       console.error('Auth middleware error:', error);
