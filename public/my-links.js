@@ -43,12 +43,20 @@ class MyLinksManager {
 
             console.log('MyLinks: Supabase is ready, attempting to recover session...');
 
+            // Debug: Check all localStorage keys
+            console.log('MyLinks: Checking ALL localStorage keys...');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                console.log(`MyLinks: localStorage[${key}] =`, value ? value.substring(0, 100) + '...' : 'null');
+            }
+
             // Debug: Check all localStorage keys related to Supabase
-            console.log('MyLinks: Checking all localStorage keys...');
+            console.log('MyLinks: Checking Supabase-related keys...');
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && (key.includes('supabase') || key.includes('sb-'))) {
-                    console.log('MyLinks: Found Supabase-related key:', key, '=', localStorage.getItem(key).substring(0, 50) + '...');
+                    console.log('MyLinks: Found Supabase-related key:', key, '=', localStorage.getItem(key));
                 }
             }
 
