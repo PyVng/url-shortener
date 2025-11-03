@@ -41,12 +41,34 @@ class MyLinksManager {
                 return;
             }
 
-            console.log('MyLinks: Getting session from Supabase...');
+            console.log('MyLinks: Supabase is ready, attempting to recover session...');
 
-            // Get current session from Supabase (this handles token refresh automatically)
+            // Try to recover session from localStorage first
+            const storedSession = localStorage.getItem('sb-' + window.supabase.supabaseKey + '-auth-token');
+            if (storedSession) {
+                try {
+                    const parsedSession = JSON.parse(storedSession);
+                    console.log('MyLinks: Found stored session, attempting to set...');
+
+                    // Try to set the session
+                    const { data, error } = await window.supabase.auth.setSession({
+                        access_token: parsedSession.access_token,
+                        refresh_token: parsedSession.refresh_token
+                    });
+
+                    if (error) {
+                        console.log('MyLinks: Failed to set stored session:', error);
+                    } else {
+                        console.log('MyLinks: Successfully recovered session from storage');
+                    }
+                } catch (parseError) {
+                    console.warn('MyLinks: Failed to parse stored session:', parseError);
+                }
+            }
+
+            // Now check for active session
             const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
-
-            console.log('MyLinks: Session result:', { session: !!session, sessionError });
+            console.log('MyLinks: Session check result:', { session: !!session, sessionError });
 
             if (sessionError) {
                 console.error('MyLinks: Session error:', sessionError);
