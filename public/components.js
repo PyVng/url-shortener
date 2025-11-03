@@ -196,21 +196,21 @@ class HeaderComponent {
                         <div class="language-selector">
                             <label for="languageSelect">${t.languageLabel}</label>
                             <select id="languageSelect">
-                                <option value="en">English</option>
-                                <option value="zh">中文</option>
-                                <option value="es">Español</option>
-                                <option value="ar">العربية</option>
-                                <option value="hi">हिन्दी</option>
+                                <option value="en" ${currentLang === 'en' ? 'selected' : ''}>English</option>
+                                <option value="zh" ${currentLang === 'zh' ? 'selected' : ''}>中文</option>
+                                <option value="es" ${currentLang === 'es' ? 'selected' : ''}>Español</option>
+                                <option value="ar" ${currentLang === 'ar' ? 'selected' : ''}>العربية</option>
+                                <option value="hi" ${currentLang === 'hi' ? 'selected' : ''}>हिन्दी</option>
                                 <option value="ru" ${currentLang === 'ru' ? 'selected' : ''}>Русский</option>
-                                <option value="fr">Français</option>
-                                <option value="ja">日本語</option>
-                                <option value="de">Deutsch</option>
-                                <option value="pt">Português</option>
-                                <option value="it">Italiano</option>
-                                <option value="ko">한국어</option>
-                                <option value="tr">Türkçe</option>
-                                <option value="pl">Polski</option>
-                                <option value="nl">Nederlands</option>
+                                <option value="fr" ${currentLang === 'fr' ? 'selected' : ''}>Français</option>
+                                <option value="ja" ${currentLang === 'ja' ? 'selected' : ''}>日本語</option>
+                                <option value="de" ${currentLang === 'de' ? 'selected' : ''}>Deutsch</option>
+                                <option value="pt" ${currentLang === 'pt' ? 'selected' : ''}>Português</option>
+                                <option value="it" ${currentLang === 'it' ? 'selected' : ''}>Italiano</option>
+                                <option value="ko" ${currentLang === 'ko' ? 'selected' : ''}>한국어</option>
+                                <option value="tr" ${currentLang === 'tr' ? 'selected' : ''}>Türkçe</option>
+                                <option value="pl" ${currentLang === 'pl' ? 'selected' : ''}>Polski</option>
+                                <option value="nl" ${currentLang === 'nl' ? 'selected' : ''}>Nederlands</option>
                             </select>
                         </div>
                     </div>

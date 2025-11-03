@@ -532,7 +532,9 @@ class AuthManager {
     constructor() {
         this.currentUser = null;
         this.authModal = null;
-        this.currentLanguage = 'en'; // Default language
+        const languageSelect = document.getElementById('languageSelect');
+        const documentLang = document.documentElement?.lang;
+        this.currentLanguage = languageSelect?.value || documentLang || 'en';
         this.init();
     }
 
@@ -561,9 +563,37 @@ class AuthManager {
             if (!session?.access_token) {
                 const oldToken = localStorage.getItem('supabase_auth_token');
                 if (oldToken) {
-                    console.log('Using old token format, will migrate on next login');
+                    console.log('Using legacy token format, migrating to session storage');
                     session = { access_token: oldToken };
                 }
+            }
+
+            if (!session?.access_token) {
+                const oauthTokenRaw = localStorage.getItem('supabase.auth.token');
+                if (oauthTokenRaw) {
+                    try {
+                        const parsed = JSON.parse(oauthTokenRaw);
+                        if (parsed?.access_token) {
+                            console.log('Migrating OAuth token to session storage');
+                            session = {
+                                access_token: parsed.access_token,
+                                refresh_token: parsed.refresh_token,
+                                token_type: parsed.token_type || 'bearer',
+                                expires_in: parsed.expires_in || 3600,
+                                expires_at: parsed.expires_at || Math.floor(Date.now() / 1000) + 3600
+                            };
+                        }
+                    } catch (parseError) {
+                        console.warn('Failed to parse OAuth token, removing:', parseError);
+                        localStorage.removeItem('supabase.auth.token');
+                    }
+                }
+            }
+
+            if (session?.access_token) {
+                localStorage.setItem('supabase_auth_session', JSON.stringify(session));
+                localStorage.removeItem('supabase_auth_token');
+                localStorage.removeItem('supabase.auth.token');
             }
 
             if (!session?.access_token) {
@@ -628,13 +658,17 @@ class AuthManager {
             console.log('Authentication failed, clearing session');
             localStorage.removeItem('supabase_auth_session');
             localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
             this.setCurrentUser(null);
+            window.dispatchEvent(new Event('auth:logout'));
 
         } catch (error) {
             console.error('Auth check failed:', error);
             localStorage.removeItem('supabase_auth_session');
             localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
             this.setCurrentUser(null);
+            window.dispatchEvent(new Event('auth:logout'));
         }
     }
 
@@ -692,6 +726,10 @@ class AuthManager {
             }
         } catch (error) {
             console.error('Failed to load OAuth providers:', error);
+        }
+
+        if (this.authModal && this.authModal.parentNode) {
+            this.authModal.parentNode.removeChild(this.authModal);
         }
 
         const modal = document.createElement('div');
@@ -758,13 +796,12 @@ class AuthManager {
         `;
         document.body.appendChild(modal);
         this.authModal = modal;
+        this.attachModalEventListeners();
     }
 
     setupEventListeners() {
-        // Remove existing modal if it exists
-        if (this.authModal && this.authModal.parentNode) {
-            this.authModal.remove();
-            this.authModal = null;
+        if (!this.authModal) {
+            this.createAuthModal();
         }
 
         // Auth buttons - these are outside the modal
@@ -772,18 +809,23 @@ class AuthManager {
         const registerBtn = document.getElementById('registerBtn');
         const logoutBtn = document.getElementById('logoutBtn');
 
-        // Remove existing listeners first
         if (loginBtn) {
-            loginBtn.removeEventListener('click', this.showModal.bind(this));
-            loginBtn.addEventListener('click', () => this.showModal('login'));
+            loginBtn.onclick = (event) => {
+                event.preventDefault();
+                this.showModal('login');
+            };
         }
         if (registerBtn) {
-            registerBtn.removeEventListener('click', this.showModal.bind(this));
-            registerBtn.addEventListener('click', () => this.showModal('register'));
+            registerBtn.onclick = (event) => {
+                event.preventDefault();
+                this.showModal('register');
+            };
         }
         if (logoutBtn) {
-            logoutBtn.removeEventListener('click', this.logout.bind(this));
-            logoutBtn.addEventListener('click', () => this.logout());
+            logoutBtn.onclick = (event) => {
+                event.preventDefault();
+                this.logout();
+            };
         }
 
         // Dropdown menu items
@@ -791,16 +833,16 @@ class AuthManager {
         const profileLink = document.getElementById('profileLink');
 
         if (myLinksLink) {
-            myLinksLink.addEventListener('click', (e) => {
-                e.preventDefault();
+            myLinksLink.onclick = (event) => {
+                event.preventDefault();
                 this.showMyLinks();
-            });
+            };
         }
         if (profileLink) {
-            profileLink.addEventListener('click', (e) => {
-                e.preventDefault();
+            profileLink.onclick = (event) => {
+                event.preventDefault();
                 this.showProfile();
-            });
+            };
         }
 
         // Modal events - only if modal exists
@@ -872,11 +914,13 @@ class AuthManager {
     }
 
     showModal(initialTab = 'login') {
-        if (this.authModal) {
-            this.authModal.style.display = 'block';
-            this.attachModalEventListeners(); // Ensure event listeners are attached
-            this.switchTab(initialTab);
+        if (!this.authModal) {
+            this.createAuthModal();
         }
+
+        this.authModal.style.display = 'block';
+        this.attachModalEventListeners();
+        this.switchTab(initialTab);
     }
 
     hideModal() {
@@ -935,6 +979,9 @@ class AuthManager {
                 }
 
                 this.setCurrentUser(data.data.user);
+                window.dispatchEvent(new CustomEvent('auth:login', {
+                    detail: { user: data.data.user }
+                }));
                 this.hideModal();
                 this.showMessage('Успешный вход!', 'success');
             } else {
@@ -979,7 +1026,10 @@ class AuthManager {
             await fetch('/api/auth/logout', { method: 'POST' });
             // Remove session from localStorage
             localStorage.removeItem('supabase_auth_session');
+            localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
             this.setCurrentUser(null);
+            window.dispatchEvent(new Event('auth:logout'));
             this.showMessage('Выход выполнен', 'success');
         } catch (error) {
             console.error('Logout error:', error);
@@ -1062,7 +1112,6 @@ class AuthManager {
 
 class UrlShortener {
     constructor() {
-        this.currentLanguage = 'en'; // English as default
         this.form = document.getElementById('urlForm');
         this.originalUrlInput = document.getElementById('originalUrl');
         this.shortenBtn = document.getElementById('shortenBtn');
@@ -1078,17 +1127,34 @@ class UrlShortener {
         this.createNewBtn = document.getElementById('createNewBtn');
         this.tryAgainBtn = document.getElementById('tryAgainBtn');
         this.languageSelect = document.getElementById('languageSelect');
+        this.currentLanguage = this.languageSelect?.value || document.documentElement?.lang || 'en';
 
         this.init();
     }
 
     init() {
+        if (!this.form || !this.originalUrlInput || !this.shortenBtn) {
+            console.warn('UrlShortener: required elements not found, skipping initialization');
+            return;
+        }
+
         this.form.addEventListener('submit', this.handleSubmit.bind(this));
-        this.copyBtn.addEventListener('click', this.copyToClipboard.bind(this));
-        this.goToBtn.addEventListener('click', this.goToUrl.bind(this));
-        this.createNewBtn.addEventListener('click', this.resetForm.bind(this));
-        this.tryAgainBtn.addEventListener('click', this.resetForm.bind(this));
-        this.languageSelect.addEventListener('change', this.changeLanguage.bind(this));
+
+        if (this.copyBtn) {
+            this.copyBtn.addEventListener('click', this.copyToClipboard.bind(this));
+        }
+        if (this.goToBtn) {
+            this.goToBtn.addEventListener('click', this.goToUrl.bind(this));
+        }
+        if (this.createNewBtn) {
+            this.createNewBtn.addEventListener('click', this.resetForm.bind(this));
+        }
+        if (this.tryAgainBtn) {
+            this.tryAgainBtn.addEventListener('click', this.resetForm.bind(this));
+        }
+        if (this.languageSelect) {
+            this.languageSelect.addEventListener('change', this.changeLanguage.bind(this));
+        }
 
         // Валидация URL в реальном времени
         this.originalUrlInput.addEventListener('input', this.validateUrl.bind(this));
@@ -1230,14 +1296,18 @@ class UrlShortener {
     }
 
     setLoading(loading) {
-        this.shortenBtn.disabled = loading;
+        if (this.shortenBtn) {
+            this.shortenBtn.disabled = loading;
+        }
 
-        if (loading) {
-            this.btnText.style.display = 'none';
-            this.btnLoading.style.display = 'inline';
-        } else {
-            this.btnText.style.display = 'inline';
-            this.btnLoading.style.display = 'none';
+        if (this.btnText && this.btnLoading) {
+            if (loading) {
+                this.btnText.style.display = 'none';
+                this.btnLoading.style.display = 'inline';
+            } else {
+                this.btnText.style.display = 'inline';
+                this.btnLoading.style.display = 'none';
+            }
         }
     }
 

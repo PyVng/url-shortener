@@ -82,12 +82,20 @@
         const refreshToken = urlParams.get('refresh_token');
 
         if (accessToken && refreshToken) {
-            // Сохраняем токены в localStorage
-            localStorage.setItem('supabase.auth.token', JSON.stringify({
+            // Сохраняем токены в формате, ожидаемом фронтендом
+            const expiresAt = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+            const session = {
                 access_token: accessToken,
                 refresh_token: refreshToken,
-                expires_at: Date.now() + (3600 * 1000) // 1 hour
-            }));
+                token_type: 'bearer',
+                expires_in: 3600,
+                expires_at: expiresAt
+            };
+
+            localStorage.setItem('supabase_auth_session', JSON.stringify(session));
+            // Чистим устаревшие ключи, чтобы избежать конфликтов
+            localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
 
             // Перенаправляем на главную страницу
             setTimeout(() => {

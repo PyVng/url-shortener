@@ -64,6 +64,7 @@ class MyLinksManager {
                 const data = await response.json();
                 this.currentUser = data.data.user;
                 this.updateAuthUI();
+                this.hideAuthRequiredMessage();
                 // Load user links only after successful authentication
                 this.loadUserLinks();
                 return;
@@ -101,6 +102,7 @@ class MyLinksManager {
                                 const retryData = await retryResponse.json();
                                 this.currentUser = retryData.data.user;
                                 this.updateAuthUI();
+                                this.hideAuthRequiredMessage();
                                 this.loadUserLinks();
                                 return;
                             }
@@ -215,14 +217,16 @@ class MyLinksManager {
         const myLinksLink = document.getElementById('myLinksLink');
         const profileLink = document.getElementById('profileLink');
 
-        if (loginBtn) {
-            loginBtn.addEventListener('click', () => this.showAuthModal('login'));
-        }
-        if (registerBtn) {
-            registerBtn.addEventListener('click', () => this.showAuthModal('register'));
-        }
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => this.logout());
+        if (!window.authManager) {
+            if (loginBtn) {
+                loginBtn.addEventListener('click', () => this.showAuthModal('login'));
+            }
+            if (registerBtn) {
+                registerBtn.addEventListener('click', () => this.showAuthModal('register'));
+            }
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => this.logout());
+            }
         }
         if (myLinksLink) {
             myLinksLink.addEventListener('click', (e) => {
@@ -236,6 +240,15 @@ class MyLinksManager {
                 this.showProfile();
             });
         }
+
+        window.addEventListener('auth:login', () => {
+            this.checkAuth();
+        });
+
+        window.addEventListener('auth:logout', () => {
+            this.currentUser = null;
+            this.showAuthRequiredMessage();
+        });
     }
 
     setupModalEventListeners() {
@@ -671,9 +684,16 @@ class MyLinksManager {
     }
 
     async logout() {
+        if (window.authManager) {
+            await window.authManager.logout();
+            return;
+        }
+
         try {
             await fetch('/api/auth/logout', { method: 'POST' });
             localStorage.removeItem('supabase_auth_session');
+            localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
             window.location.href = '/';
         } catch (error) {
             console.error('Logout error:', error);
@@ -687,8 +707,19 @@ class MyLinksManager {
     }
 
     showAuthRequiredMessage() {
+        if (document.getElementById('auth-required')) {
+            return;
+        }
+
+        const loadingState = document.getElementById('loadingState');
+        if (loadingState) loadingState.style.display = 'none';
+        const linksGrid = document.getElementById('linksGrid');
+        if (linksGrid) linksGrid.style.display = 'none';
+
         // Hide the main content and show auth required message
         const mainContent = document.querySelector('main');
+        if (mainContent) mainContent.style.display = 'none';
+
         const authRequired = document.createElement('div');
         authRequired.id = 'auth-required';
         authRequired.innerHTML = `
@@ -705,28 +736,62 @@ class MyLinksManager {
         `;
 
         // Hide main content
-        if (mainContent) mainContent.style.display = 'none';
+        const container = document.querySelector('.container');
+        if (container) {
+            container.appendChild(authRequired);
+        }
 
-        // Add auth required message
-        document.querySelector('.container').appendChild(authRequired);
+        const openAuthModal = (tab) => {
+            if (window.authManager) {
+                window.authManager.showModal(tab);
+            } else {
+                window.location.href = '/';
+            }
+        };
 
-        // Add event listeners
-        document.getElementById('goToLogin').addEventListener('click', () => {
-            window.location.href = '/';
-        });
-        document.getElementById('goToRegister').addEventListener('click', () => {
-            window.location.href = '/';
-        });
-        document.getElementById('registerLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = '/';
-        });
+        const loginBtn = document.getElementById('goToLogin');
+        const registerBtn = document.getElementById('goToRegister');
+        const registerLink = document.getElementById('registerLink');
+
+        if (loginBtn) {
+            loginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                openAuthModal('login');
+            });
+        }
+        if (registerBtn) {
+            registerBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                openAuthModal('register');
+            });
+        }
+        if (registerLink) {
+            registerLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                openAuthModal('register');
+            });
+        }
     }
 
     showAuthModal(tab = 'login') {
-        // This would need to be implemented if we want auth modals on this page
-        alert('Пожалуйста, войдите на главной странице');
-        window.location.href = '/';
+        if (window.authManager) {
+            window.authManager.showModal(tab);
+        } else {
+            alert('Пожалуйста, войдите на главной странице');
+            window.location.href = '/';
+        }
+    }
+
+    hideAuthRequiredMessage() {
+        const authRequired = document.getElementById('auth-required');
+        if (authRequired && authRequired.parentNode) {
+            authRequired.parentNode.removeChild(authRequired);
+        }
+
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            mainContent.style.display = '';
+        }
     }
 }
 

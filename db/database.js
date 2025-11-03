@@ -21,9 +21,9 @@ async function initializeDatabase() {
 // Legacy functions for backward compatibility
 const databaseOperations = {
   // Создание короткого URL
-  createShortUrl: async (shortCode, originalUrl) => {
+  createShortUrl: async (shortCode, originalUrl, userId = null) => {
     await initializeDatabase();
-    return await dbManager.createShortUrl(shortCode, originalUrl);
+    return await dbManager.createShortUrl(shortCode, originalUrl, userId);
   },
 
   // Получение оригинального URL по короткому коду

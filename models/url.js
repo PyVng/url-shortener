@@ -43,7 +43,7 @@ class UrlModel {
       attempts++;
 
       try {
-        const result = await createShortUrl(shortCode, originalUrl);
+        const result = await createShortUrl(shortCode, originalUrl, userId);
         // Используем переданный baseUrl или fallback к environment переменной
         const finalBaseUrl = baseUrl || process.env.BASE_URL || 'http://localhost:3000';
         return {

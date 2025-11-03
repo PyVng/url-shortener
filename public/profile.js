@@ -9,6 +9,12 @@ class ProfileManager {
 
     init() {
         this.setupEventListeners();
+        window.addEventListener('auth:logout', () => {
+            window.location.href = '/';
+        });
+        window.addEventListener('auth:login', () => {
+            this.checkAuth();
+        });
         this.checkAuth();
     }
 
@@ -37,9 +43,35 @@ class ProfileManager {
             }
 
             if (!session?.access_token) {
+                const oauthTokenRaw = localStorage.getItem('supabase.auth.token');
+                if (oauthTokenRaw) {
+                    try {
+                        const parsed = JSON.parse(oauthTokenRaw);
+                        if (parsed?.access_token) {
+                            console.log('Migrating OAuth token to session storage');
+                            session = {
+                                access_token: parsed.access_token,
+                                refresh_token: parsed.refresh_token,
+                                token_type: parsed.token_type || 'bearer',
+                                expires_in: parsed.expires_in || 3600,
+                                expires_at: parsed.expires_at || Math.floor(Date.now() / 1000) + 3600
+                            };
+                        }
+                    } catch (parseError) {
+                        console.warn('Failed to parse OAuth token, removing:', parseError);
+                        localStorage.removeItem('supabase.auth.token');
+                    }
+                }
+            }
+
+            if (!session?.access_token) {
                 window.location.href = '/';
                 return;
             }
+
+            localStorage.setItem('supabase_auth_session', JSON.stringify(session));
+            localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
 
             // First try with current token
             let response = await fetch('/api/auth/me', {
@@ -102,12 +134,14 @@ class ProfileManager {
             console.log('Authentication failed, redirecting to home');
             localStorage.removeItem('supabase_auth_session');
             localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
             window.location.href = '/';
 
         } catch (error) {
             console.error('Auth check failed:', error);
             localStorage.removeItem('supabase_auth_session');
             localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase.auth.token');
             window.location.href = '/';
         }
     }
@@ -147,11 +181,18 @@ class ProfileManager {
         const logoutBtn = document.getElementById('logoutBtn');
         const logoutBtnMain = document.getElementById('logoutBtnMain');
 
-        if (logoutBtn) {
+        if (logoutBtn && !window.authManager) {
             logoutBtn.addEventListener('click', () => this.logout());
         }
         if (logoutBtnMain) {
-            logoutBtnMain.addEventListener('click', () => this.logout());
+            logoutBtnMain.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (window.authManager) {
+                    window.authManager.logout();
+                } else {
+                    this.logout();
+                }
+            });
         }
 
         // Navigation links
@@ -375,11 +416,17 @@ class ProfileManager {
     }
 
     async logout() {
+        if (window.authManager) {
+            await window.authManager.logout();
+            return;
+        }
+
         try {
             await fetch('/api/auth/logout', { method: 'POST' });
             // Remove session from localStorage
             localStorage.removeItem('supabase_auth_session');
             localStorage.removeItem('supabase_auth_token'); // Also remove old format
+            localStorage.removeItem('supabase.auth.token');
             window.location.href = '/';
         } catch (error) {
             console.error('Logout error:', error);
@@ -445,27 +492,6 @@ const toastStyles = `
 const style = document.createElement('style');
 style.textContent = toastStyles;
 document.head.appendChild(style);
-
-// Функция для загрузки и отображения версии
-async function loadVersion() {
-    try {
-        const response = await fetch('/api/version');
-        if (response.ok) {
-            const data = await response.json();
-            const versionElement = document.getElementById('version-info');
-            if (versionElement) {
-                versionElement.textContent = `Версия: ${data.version} (${data.lastUpdated})`;
-                console.log('Version loaded:', data);
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load version:', error);
-        const versionElement = document.getElementById('version-info');
-        if (versionElement) {
-            versionElement.textContent = 'Версия: неизвестна';
-        }
-    }
-}
 
 // Initialize the profile manager when DOM is loaded
 let profileManager;
