@@ -14,9 +14,8 @@ class MyLinksManager {
     }
 
     init() {
-        this.checkAuth();
         this.setupEventListeners();
-        this.loadUserLinks();
+        this.checkAuth(); // This will load links if user is authenticated
     }
 
     async checkAuth() {
@@ -37,6 +36,8 @@ class MyLinksManager {
                 const data = await response.json();
                 this.currentUser = data.data.user;
                 this.updateAuthUI();
+                // Load user links only after successful authentication
+                this.loadUserLinks();
             } else {
                 localStorage.removeItem('supabase_auth_token');
                 window.location.href = '/';
