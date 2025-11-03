@@ -153,7 +153,7 @@ class MyLinksManager {
         if (profileLink) {
             profileLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                alert('Функция "Профиль" будет реализована в следующем обновлении!');
+                this.showProfile();
             });
         }
     }
@@ -217,23 +217,39 @@ class MyLinksManager {
 
         try {
             const token = localStorage.getItem('supabase_auth_token');
+            console.log('Loading user links, token exists:', !!token);
+
+            if (!token) {
+                console.error('No auth token found');
+                this.showError('Необходима авторизация');
+                return;
+            }
+
             const response = await fetch('/api/links', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
 
+            console.log('API response status:', response.status);
+
             if (response.ok) {
                 const data = await response.json();
+                console.log('API response data:', data);
+
                 if (data.success) {
                     this.links = data.data.links || [];
+                    console.log('Loaded links:', this.links.length);
                     this.filterAndSortLinks();
                     this.renderLinks();
                 } else {
-                    this.showError('Не удалось загрузить ссылки');
+                    console.error('API returned success=false:', data.error);
+                    this.showError(data.error || 'Не удалось загрузить ссылки');
                 }
             } else {
-                this.showError('Ошибка при загрузке ссылок');
+                const errorText = await response.text();
+                console.error('API error response:', response.status, errorText);
+                this.showError(`Ошибка сервера: ${response.status}`);
             }
         } catch (error) {
             console.error('Load links error:', error);
@@ -554,6 +570,26 @@ class MyLinksManager {
             console.error('Logout error:', error);
             window.location.href = '/';
         }
+    }
+
+    showProfile() {
+        // Show user profile information
+        if (!this.currentUser) {
+            this.showToast('Пользователь не найден', 'error');
+            return;
+        }
+
+        const profileInfo = `
+👤 Профиль пользователя
+
+📧 Email: ${this.currentUser.email}
+👨‍💼 Имя: ${this.currentUser.name || 'Не указано'}
+📅 Дата регистрации: ${new Date(this.currentUser.created_at).toLocaleDateString('ru-RU')}
+
+⚠️ Функция полного редактирования профиля будет добавлена в следующих обновлениях.
+        `;
+
+        alert(profileInfo);
     }
 
     showAuthModal(tab = 'login') {
