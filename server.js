@@ -56,13 +56,23 @@ app.get('/auth/callback', async (req, res) => {
   }
 });
 
-// Маршрут для перенаправления коротких URL
-app.get('/:shortCode', UrlController.redirectToOriginal);
-
 // Главная страница
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// Страница "Мои ссылки"
+app.get('/my-links', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'my-links.html'));
+});
+
+// Страница успеха аутентификации
+app.get('/auth/success', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'auth-success.html'));
+});
+
+// Маршрут для перенаправления коротких URL (должен быть последним)
+app.get('/:shortCode', UrlController.redirectToOriginal);
 
 // Обработка 404 для остальных маршрутов
 app.use((req, res) => {
