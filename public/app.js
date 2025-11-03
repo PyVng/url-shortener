@@ -964,9 +964,8 @@ class AuthManager {
     }
 
     showMyLinks() {
-        // TODO: Navigate to user's links page
-        alert('Функция "Мои ссылки" будет реализована в следующем обновлении!');
-        console.log('Show My Links clicked');
+        // Navigate to user's links page
+        window.location.href = '/my-links';
     }
 
     showProfile() {
