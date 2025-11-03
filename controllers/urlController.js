@@ -135,7 +135,9 @@ class UrlController {
         hasSupabaseClient: !!options.supabaseClient
       });
 
+      console.log('🔍 Calling UrlModel.getUserLinks with userId:', userId);
       const links = await UrlModel.getUserLinks(userId, options);
+      console.log('🔍 UrlModel.getUserLinks returned:', typeof links, Array.isArray(links) ? links.length : 'not array');
 
       console.log('✅ getUserLinks successful, returning', links.length, 'links');
 
