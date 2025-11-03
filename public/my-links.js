@@ -20,7 +20,28 @@ class MyLinksManager {
 
     async checkAuth() {
         try {
-            const token = localStorage.getItem('supabase_auth_token');
+            // Try to get stored session first (new format)
+            let sessionStr = localStorage.getItem('supabase_auth_session');
+            let token = null;
+
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    token = session?.access_token;
+                } catch (e) {
+                    console.warn('Failed to parse session, removing:', e);
+                    localStorage.removeItem('supabase_auth_session');
+                }
+            }
+
+            // Fallback to old token format for backward compatibility
+            if (!token) {
+                token = localStorage.getItem('supabase_auth_token');
+                if (token) {
+                    console.log('Using old token format, will migrate on next login');
+                }
+            }
+
             if (!token) {
                 window.location.href = '/';
                 return;
@@ -39,13 +60,23 @@ class MyLinksManager {
                 // Load user links only after successful authentication
                 this.loadUserLinks();
             } else {
-                localStorage.removeItem('supabase_auth_token');
+                // Token is invalid, remove it
+                localStorage.removeItem('supabase_auth_session');
+                localStorage.removeItem('supabase_auth_token'); // Also remove old format
                 window.location.href = '/';
             }
         } catch (error) {
             console.error('Auth check failed:', error);
+            localStorage.removeItem('supabase_auth_session');
+            localStorage.removeItem('supabase_auth_token');
             window.location.href = '/';
         }
+    }
+
+    async refreshSession(refreshToken) {
+        // For now, we don't refresh sessions on the client side
+        // The server should handle token validation and refresh
+        return null;
     }
 
     updateAuthUI() {
@@ -216,18 +247,25 @@ class MyLinksManager {
         this.showLoading();
 
         try {
-            const token = localStorage.getItem('supabase_auth_token');
-            console.log('Loading user links, token exists:', !!token);
-
-            if (!token) {
-                console.error('No auth token found');
+            const sessionStr = localStorage.getItem('supabase_auth_session');
+            if (!sessionStr) {
+                console.error('No auth session found');
                 this.showError('Необходима авторизация');
                 return;
             }
 
+            const session = JSON.parse(sessionStr);
+            if (!session?.access_token) {
+                console.error('No access token in session');
+                this.showError('Необходима авторизация');
+                return;
+            }
+
+            console.log('Loading user links, session exists:', !!session);
+
             const response = await fetch('/api/links', {
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${session.access_token}`
                 }
             });
 
@@ -426,12 +464,23 @@ class MyLinksManager {
         }
 
         try {
-            const token = localStorage.getItem('supabase_auth_token');
+            const sessionStr = localStorage.getItem('supabase_auth_session');
+            if (!sessionStr) {
+                this.showToast('Необходима авторизация', 'error');
+                return;
+            }
+
+            const session = JSON.parse(sessionStr);
+            if (!session?.access_token) {
+                this.showToast('Необходима авторизация', 'error');
+                return;
+            }
+
             const response = await fetch(`/api/links/${this.editingLinkId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${session.access_token}`
                 },
                 body: JSON.stringify({
                     title,
@@ -478,11 +527,22 @@ class MyLinksManager {
         if (!this.deletingLinkId) return;
 
         try {
-            const token = localStorage.getItem('supabase_auth_token');
+            const sessionStr = localStorage.getItem('supabase_auth_session');
+            if (!sessionStr) {
+                this.showToast('Необходима авторизация', 'error');
+                return;
+            }
+
+            const session = JSON.parse(sessionStr);
+            if (!session?.access_token) {
+                this.showToast('Необходима авторизация', 'error');
+                return;
+            }
+
             const response = await fetch(`/api/links/${this.deletingLinkId}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${session.access_token}`
                 }
             });
 
@@ -564,7 +624,7 @@ class MyLinksManager {
     async logout() {
         try {
             await fetch('/api/auth/logout', { method: 'POST' });
-            localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('supabase_auth_session');
             window.location.href = '/';
         } catch (error) {
             console.error('Logout error:', error);
@@ -623,8 +683,37 @@ const style = document.createElement('style');
 style.textContent = toastStyles;
 document.head.appendChild(style);
 
+// Функция для загрузки и отображения версии
+async function loadVersion() {
+    try {
+        const response = await fetch('/api/version');
+        if (response.ok) {
+            const data = await response.json();
+            const versionElement = document.getElementById('version-info');
+            if (versionElement) {
+                versionElement.textContent = `Версия: ${data.version} (${data.lastUpdated})`;
+                console.log('Version loaded:', data);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load version:', error);
+        const versionElement = document.getElementById('version-info');
+        if (versionElement) {
+            versionElement.textContent = 'Версия: неизвестна';
+        }
+    }
+}
+
 // Initialize the manager when DOM is loaded
 let myLinksManager;
 document.addEventListener('DOMContentLoaded', () => {
+    // Инициализируем общие компоненты для страницы "Мои ссылки"
+    const footerContainer = document.getElementById('footer-container');
+    if (footerContainer) {
+        footerContainer.innerHTML = FooterComponent.render();
+    }
+
+    initCommonComponents('/my-links', 'ru');
+
     myLinksManager = new MyLinksManager();
 });

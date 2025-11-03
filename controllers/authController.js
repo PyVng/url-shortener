@@ -29,6 +29,34 @@ const createUserSupabaseClient = (token) => {
   });
 };
 
+const getAuthContext = async (req) => {
+  if (!supabaseConfig.url || !supabaseConfig.anonKey) {
+    return { error: 'Authentication service not configured', status: 503 };
+  }
+
+  const token = getBearerToken(req);
+  if (!token) {
+    return { error: 'No authorization token provided', status: 401 };
+  }
+
+  const client = createUserSupabaseClient(token);
+  if (!client) {
+    return { error: 'Authentication service not configured', status: 503 };
+  }
+
+  const { data, error } = await client.auth.getUser();
+  if (error || !data?.user) {
+    // Try to refresh the session if we have a refresh token in the request
+    // For now, just return the error since we don't have refresh token in headers
+    return {
+      error: error?.message || 'Invalid or expired token',
+      status: 401
+    };
+  }
+
+  return { token, client, user: data.user };
+};
+
 class AuthController {
   async getAuthContext(req) {
     if (!supabaseConfig.url || !supabaseConfig.anonKey) {
@@ -45,7 +73,7 @@ class AuthController {
       return { error: 'Authentication service not configured', status: 503 };
     }
 
-    const { data, error } = await client.auth.getUser(token);
+    const { data, error } = await client.auth.getUser();
     if (error || !data?.user) {
       return {
         error: error?.message || 'Invalid or expired token',
@@ -400,9 +428,9 @@ class AuthController {
   }
 
   // Middleware для проверки аутентификации
-  async requireAuth(req, res, next) {
+  requireAuth = async (req, res, next) => {
     try {
-      const context = await this.getAuthContext(req);
+      const context = await getAuthContext(req);
       if (context.error) {
         return res.status(context.status).json({
           success: false,

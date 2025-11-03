@@ -14,7 +14,28 @@ class ProfileManager {
 
     async checkAuth() {
         try {
-            const token = localStorage.getItem('supabase_auth_token');
+            // Try to get stored session first (new format)
+            let sessionStr = localStorage.getItem('supabase_auth_session');
+            let token = null;
+
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    token = session?.access_token;
+                } catch (e) {
+                    console.warn('Failed to parse session, removing:', e);
+                    localStorage.removeItem('supabase_auth_session');
+                }
+            }
+
+            // Fallback to old token format for backward compatibility
+            if (!token) {
+                token = localStorage.getItem('supabase_auth_token');
+                if (token) {
+                    console.log('Using old token format, will migrate on next login');
+                }
+            }
+
             if (!token) {
                 window.location.href = '/';
                 return;
@@ -32,11 +53,15 @@ class ProfileManager {
                 this.loadProfileData();
                 this.updateAuthUI();
             } else {
-                localStorage.removeItem('supabase_auth_token');
+                // Token is invalid, remove it
+                localStorage.removeItem('supabase_auth_session');
+                localStorage.removeItem('supabase_auth_token'); // Also remove old format
                 window.location.href = '/';
             }
         } catch (error) {
             console.error('Auth check failed:', error);
+            localStorage.removeItem('supabase_auth_session');
+            localStorage.removeItem('supabase_auth_token');
             window.location.href = '/';
         }
     }
@@ -158,7 +183,30 @@ class ProfileManager {
 
     async loadUserStats() {
         try {
-            const token = localStorage.getItem('supabase_auth_token');
+            // Try to get stored session first (new format)
+            let sessionStr = localStorage.getItem('supabase_auth_session');
+            let token = null;
+
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    token = session?.access_token;
+                } catch (e) {
+                    console.warn('Failed to parse session, removing:', e);
+                    localStorage.removeItem('supabase_auth_session');
+                }
+            }
+
+            // Fallback to old token format for backward compatibility
+            if (!token) {
+                token = localStorage.getItem('supabase_auth_token');
+            }
+
+            if (!token) {
+                console.error('No auth token found for stats');
+                return;
+            }
+
             const response = await fetch('/api/links', {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -222,7 +270,30 @@ class ProfileManager {
         if (btnLoading) btnLoading.style.display = 'inline';
 
         try {
-            const token = localStorage.getItem('supabase_auth_token');
+            // Try to get stored session first (new format)
+            let sessionStr = localStorage.getItem('supabase_auth_session');
+            let token = null;
+
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    token = session?.access_token;
+                } catch (e) {
+                    console.warn('Failed to parse session, removing:', e);
+                    localStorage.removeItem('supabase_auth_session');
+                }
+            }
+
+            // Fallback to old token format for backward compatibility
+            if (!token) {
+                token = localStorage.getItem('supabase_auth_token');
+            }
+
+            if (!token) {
+                this.showToast('Необходима авторизация', 'error');
+                return;
+            }
+
             const response = await fetch('/api/auth/profile', {
                 method: 'PUT',
                 headers: {
@@ -260,7 +331,9 @@ class ProfileManager {
     async logout() {
         try {
             await fetch('/api/auth/logout', { method: 'POST' });
-            localStorage.removeItem('supabase_auth_token');
+            // Remove session from localStorage
+            localStorage.removeItem('supabase_auth_session');
+            localStorage.removeItem('supabase_auth_token'); // Also remove old format
             window.location.href = '/';
         } catch (error) {
             console.error('Logout error:', error);
@@ -327,8 +400,37 @@ const style = document.createElement('style');
 style.textContent = toastStyles;
 document.head.appendChild(style);
 
+// Функция для загрузки и отображения версии
+async function loadVersion() {
+    try {
+        const response = await fetch('/api/version');
+        if (response.ok) {
+            const data = await response.json();
+            const versionElement = document.getElementById('version-info');
+            if (versionElement) {
+                versionElement.textContent = `Версия: ${data.version} (${data.lastUpdated})`;
+                console.log('Version loaded:', data);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load version:', error);
+        const versionElement = document.getElementById('version-info');
+        if (versionElement) {
+            versionElement.textContent = 'Версия: неизвестна';
+        }
+    }
+}
+
 // Initialize the profile manager when DOM is loaded
 let profileManager;
 document.addEventListener('DOMContentLoaded', () => {
+    // Инициализируем общие компоненты для страницы профиля
+    const footerContainer = document.getElementById('footer-container');
+    if (footerContainer) {
+        footerContainer.innerHTML = FooterComponent.render();
+    }
+
+    initCommonComponents('/profile', 'ru');
+
     profileManager = new ProfileManager();
 });

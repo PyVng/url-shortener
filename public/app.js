@@ -544,8 +544,28 @@ class AuthManager {
 
     async checkAuthStatus() {
         try {
-            // Try to get stored token first
-            const token = localStorage.getItem('supabase_auth_token');
+            // Try to get stored session first (new format)
+            let sessionStr = localStorage.getItem('supabase_auth_session');
+            let token = null;
+
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    token = session?.access_token;
+                } catch (e) {
+                    console.warn('Failed to parse session, removing:', e);
+                    localStorage.removeItem('supabase_auth_session');
+                }
+            }
+
+            // Fallback to old token format for backward compatibility
+            if (!token) {
+                token = localStorage.getItem('supabase_auth_token');
+                if (token) {
+                    console.log('Using old token format, will migrate on next login');
+                }
+            }
+
             if (!token) {
                 this.setCurrentUser(null);
                 return;
@@ -562,14 +582,22 @@ class AuthManager {
                 this.setCurrentUser(data.data.user);
             } else {
                 // Token is invalid, remove it
-                localStorage.removeItem('supabase_auth_token');
+                localStorage.removeItem('supabase_auth_session');
+                localStorage.removeItem('supabase_auth_token'); // Also remove old format
                 this.setCurrentUser(null);
             }
         } catch (error) {
             console.error('Auth check failed:', error);
+            localStorage.removeItem('supabase_auth_session');
             localStorage.removeItem('supabase_auth_token');
             this.setCurrentUser(null);
         }
+    }
+
+    async refreshSession(refreshToken) {
+        // For now, we don't refresh sessions on the client side
+        // The server should handle token validation and refresh
+        return null;
     }
 
     setCurrentUser(user) {
@@ -845,22 +873,21 @@ class AuthManager {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                // Save token to localStorage for persistence
-                // Try different possible token locations
-                let token = null;
-                if (data.data?.session?.access_token) {
-                    token = data.data.session.access_token;
+                // Save session to localStorage for persistence
+                if (data.data?.session) {
+                    localStorage.setItem('supabase_auth_session', JSON.stringify(data.data.session));
+                    console.log('Session saved to localStorage');
                 } else if (data.data?.access_token) {
-                    token = data.data.access_token;
-                } else if (data.data?.token) {
-                    token = data.data.token;
-                }
-
-                if (token) {
-                    localStorage.setItem('supabase_auth_token', token);
-                    console.log('Token saved to localStorage');
+                    // Fallback for old format
+                    const session = {
+                        access_token: data.data.access_token,
+                        refresh_token: data.data.refresh_token,
+                        user: data.data.user
+                    };
+                    localStorage.setItem('supabase_auth_session', JSON.stringify(session));
+                    console.log('Session saved to localStorage (fallback)');
                 } else {
-                    console.warn('No token found in response:', data);
+                    console.warn('No session found in response:', data);
                 }
 
                 this.setCurrentUser(data.data.user);
@@ -906,8 +933,8 @@ class AuthManager {
     async logout() {
         try {
             await fetch('/api/auth/logout', { method: 'POST' });
-            // Remove token from localStorage
-            localStorage.removeItem('supabase_auth_token');
+            // Remove session from localStorage
+            localStorage.removeItem('supabase_auth_session');
             this.setCurrentUser(null);
             this.showMessage('Выход выполнен', 'success');
         } catch (error) {
@@ -969,9 +996,8 @@ class AuthManager {
     }
 
     showProfile() {
-        // TODO: Navigate to user profile page
-        alert('Функция "Профиль" будет реализована в следующем обновлении!');
-        console.log('Show Profile clicked');
+        // Navigate to user profile page
+        window.location.href = '/profile';
     }
 
     updateLanguage(language) {
@@ -1231,6 +1257,15 @@ class UrlShortener {
 
 // Инициализация приложения при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
+    // Инициализируем общие компоненты для главной страницы
+    const footerContainer = document.getElementById('footer-container');
+    if (footerContainer) {
+        footerContainer.innerHTML = FooterComponent.render();
+    }
+
+    initCommonComponents('/', 'ru');
+
+    // Инициализируем менеджеры
     window.authManager = new AuthManager();
     new UrlShortener();
 });
