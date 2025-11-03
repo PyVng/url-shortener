@@ -1,11 +1,10 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "server.js",
-      "use": "@vercel/node"
+  "functions": {
+    "server.js": {
+      "maxDuration": 25
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/(.*)",
@@ -16,11 +15,6 @@
       "dest": "/server.js"
     }
   ],
-  "functions": {
-    "server.js": {
-      "maxDuration": 25
-    }
-  },
   "env": {
     "NODE_ENV": "production",
     "ACTIVE_DATABASE": "supabase_rest",
