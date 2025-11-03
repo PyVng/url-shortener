@@ -88,6 +88,9 @@ const databaseConfigs = {
 function getActiveDatabaseConfig() {
   const activeDB = process.env.ACTIVE_DATABASE || 'postgresql';
 
+  console.log('🔍 ACTIVE_DATABASE:', activeDB);
+  console.log('🔍 Available databases:', Object.keys(databaseConfigs));
+
   if (!databaseConfigs[activeDB]) {
     throw new Error(`Unsupported database type: ${activeDB}`);
   }
