@@ -314,6 +314,6 @@ function initCommonComponents(currentPage = '/', currentLang = 'ru') {
     // Устанавливаем активную ссылку в навигации
     HeaderComponent.setActiveLink(currentPage);
 
-    // Загружаем версию с текущим языком
-    loadVersion(currentLang);
+    // Загружаем версию с небольшой задержкой, чтобы DOM обновился
+    setTimeout(() => loadVersion(currentLang), 100);
 }
