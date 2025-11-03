@@ -22,132 +22,73 @@ class MyLinksManager {
         try {
             console.log('MyLinks: Starting auth check...');
 
-            // Try to get stored session first (new format)
-            let sessionStr = localStorage.getItem('supabase_auth_session');
-            let session = null;
-
-            if (sessionStr) {
-                try {
-                    session = JSON.parse(sessionStr);
-                    console.log('MyLinks: Found session in localStorage');
-                } catch (e) {
-                    console.warn('Failed to parse session, removing:', e);
-                    localStorage.removeItem('supabase_auth_session');
+            // Wait for Supabase to be ready
+            if (!window.supabase) {
+                console.log('MyLinks: Supabase not ready, waiting...');
+                if (window.supabaseReadyPromise) {
+                    await window.supabaseReadyPromise;
+                } else {
+                    // Wait for supabaseReady event
+                    await new Promise(resolve => {
+                        window.addEventListener('supabaseReady', resolve, { once: true });
+                    });
                 }
             }
 
-        // Fallback to old token format for backward compatibility
-        if (!session?.access_token) {
-            const oldToken = localStorage.getItem('supabase_auth_token');
-            if (oldToken) {
-                console.log('Using old token format, will migrate on next login');
-                session = { access_token: oldToken };
+            if (!window.supabase) {
+                console.error('MyLinks: Supabase still not available');
+                this.showAuthRequiredMessage();
+                return;
             }
-        }
 
-        if (!session?.access_token) {
-            const oauthTokenRaw = localStorage.getItem('supabase.auth.token');
-            if (oauthTokenRaw) {
-                try {
-                    const parsed = JSON.parse(oauthTokenRaw);
-                    if (parsed?.access_token) {
-                        console.log('Migrating OAuth token from legacy storage');
-                        session = {
-                            access_token: parsed.access_token,
-                            refresh_token: parsed.refresh_token,
-                            token_type: parsed.token_type || 'bearer',
-                            expires_in: parsed.expires_in || 3600,
-                            expires_at: parsed.expires_at || Math.floor(Date.now() / 1000) + 3600
-                        };
-                    }
-                } catch (parseError) {
-                    console.warn('Failed to parse legacy OAuth token:', parseError);
-                    localStorage.removeItem('supabase.auth.token');
-                }
+            console.log('MyLinks: Getting session from Supabase...');
+
+            // Get current session from Supabase (this handles token refresh automatically)
+            const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
+
+            console.log('MyLinks: Session result:', { session: !!session, sessionError });
+
+            if (sessionError) {
+                console.error('MyLinks: Session error:', sessionError);
+                this.showAuthRequiredMessage();
+                return;
             }
-        }
 
-        if (session?.access_token) {
-            localStorage.setItem('supabase_auth_session', JSON.stringify(session));
-            localStorage.removeItem('supabase_auth_token');
-            localStorage.removeItem('supabase.auth.token');
-        }
+            if (!session?.access_token) {
+                console.log('MyLinks: No active session found');
+                this.showAuthRequiredMessage();
+                return;
+            }
 
-        if (!session?.access_token) {
-            console.log('MyLinks: No access token found, showing auth prompt');
-            this.showAuthRequiredMessage();
-            return;
-        }
+            console.log('MyLinks: Session found, access_token exists:', !!session.access_token);
+            console.log('MyLinks: Token preview:', session.access_token.substring(0, 20) + '...');
 
-            console.log('MyLinks: Token found, checking with server...');
-
-            // First try with current token
-            let response = await fetch('/api/auth/me', {
+            // Validate token with server
+            const response = await fetch('/api/auth/me', {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`
                 }
             });
 
+            console.log('MyLinks: Auth validation response status:', response.status);
+
             if (response.ok) {
                 const data = await response.json();
+                console.log('MyLinks: Auth validation successful, user:', data.data.user.email);
                 this.currentUser = data.data.user;
                 this.updateAuthUI();
                 this.hideAuthRequiredMessage();
                 // Load user links only after successful authentication
                 this.loadUserLinks();
-                return;
+                console.log('MyLinks: Authentication successful');
+            } else {
+                const errorText = await response.text();
+                console.log('MyLinks: Token validation failed:', response.status, errorText);
+                this.showAuthRequiredMessage();
             }
-
-            // If token is invalid, try to refresh it
-            if (session.refresh_token) {
-                console.log('Token expired, trying to refresh...');
-                try {
-                    const refreshResponse = await fetch('/api/auth/refresh', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            refresh_token: session.refresh_token
-                        })
-                    });
-
-                    if (refreshResponse.ok) {
-                        const refreshData = await refreshResponse.json();
-                        if (refreshData.success && refreshData.data?.session) {
-                            // Save new session
-                            localStorage.setItem('supabase_auth_session', JSON.stringify(refreshData.data.session));
-                            console.log('Session refreshed successfully');
-
-                            // Retry with new token
-                            const retryResponse = await fetch('/api/auth/me', {
-                                headers: {
-                                    'Authorization': `Bearer ${refreshData.data.session.access_token}`
-                                }
-                            });
-
-                            if (retryResponse.ok) {
-                                const retryData = await retryResponse.json();
-                                this.currentUser = retryData.data.user;
-                                this.updateAuthUI();
-                                this.hideAuthRequiredMessage();
-                                this.loadUserLinks();
-                                return;
-                            }
-                        }
-                    }
-                } catch (refreshError) {
-                    console.error('Failed to refresh token:', refreshError);
-                }
-            }
-
-            // If we get here, authentication failed - show auth prompt instead of logging out
-            console.log('Authentication failed, showing auth prompt');
-            this.showAuthRequiredMessage();
 
         } catch (error) {
-            console.error('Auth check failed:', error);
-            // Don't clear tokens on network errors - just show auth prompt
+            console.error('MyLinks: Auth check failed:', error);
             this.showAuthRequiredMessage();
         }
     }
@@ -393,21 +334,20 @@ class MyLinksManager {
         this.showLoading();
 
         try {
-            const sessionStr = localStorage.getItem('supabase_auth_session');
-            if (!sessionStr) {
-                console.error('No auth session found');
+            console.log('MyLinks: Starting to load user links...');
+
+            // Get current session from Supabase
+            const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
+
+            console.log('MyLinks: Session for links:', { session: !!session, sessionError });
+
+            if (sessionError || !session?.access_token) {
+                console.error('MyLinks: No valid session for loading links');
                 this.showError('Необходима авторизация');
                 return;
             }
 
-            const session = JSON.parse(sessionStr);
-            if (!session?.access_token) {
-                console.error('No access token in session');
-                this.showError('Необходима авторизация');
-                return;
-            }
-
-            console.log('Loading user links, session exists:', !!session);
+            console.log('MyLinks: Loading user links with valid session, user ID should be available from auth context');
 
             const response = await fetch('/api/links', {
                 headers: {
@@ -415,28 +355,29 @@ class MyLinksManager {
                 }
             });
 
-            console.log('API response status:', response.status);
+            console.log('MyLinks: Links API response status:', response.status);
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('API response data:', data);
+                console.log('MyLinks: Links API response data:', data);
 
                 if (data.success) {
                     this.links = data.data.links || [];
-                    console.log('Loaded links:', this.links.length);
+                    console.log('MyLinks: Loaded links count:', this.links.length);
+                    console.log('MyLinks: Links data:', this.links);
                     this.filterAndSortLinks();
                     this.renderLinks();
                 } else {
-                    console.error('API returned success=false:', data.error);
+                    console.error('MyLinks: API returned success=false:', data.error);
                     this.showError(data.error || 'Не удалось загрузить ссылки');
                 }
             } else {
                 const errorText = await response.text();
-                console.error('API error response:', response.status, errorText);
+                console.error('MyLinks: Links API error response:', response.status, errorText);
                 this.showError(`Ошибка сервера: ${response.status}`);
             }
         } catch (error) {
-            console.error('Load links error:', error);
+            console.error('MyLinks: Load links error:', error);
             this.showError('Ошибка сети при загрузке ссылок');
         } finally {
             this.hideLoading();
@@ -610,14 +551,10 @@ class MyLinksManager {
         }
 
         try {
-            const sessionStr = localStorage.getItem('supabase_auth_session');
-            if (!sessionStr) {
-                this.showToast('Необходима авторизация', 'error');
-                return;
-            }
+            // Get current session from Supabase
+            const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
 
-            const session = JSON.parse(sessionStr);
-            if (!session?.access_token) {
+            if (sessionError || !session?.access_token) {
                 this.showToast('Необходима авторизация', 'error');
                 return;
             }
@@ -673,14 +610,10 @@ class MyLinksManager {
         if (!this.deletingLinkId) return;
 
         try {
-            const sessionStr = localStorage.getItem('supabase_auth_session');
-            if (!sessionStr) {
-                this.showToast('Необходима авторизация', 'error');
-                return;
-            }
+            // Get current session from Supabase
+            const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
 
-            const session = JSON.parse(sessionStr);
-            if (!session?.access_token) {
+            if (sessionError || !session?.access_token) {
                 this.showToast('Необходима авторизация', 'error');
                 return;
             }
@@ -922,13 +855,25 @@ document.head.appendChild(style);
 
 // Initialize the manager when DOM is loaded
 let myLinksManager;
-document.addEventListener('DOMContentLoaded', () => {
-    initCommonComponents('/my-links', 'ru');
-
-    // Initialize AuthManager for authentication on internal pages
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize AuthManager first to check authentication status
     if (typeof AuthManager !== 'undefined') {
         window.authManager = new AuthManager();
+        // Wait for auth check to complete
+        await new Promise(resolve => {
+            const checkComplete = () => {
+                if (window.authManager.currentUser !== undefined) {
+                    resolve();
+                } else {
+                    setTimeout(checkComplete, 100);
+                }
+            };
+            checkComplete();
+        });
     }
+
+    // Now initialize common components with auth state
+    initCommonComponents('/my-links', 'ru');
 
     myLinksManager = new MyLinksManager();
 });

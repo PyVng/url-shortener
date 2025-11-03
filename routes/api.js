@@ -143,6 +143,38 @@ router.get('/env-check', (req, res) => {
   });
 });
 
+// GET /api/debug/user-links - отладка получения ссылок пользователя
+router.get('/debug/user-links', AuthController.requireAuth, async (req, res) => {
+  try {
+    console.log('🔍 Debug user links requested');
+    console.log('🔍 User from auth:', req.user);
+
+    const userId = req.user.id;
+    console.log('🔍 User ID:', userId);
+
+    const { getUserLinks } = require('../db/database');
+    const links = await getUserLinks(userId);
+
+    console.log('🔍 Debug links result:', links);
+
+    res.json({
+      success: true,
+      data: {
+        userId,
+        user: req.user,
+        linksCount: links.length,
+        links: links
+      }
+    });
+  } catch (error) {
+    console.error('❌ Debug user links error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // POST /api/auth/oauth/:provider - инициация OAuth входа
 router.post('/auth/oauth/:provider', AuthController.oauthLogin);
 
