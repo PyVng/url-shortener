@@ -218,23 +218,26 @@ class AuthController {
   // Получение текущего пользователя
   async getCurrentUser(req, res) {
     try {
-      console.log('Get current user - checking auth context...');
+      console.log('=== Get current user - checking auth context ===');
+      console.log('Headers:', req.headers.authorization ? 'Bearer token present' : 'No auth header');
+      console.log('Environment:', process.env.VERCEL ? 'Vercel' : 'Local');
+
       const context = await this.getAuthContext(req);
       if (context.error) {
-        console.log('Auth context error:', context.error, 'Status:', context.status);
+        console.log('❌ Auth context error:', context.error, 'Status:', context.status);
         return res.status(context.status).json({
           success: false,
           error: context.error
         });
       }
 
-      console.log('Auth successful for user:', context.user.email);
+      console.log('✅ Auth successful for user:', context.user.email);
       res.json({
         success: true,
         data: { user: context.user }
       });
     } catch (error) {
-      console.error('Get current user error:', error);
+      console.error('❌ Get current user error:', error);
       res.status(500).json({
         success: false,
         error: 'Internal server error'
