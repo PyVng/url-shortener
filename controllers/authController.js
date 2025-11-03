@@ -30,31 +30,59 @@ const createUserSupabaseClient = (token) => {
 };
 
 const getAuthContext = async (req) => {
+  console.log('🔍 getAuthContext called');
+  console.log('🔍 supabaseConfig.url:', supabaseConfig.url ? 'SET' : 'NOT SET');
+  console.log('🔍 supabaseConfig.anonKey:', supabaseConfig.anonKey ? 'SET' : 'NOT SET');
+
   if (!supabaseConfig.url || !supabaseConfig.anonKey) {
+    console.log('❌ Authentication service not configured');
     return { error: 'Authentication service not configured', status: 503 };
   }
 
   const token = getBearerToken(req);
+  console.log('🔍 Token present:', !!token);
   if (!token) {
+    console.log('❌ No authorization token provided');
     return { error: 'No authorization token provided', status: 401 };
   }
 
   const client = createUserSupabaseClient(token);
+  console.log('🔍 Client created:', !!client);
   if (!client) {
+    console.log('❌ Failed to create Supabase client');
     return { error: 'Authentication service not configured', status: 503 };
   }
 
-  const { data, error } = await client.auth.getUser();
-  if (error || !data?.user) {
-    // Try to refresh the session if we have a refresh token in the request
-    // For now, just return the error since we don't have refresh token in headers
+  try {
+    console.log('🔍 Calling client.auth.getUser()...');
+    const { data, error } = await client.auth.getUser();
+    console.log('🔍 getUser result - data:', !!data, 'error:', !!error);
+
+    if (error) {
+      console.log('❌ getUser error:', error.message);
+      return {
+        error: error?.message || 'Invalid or expired token',
+        status: 401
+      };
+    }
+
+    if (!data?.user) {
+      console.log('❌ No user data returned');
+      return {
+        error: 'Invalid or expired token',
+        status: 401
+      };
+    }
+
+    console.log('✅ Auth successful for user:', data.user.email);
+    return { token, client, user: data.user };
+  } catch (error) {
+    console.log('❌ getUser exception:', error);
     return {
-      error: error?.message || 'Invalid or expired token',
-      status: 401
+      error: 'Authentication service error',
+      status: 500
     };
   }
-
-  return { token, client, user: data.user };
 };
 
 class AuthController {
