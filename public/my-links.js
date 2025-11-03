@@ -858,12 +858,8 @@ class MyLinksManager {
     }
 
     showAuthModal(tab = 'login') {
-        if (window.authManager) {
-            window.authManager.showModal(tab);
-        } else {
-            alert('Пожалуйста, войдите на главной странице');
-            window.location.href = '/';
-        }
+        // Since we don't have AuthManager on this page, redirect to home
+        window.location.href = '/';
     }
 
     hideAuthRequiredMessage() {
@@ -923,23 +919,7 @@ document.head.appendChild(style);
 // Initialize the manager when DOM is loaded
 let myLinksManager;
 document.addEventListener('DOMContentLoaded', async () => {
-    // Initialize AuthManager first to check authentication status
-    if (typeof AuthManager !== 'undefined') {
-        window.authManager = new AuthManager();
-        // Wait for auth check to complete
-        await new Promise(resolve => {
-            const checkComplete = () => {
-                if (window.authManager.currentUser !== undefined) {
-                    resolve();
-                } else {
-                    setTimeout(checkComplete, 100);
-                }
-            };
-            checkComplete();
-        });
-    }
-
-    // Now initialize common components with auth state
+    // Initialize common components with auth state
     initCommonComponents('/my-links', 'ru');
 
     myLinksManager = new MyLinksManager();
