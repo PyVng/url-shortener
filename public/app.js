@@ -1254,9 +1254,12 @@ class UrlShortener {
     updateTexts() {
         const t = translations[this.currentLanguage];
 
-        // Обновление заголовка и подзаголовка
-        document.querySelector('h1').textContent = t.title;
-        document.querySelector('header p').textContent = t.subtitle;
+        // Обновление заголовка и подзаголовка (только если существуют)
+        const titleElement = document.querySelector('h1');
+        if (titleElement) titleElement.textContent = t.title;
+
+        const subtitleElement = document.querySelector('header p');
+        if (subtitleElement) subtitleElement.textContent = t.subtitle;
 
         // Обновление кнопок аутентификации
         const loginBtn = document.getElementById('loginBtn');
@@ -1264,12 +1267,21 @@ class UrlShortener {
         if (loginBtn) loginBtn.textContent = t.login;
         if (registerBtn) registerBtn.textContent = t.register;
 
-        // Обновление формы
-        document.querySelector('label[for="languageSelect"]').textContent = t.languageLabel;
-        document.querySelector('label[for="originalUrl"]').textContent = t.enterUrlLabel;
-        document.getElementById('originalUrl').placeholder = t.urlPlaceholder;
-        document.querySelector('.btn-text').textContent = t.shortenBtn;
-        document.querySelector('.btn-loading').textContent = t.shortening;
+        // Обновление формы (только если существуют)
+        const languageLabel = document.querySelector('label[for="languageSelect"]');
+        if (languageLabel) languageLabel.textContent = t.languageLabel;
+
+        const originalUrlLabel = document.querySelector('label[for="originalUrl"]');
+        if (originalUrlLabel) originalUrlLabel.textContent = t.enterUrlLabel;
+
+        const originalUrlInput = document.getElementById('originalUrl');
+        if (originalUrlInput) originalUrlInput.placeholder = t.urlPlaceholder;
+
+        const btnText = document.querySelector('.btn-text');
+        if (btnText) btnText.textContent = t.shortenBtn;
+
+        const btnLoading = document.querySelector('.btn-loading');
+        if (btnLoading) btnLoading.textContent = t.shortening;
 
         // Обновление результатов
         const resultTitle = document.querySelector('#result h3');
@@ -1281,18 +1293,25 @@ class UrlShortener {
         const shortLabel = document.querySelector('.short-url strong');
         if (shortLabel) shortLabel.textContent = t.shortUrlLabel;
 
-        document.getElementById('copyBtn').textContent = t.copyBtn;
-        document.getElementById('goToBtn').textContent = t.goToBtn;
-        document.getElementById('createNewBtn').textContent = t.createNewBtn;
+        const copyBtn = document.getElementById('copyBtn');
+        if (copyBtn) copyBtn.textContent = t.copyBtn;
+
+        const goToBtn = document.getElementById('goToBtn');
+        if (goToBtn) goToBtn.textContent = t.goToBtn;
+
+        const createNewBtn = document.getElementById('createNewBtn');
+        if (createNewBtn) createNewBtn.textContent = t.createNewBtn;
 
         // Обновление ошибок
         const errorTitle = document.querySelector('#error h3');
         if (errorTitle) errorTitle.textContent = t.errorTitle;
 
-        document.getElementById('tryAgainBtn').textContent = t.tryAgainBtn;
+        const tryAgainBtn = document.getElementById('tryAgainBtn');
+        if (tryAgainBtn) tryAgainBtn.textContent = t.tryAgainBtn;
 
         // Обновление футера
-        document.querySelector('footer p').innerHTML = t.footer;
+        const footerElement = document.querySelector('footer p');
+        if (footerElement) footerElement.innerHTML = t.footer;
 
         // Обновление атрибута lang в HTML
         document.documentElement.lang = this.currentLanguage;
