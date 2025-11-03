@@ -14,17 +14,15 @@ if (!supabaseConfig.url || !supabaseConfig.anonKey) {
   console.warn('Please check your .env file and ensure SUPABASE_URL and SUPABASE_ANON_KEY are set.');
 }
 
-const supabase = process.env.NODE_ENV === 'development'
-  ? null // Force mock auth in development
-  : (supabaseConfig.url && supabaseConfig.anonKey
-      ? createClient(supabaseConfig.url, supabaseConfig.anonKey, {
-          auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: true
-          }
-        })
-      : null);
+const supabase = supabaseConfig.url && supabaseConfig.anonKey
+  ? createClient(supabaseConfig.url, supabaseConfig.anonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      }
+    })
+  : null;
 
 console.log('🔍 Supabase Client Status:', supabase ? '✅ Initialized' : '❌ Null');
 
