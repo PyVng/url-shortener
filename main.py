@@ -1,7 +1,6 @@
-"""URL Shortener API built with FastAPI for Render."""
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
-from fastapi.middleware.cors import CORSMiddleware
+"""URL Shortener API built with Flask for Render."""
+from flask import Flask, request, jsonify, redirect, send_file
+from flask_cors import CORS
 import os
 
 # Import our modules
@@ -9,21 +8,11 @@ from database import init_db, get_db
 from models import Url
 from schemas import UrlCreate, UrlResponse
 
-# Create FastAPI app
-app = FastAPI(
-    title="URL Shortener API",
-    description="A simple URL shortener service",
-    version="1.0.0"
-)
+# Create Flask app
+app = Flask(__name__)
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Enable CORS
+CORS(app)
 
 # Database will be initialized lazily on first request
 _db_initialized = False
@@ -42,44 +31,58 @@ def ensure_db_initialized():
             # The app can still serve the HTML page
 
 
-@app.get("/", response_class=HTMLResponse)
-async def read_root():
+@app.route("/")
+def read_root():
     """Serve the main HTML page."""
-    return FileResponse("index.html", media_type="text/html")
+    return send_file("index.html", mimetype="text/html")
 
 
-@app.post("/api/shorten", response_model=UrlResponse, status_code=201)
-async def shorten_url(url_data: UrlCreate, request: Request):
+@app.route("/api/shorten", methods=["POST"])
+def shorten_url():
     """Create a short URL."""
     ensure_db_initialized()
     db = next(get_db())
 
     try:
+        data = request.get_json()
+        if not data or "original_url" not in data:
+            return jsonify({"error": "original_url is required"}), 400
+
+        url_data = UrlCreate(original_url=data["original_url"])
+
         # Get base URL from request
-        protocol = request.headers.get('x-forwarded-proto', request.url.scheme)
+        protocol = request.headers.get('x-forwarded-proto', request.scheme)
         host = request.headers.get('x-forwarded-host',
-                                   request.headers.get('host',
-                                                       request.url.hostname))
+                                   request.headers.get('host', request.host))
         base_url = f"{protocol}://{host}"
 
         # Create short URL
         short_url = Url.create_short_url(db, url_data.original_url, base_url)
 
-        return UrlResponse(
+        response = UrlResponse(
             id=short_url.id,
             short_code=short_url.short_code,
             original_url=short_url.original_url,
             short_url=short_url.short_url,
             created_at=short_url.created_at
         )
+
+        return jsonify({
+            "id": response.id,
+            "short_code": response.short_code,
+            "original_url": response.original_url,
+            "short_url": response.short_url,
+            "created_at": response.created_at.isoformat()
+        }), 201
+
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return jsonify({"error": str(e)}), 400
 
 
-@app.get("/api/info/{short_code}")
-async def get_url_info(short_code: str):
+@app.route("/api/info/<short_code>")
+def get_url_info(short_code):
     """Get information about a short URL."""
     ensure_db_initialized()
     db = next(get_db())
@@ -87,25 +90,24 @@ async def get_url_info(short_code: str):
     try:
         url = Url.get_by_short_code(db, short_code)
         if not url:
-            raise HTTPException(status_code=404, detail="Короткий URL не найден")
+            return jsonify({"error": "Короткий URL не найден"}), 404
 
-        return {
+        return jsonify({
             "success": True,
             "data": {
                 "short_code": url.short_code,
                 "original_url": url.original_url,
                 "click_count": url.click_count,
-                "created_at": url.created_at
+                "created_at": url.created_at.isoformat()
             }
-        }
-    except HTTPException:
-        raise
+        })
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return jsonify({"error": str(e)}), 500
 
 
-@app.get("/{short_code}")
-async def redirect_to_url(short_code: str):
+@app.route("/<short_code>")
+def redirect_to_url(short_code):
     """Redirect to the original URL."""
     ensure_db_initialized()
     db = next(get_db())
@@ -113,28 +115,26 @@ async def redirect_to_url(short_code: str):
     try:
         original_url = Url.get_original_url(db, short_code)
         if not original_url:
-            raise HTTPException(status_code=404, detail="Короткий URL не найден")
+            return jsonify({"error": "Короткий URL не найден"}), 404
 
-        return RedirectResponse(url=original_url, status_code=302)
-    except HTTPException:
-        raise
+        return redirect(original_url, code=302)
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return jsonify({"error": str(e)}), 500
 
 
-@app.get("/api/version")
-async def get_version():
+@app.route("/api/version")
+def get_version():
     """Get application version and build info."""
-    return {
+    return jsonify({
         "success": True,
         "version": "1.0.0",
         "name": "url-shortener",
-        "environment": os.getenv("RENDER_ENV",
-                                 os.getenv("ENVIRONMENT", "local")),
+        "environment": os.getenv("RENDER_ENV", os.getenv("ENVIRONMENT", "local")),
         "platform": "render"
-    }
+    })
+
 
 # Local development server
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=8000, debug=True)

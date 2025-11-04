@@ -1,7 +1,8 @@
-fastapi==0.88.0
-uvicorn[standard]==0.20.0
+flask==2.3.3
+gunicorn==21.2.0
 sqlalchemy==1.4.46
 psycopg2-binary==2.9.9
 python-dotenv==1.0.0
-pydantic==1.8.2
-# Force rebuild marker v3
+pydantic==1.10.13
+flask-cors==4.0.0
+# Force rebuild marker v4
