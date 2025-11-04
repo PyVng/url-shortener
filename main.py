@@ -1,6 +1,4 @@
-"""
-URL Shortener API built with FastAPI for Render
-"""
+"""URL Shortener API built with FastAPI for Render."""
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -56,7 +54,9 @@ async def shorten_url(url_data: UrlCreate, request: Request):
     try:
         # Get base URL from request
         protocol = request.headers.get('x-forwarded-proto', request.url.scheme)
-        host = request.headers.get('x-forwarded-host', request.headers.get('host', request.url.hostname))
+        host = request.headers.get('x-forwarded-host',
+                                   request.headers.get('host',
+                                                       request.url.hostname))
         base_url = f"{protocol}://{host}"
 
         # Create short URL

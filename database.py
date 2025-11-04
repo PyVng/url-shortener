@@ -1,6 +1,4 @@
-"""
-Database connection and session management for URL Shortener
-"""
+"""Database connection and session management for URL Shortener."""
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool

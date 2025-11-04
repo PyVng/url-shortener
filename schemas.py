@@ -1,6 +1,4 @@
-"""
-Pydantic schemas for URL Shortener API
-"""
+"""Pydantic schemas for URL Shortener API."""
 from pydantic import BaseModel, HttpUrl
 from datetime import datetime
 
