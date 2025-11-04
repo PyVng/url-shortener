@@ -33,7 +33,7 @@ init_db()
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     """Serve the main HTML page"""
-    with open("index.html", "r", encoding="utf-8") as f:
+    with open("api/index.html", "r", encoding="utf-8") as f:
         return f.read()
 
 @app.post("/api/shorten", response_model=UrlResponse, status_code=201)
