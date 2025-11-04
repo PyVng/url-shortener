@@ -2,19 +2,20 @@
 Pydantic schemas for URL Shortener API
 """
 from pydantic import BaseModel, HttpUrl
-from typing import Optional
 from datetime import datetime
+
 
 class UrlCreate(BaseModel):
     """Schema for creating a new short URL"""
     original_url: HttpUrl
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "original_url": "https://example.com/very/long/url"
             }
         }
+
 
 class UrlResponse(BaseModel):
     """Schema for URL response"""
@@ -26,7 +27,7 @@ class UrlResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "1",
                 "short_code": "abc123",
@@ -35,6 +36,7 @@ class UrlResponse(BaseModel):
                 "created_at": "2023-01-01T00:00:00Z"
             }
         }
+
 
 class UrlInfo(BaseModel):
     """Schema for URL information"""

@@ -14,8 +14,35 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
 
 # Always use SQLite for local development (unless explicitly set to Postgres)
-if not DATABASE_URL or os.getenv("ENVIRONMENT") != "production":
+# Check for Vercel environment or explicit ENVIRONMENT setting
+vercel_env = os.getenv("VERCEL_ENV")
+is_production = ((vercel_env == "production") or
+                 (os.getenv("ENVIRONMENT") == "production"))
+
+if not DATABASE_URL or not is_production:
     DATABASE_URL = "sqlite:///./local.db"
+else:
+    # Ensure PostgreSQL URL uses the correct scheme for SQLAlchemy 2.0
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+    # Clean up Supabase-specific parameters that psycopg2 doesn't understand
+    from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+    parsed = urlparse(DATABASE_URL)
+    query_params = parse_qs(parsed.query)
+
+    # Remove Supabase-specific parameters
+    supabase_params = ['supa', 'pgbouncer']
+    cleaned_params = {k: v for k, v in query_params.items()
+                      if k not in supabase_params}
+
+    # Reconstruct URL without invalid parameters
+    if cleaned_params:
+        parsed = parsed._replace(query=urlencode(cleaned_params, doseq=True))
+    else:
+        parsed = parsed._replace(query='')
+
+    DATABASE_URL = urlunparse(parsed)
 
 # Create engine
 if DATABASE_URL.startswith("sqlite"):
@@ -37,6 +64,7 @@ else:
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 def init_db():
     """Initialize database and create tables"""
     from models import Base
@@ -50,6 +78,7 @@ def get_db() -> Session:
         yield db
     finally:
         db.close()
+
 
 def get_db_session() -> Session:
     """Get database session (for synchronous operations)"""

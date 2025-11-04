@@ -27,20 +27,22 @@ A modern URL shortener service built with FastAPI, SQLAlchemy, and Vercel Postgr
    cd url-shortener
    ```
 
-2. **Install dependencies**
+2. **Install Python dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Set up environment variables**
+3. **Install Node.js dependencies (for testing)**
    ```bash
-   cp .env.example .env
-   # Edit .env with your database credentials
+   npm install
    ```
 
-4. **Run locally**
+4. **Set up environment variables**
+   The project uses `.env` file for configuration. Copy the existing `.env` file and modify as needed.
+
+5. **Run locally**
    ```bash
-   python main.py
+   python3 main.py
    ```
 
    Visit `http://localhost:8000`
@@ -49,17 +51,17 @@ A modern URL shortener service built with FastAPI, SQLAlchemy, and Vercel Postgr
 
 ### Unit Tests
 ```bash
-python -m pytest tests/ -v
-```
-
-### API Tests
-```bash
-python -m pytest test_main.py -v
+python -m pytest -v
 ```
 
 ### E2E Tests
 ```bash
-npx playwright test
+npm test
+```
+
+Or run with headed browser:
+```bash
+npm run test:headed
 ```
 
 ## 🚀 Deployment
@@ -136,17 +138,19 @@ CREATE TABLE urls (
 
 ### Project Structure
 ```
-├── main.py              # FastAPI application
+├── main.py              # FastAPI application (main entry point)
+├── database.py          # Database connection and session management
 ├── models.py            # SQLAlchemy models
 ├── schemas.py           # Pydantic schemas
-├── database.py          # Database connection
+├── index.html           # Frontend HTML
+├── local.db             # Local SQLite database (created automatically)
 ├── requirements.txt     # Python dependencies
 ├── vercel.json          # Vercel configuration
-├── public/              # Static files
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
-└── tests/               # Test files
+├── package.json         # Node.js dependencies for testing
+├── playwright.config.js # Playwright configuration
+├── tests/               # E2E tests
+│   └── url-shortener.spec.js
+└── .env                 # Environment variables
 ```
 
 ### Adding New Features
@@ -154,7 +158,8 @@ CREATE TABLE urls (
 1. **API Endpoints**: Add routes in `main.py`
 2. **Database Models**: Define in `models.py`
 3. **Validation**: Create Pydantic schemas in `schemas.py`
-4. **Tests**: Add tests in `test_main.py`
+4. **Frontend**: Modify `index.html`
+5. **Tests**: Add tests in `tests/` directory
 
 ## 📈 Performance
 

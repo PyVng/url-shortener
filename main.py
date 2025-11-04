@@ -27,18 +27,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize database on startup
-init_db()
+# Database will be initialized lazily on first request
+_db_initialized = False
+
+def ensure_db_initialized():
+    """Ensure database is initialized before handling requests"""
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            init_db()
+            _db_initialized = True
+        except Exception as e:
+            print(f"Database initialization failed: {e}")
+            # Don't crash the app, just log the error
+            # The app can still serve the HTML page
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     """Serve the main HTML page"""
-    with open("public/index.html", "r", encoding="utf-8") as f:
+    with open("index.html", "r", encoding="utf-8") as f:
         return f.read()
 
 @app.post("/api/shorten", response_model=UrlResponse, status_code=201)
 async def shorten_url(url_data: UrlCreate, request: Request):
     """Create a short URL"""
+    ensure_db_initialized()
     db = next(get_db())
 
     try:
@@ -65,6 +78,7 @@ async def shorten_url(url_data: UrlCreate, request: Request):
 @app.get("/api/info/{short_code}")
 async def get_url_info(short_code: str):
     """Get information about a short URL"""
+    ensure_db_initialized()
     db = next(get_db())
 
     try:
@@ -89,6 +103,7 @@ async def get_url_info(short_code: str):
 @app.get("/{short_code}")
 async def redirect_to_url(short_code: str):
     """Redirect to the original URL"""
+    ensure_db_initialized()
     db = next(get_db())
 
     try:
@@ -118,3 +133,8 @@ def handler(request, context):
     from mangum import Mangum
     handler = Mangum(app)
     return handler(request, context)
+
+# Local development server
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
