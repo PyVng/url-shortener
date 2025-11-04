@@ -10,7 +10,7 @@ class UrlCreate(BaseModel):
     original_url: HttpUrl
 
     class Config:
-        json_schema_extra = {
+        schema_extra = {
             "example": {
                 "original_url": "https://example.com/very/long/url"
             }
@@ -26,8 +26,8 @@ class UrlResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True
-        json_schema_extra = {
+        orm_mode = True
+        schema_extra = {
             "example": {
                 "id": "1",
                 "short_code": "abc123",
@@ -46,4 +46,4 @@ class UrlInfo(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
