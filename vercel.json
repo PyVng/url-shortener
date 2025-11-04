@@ -3,8 +3,7 @@
   "functions": {
     "main.py": {
       "runtime": "@vercel/python",
-      "maxDuration": 10,
-      "maxLambdaSize": "15mb"
+      "maxDuration": 10
     }
   },
   "routes": [
