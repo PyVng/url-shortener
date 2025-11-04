@@ -19,7 +19,7 @@
     // Load Supabase script if not already loaded
     console.log('Components: Loading Supabase script');
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js';
     script.onload = function() {
         console.log('Components: Supabase script loaded, initializing client');
         initSupabaseClient();
