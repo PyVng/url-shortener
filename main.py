@@ -1,16 +1,10 @@
 """
-URL Shortener API built with FastAPI
+URL Shortener API built with FastAPI for Vercel
 """
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 # Import our modules
 from database import init_db, get_db
@@ -27,19 +21,14 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your domain
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="public"), name="static")
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database on startup"""
-    init_db()
+# Initialize database on startup
+init_db()
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
@@ -123,11 +112,9 @@ async def get_version():
         "environment": os.getenv("VERCEL_ENV", "local")
     }
 
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=port,
-        reload=True if os.getenv("ENVIRONMENT") != "production" else False
-    )
+# Vercel handler
+def handler(request, context):
+    """Vercel serverless function handler"""
+    from mangum import Mangum
+    handler = Mangum(app)
+    return handler(request, context)
