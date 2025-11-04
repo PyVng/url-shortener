@@ -1,293 +1,70 @@
-// Common components for URL Shortener
+// Simplified components for URL Shortener - only Supabase initialization and basic utilities
 
-// Translations for components
-const componentTranslations = {
-    ru: {
-        languageLabel: "Язык:",
-        home: "Главная",
-        myLinks: "Мои ссылки",
-        profile: "Профиль",
-        login: "Войти",
-        register: "Регистрация",
-        logout: "Выйти",
-        version: "Версия",
-        versionLoading: "загружается",
-        versionUnknown: "неизвестна"
-    },
-    en: {
-        languageLabel: "Language:",
-        home: "Home",
-        myLinks: "My Links",
-        profile: "Profile",
-        login: "Login",
-        register: "Register",
-        logout: "Logout",
-        version: "Version",
-        versionLoading: "loading",
-        versionUnknown: "unknown"
-    },
-    es: {
-        languageLabel: "Idioma:",
-        home: "Inicio",
-        myLinks: "Mis enlaces",
-        profile: "Perfil",
-        login: "Iniciar sesión",
-        register: "Registrarse",
-        logout: "Cerrar sesión",
-        version: "Versión",
-        versionLoading: "cargando",
-        versionUnknown: "desconocida"
-    },
-    fr: {
-        languageLabel: "Langue:",
-        home: "Accueil",
-        myLinks: "Mes liens",
-        profile: "Profil",
-        login: "Se connecter",
-        register: "S'inscrire",
-        logout: "Se déconnecter",
-        version: "Version",
-        versionLoading: "chargement",
-        versionUnknown: "inconnue"
-    },
-    de: {
-        languageLabel: "Sprache:",
-        home: "Startseite",
-        myLinks: "Meine Links",
-        profile: "Profil",
-        login: "Anmelden",
-        register: "Registrieren",
-        logout: "Abmelden",
-        version: "Version",
-        versionLoading: "lädt",
-        versionUnknown: "unbekannt"
-    },
-    zh: {
-        languageLabel: "语言:",
-        home: "首页",
-        myLinks: "我的链接",
-        profile: "个人资料",
-        login: "登录",
-        register: "注册",
-        logout: "登出",
-        version: "版本",
-        versionLoading: "加载中",
-        versionUnknown: "未知"
-    },
-    ja: {
-        languageLabel: "言語:",
-        home: "ホーム",
-        myLinks: "マイリンク",
-        profile: "プロフィール",
-        login: "ログイン",
-        register: "登録",
-        logout: "ログアウト",
-        version: "バージョン",
-        versionLoading: "読み込み中",
-        versionUnknown: "不明"
-    },
-    ar: {
-        languageLabel: "اللغة:",
-        home: "الرئيسية",
-        myLinks: "روابطي",
-        profile: "الملف الشخصي",
-        login: "تسجيل الدخول",
-        register: "التسجيل",
-        logout: "تسجيل الخروج",
-        version: "الإصدار",
-        versionLoading: "جارٍ التحميل",
-        versionUnknown: "غير معروف"
-    },
-    pt: {
-        languageLabel: "Idioma:",
-        home: "Início",
-        myLinks: "Meus links",
-        profile: "Perfil",
-        login: "Entrar",
-        register: "Registrar",
-        logout: "Sair",
-        version: "Versão",
-        versionLoading: "carregando",
-        versionUnknown: "desconhecida"
-    },
-    it: {
-        languageLabel: "Lingua:",
-        home: "Home",
-        myLinks: "I miei link",
-        profile: "Profilo",
-        login: "Accedi",
-        register: "Registrati",
-        logout: "Esci",
-        version: "Versione",
-        versionLoading: "caricamento",
-        versionUnknown: "sconosciuta"
-    },
-    hi: {
-        languageLabel: "भाषा:",
-        home: "होम",
-        myLinks: "मेरी लिंक्स",
-        profile: "प्रोफ़ाइल",
-        login: "लॉग इन",
-        register: "पंजीकरण",
-        logout: "लॉग आउट",
-        version: "संस्करण",
-        versionLoading: "लोड हो रहा है",
-        versionUnknown: "अज्ञात"
-    },
-    ko: {
-        languageLabel: "언어:",
-        home: "홈",
-        myLinks: "내 링크",
-        profile: "프로필",
-        login: "로그인",
-        register: "등록",
-        logout: "로그아웃",
-        version: "버전",
-        versionLoading: "로딩 중",
-        versionUnknown: "알 수 없음"
-    },
-    tr: {
-        languageLabel: "Dil:",
-        home: "Ana Sayfa",
-        myLinks: "Bağlantılarım",
-        profile: "Profil",
-        login: "Giriş",
-        register: "Kayıt",
-        logout: "Çıkış",
-        version: "Sürüm",
-        versionLoading: "yükleniyor",
-        versionUnknown: "bilinmiyor"
-    },
-    pl: {
-        languageLabel: "Język:",
-        home: "Strona główna",
-        myLinks: "Moje linki",
-        profile: "Profil",
-        login: "Zaloguj się",
-        register: "Zarejestruj się",
-        logout: "Wyloguj się",
-        version: "Wersja",
-        versionLoading: "ładowanie",
-        versionUnknown: "nieznana"
-    },
-    nl: {
-        languageLabel: "Taal:",
-        home: "Home",
-        myLinks: "Mijn links",
-        profile: "Profiel",
-        login: "Inloggen",
-        register: "Registreren",
-        logout: "Uitloggen",
-        version: "Versie",
-        versionLoading: "laden",
-        versionUnknown: "onbekend"
-    }
-};
-
-class HeaderComponent {
-    static render(currentLang = 'ru') {
-        const t = componentTranslations[currentLang] || componentTranslations.ru;
-
-        return `
-            <nav class="top-nav">
-                <div class="nav-container">
-                    <div class="nav-left">
-                        <div class="language-selector">
-                            <label for="languageSelect">${t.languageLabel}</label>
-                            <select id="languageSelect">
-                                <option value="en" ${currentLang === 'en' ? 'selected' : ''}>English</option>
-                                <option value="zh" ${currentLang === 'zh' ? 'selected' : ''}>中文</option>
-                                <option value="es" ${currentLang === 'es' ? 'selected' : ''}>Español</option>
-                                <option value="ar" ${currentLang === 'ar' ? 'selected' : ''}>العربية</option>
-                                <option value="hi" ${currentLang === 'hi' ? 'selected' : ''}>हिन्दी</option>
-                                <option value="ru" ${currentLang === 'ru' ? 'selected' : ''}>Русский</option>
-                                <option value="fr" ${currentLang === 'fr' ? 'selected' : ''}>Français</option>
-                                <option value="ja" ${currentLang === 'ja' ? 'selected' : ''}>日本語</option>
-                                <option value="de" ${currentLang === 'de' ? 'selected' : ''}>Deutsch</option>
-                                <option value="pt" ${currentLang === 'pt' ? 'selected' : ''}>Português</option>
-                                <option value="it" ${currentLang === 'it' ? 'selected' : ''}>Italiano</option>
-                                <option value="ko" ${currentLang === 'ko' ? 'selected' : ''}>한국어</option>
-                                <option value="tr" ${currentLang === 'tr' ? 'selected' : ''}>Türkçe</option>
-                                <option value="pl" ${currentLang === 'pl' ? 'selected' : ''}>Polski</option>
-                                <option value="nl" ${currentLang === 'nl' ? 'selected' : ''}>Nederlands</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="nav-right">
-                        <div class="nav-links">
-                            <a href="/" class="nav-link">${t.home}</a>
-                            <a href="/my-links" class="nav-link">${t.myLinks}</a>
-                        </div>
-                        <div class="auth-section">
-                            <button id="loginBtn" class="btn btn-outline auth-btn">${t.login}</button>
-                            <button id="registerBtn" class="btn btn-primary auth-btn">${t.register}</button>
-                            <div id="userInfo" class="user-info" style="display: none;">
-                                <div class="user-avatar">👤</div>
-                                <div class="user-details">
-                                    <div class="user-display-name" id="userDisplayName"></div>
-                                    <div class="user-email" id="userEmail"></div>
-                                </div>
-                                <div class="user-menu-toggle">▼</div>
-                                <div class="user-dropdown" id="userDropdown">
-                                    <a href="#" class="dropdown-item" id="myLinksLink">
-                                        <span class="dropdown-icon">🔗</span>
-                                        ${t.myLinks}
-                                    </a>
-                                    <a href="#" class="dropdown-item" id="profileLink">
-                                        <span class="dropdown-icon">👤</span>
-                                        ${t.profile}
-                                    </a>
-                                    <div class="dropdown-divider"></div>
-                                    <a href="#" class="dropdown-item logout-link" id="logoutBtn">
-                                        <span class="dropdown-icon">🚪</span>
-                                        ${t.logout}
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-        `;
+// Initialize Supabase client for all pages
+(function() {
+    // Check if Supabase is already initialized (from any page)
+    if (typeof window.supabase !== 'undefined') {
+        console.log('Components: Supabase already initialized');
+        window.dispatchEvent(new Event('supabaseReady'));
+        return;
     }
 
-    static setActiveLink(page) {
-        const links = document.querySelectorAll('.nav-link');
-        links.forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === page) {
-                link.classList.add('active');
-            }
-        });
+    // Check if Supabase script is already loaded
+    if (typeof supabase !== 'undefined') {
+        console.log('Components: Supabase script already loaded, initializing client');
+        initSupabaseClient();
+        return;
     }
-}
 
-class FooterComponent {
-    static render(currentLang = 'ru') {
-        const t = componentTranslations[currentLang] || componentTranslations.ru;
+    // Load Supabase script if not already loaded
+    console.log('Components: Loading Supabase script');
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+    script.onload = function() {
+        console.log('Components: Supabase script loaded, initializing client');
+        initSupabaseClient();
+    };
+    script.onerror = function() {
+        console.error('Components: Failed to load Supabase script');
+    };
+    document.head.appendChild(script);
 
-        // Создаем footer элемент
-        const footer = document.createElement('footer');
-        const p = document.createElement('p');
+    function initSupabaseClient() {
+        const SUPABASE_URL = window.APP_CONFIG?.SUPABASE_URL || 'https://dkbvavfdjpamsmezfrrt.supabase.co';
+        const SUPABASE_ANON_KEY = window.APP_CONFIG?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrYnZhdmZkanBhbXNtZXpmcnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxNDc0MzEsImV4cCI6MjA3NzcyMzQzMX0.4NBBusEGQyfikpidc8QCoqhIjWs_7FoJCCNwjJ8C-cI';
 
-        // Создаем текстовый узел для копирайта
-        const copyrightText = document.createTextNode('© 2025 URL Shortener. Created with Node.js and Express. ');
-        p.appendChild(copyrightText);
+        // Check if the global supabase library is available
+        if (typeof supabase === 'undefined' || typeof supabase.createClient !== 'function') {
+            console.error('Components: Supabase library not loaded correctly');
+            return;
+        }
 
-        // Создаем span для версии
-        const versionSpan = document.createElement('span');
-        versionSpan.id = 'version-info';
-        versionSpan.textContent = `${t.version}: ${t.versionLoading}...`;
-        p.appendChild(versionSpan);
+        try {
+            window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: true
+                }
+            });
 
-        footer.appendChild(p);
-        return footer;
+            console.log('Components: Supabase client initialized');
+            console.log('Components: Supabase client auth object:', window.supabase.auth ? 'exists' : 'missing');
+            window.dispatchEvent(new Event('supabaseReady'));
+        } catch (error) {
+            console.error('Components: Failed to initialize Supabase client:', error);
+        }
     }
-}
+})();
 
-// Функция для загрузки и отображения версии (общая для всех страниц)
+// Function to load version information
 async function loadVersion(currentLang = 'ru') {
-    const t = componentTranslations[currentLang] || componentTranslations.ru;
+    const versionTexts = {
+        ru: { version: 'Версия', loading: 'загружается', unknown: 'неизвестна' },
+        en: { version: 'Version', loading: 'loading', unknown: 'unknown' }
+    };
+    
+    const t = versionTexts[currentLang] || versionTexts.ru;
     console.log('loadVersion called with lang:', currentLang);
 
     try {
@@ -319,54 +96,56 @@ async function loadVersion(currentLang = 'ru') {
         console.error('Failed to load version:', error);
         const versionElement = document.getElementById('version-info');
         if (versionElement) {
-            versionElement.textContent = `${t.version}: ${t.versionUnknown}`;
+            versionElement.textContent = `${t.version}: ${t.unknown}`;
         }
     }
 }
 
-// Функция для инициализации общих компонентов
-function initCommonComponents(currentPage = '/', currentLang = 'ru') {
-    console.log('initCommonComponents called with page:', currentPage, 'lang:', currentLang);
+// Setup navigation handlers for dropdown menu items
+function setupNavigationHandlers() {
+    console.log('🔍 Setting up navigation handlers...');
 
-    // Рендерим header с текущим языком
-    const headerContainer = document.getElementById('header-container');
-    console.log('Header container found:', !!headerContainer);
-    if (headerContainer) {
-        // Устанавливаем HTML контент
-        headerContainer.innerHTML = HeaderComponent.render(currentLang);
+    // Dropdown menu items
+    const myLinksLink = document.getElementById('myLinksLink');
+    const profileLink = document.getElementById('profileLink');
+
+    if (myLinksLink) {
+        console.log('🔍 Found myLinksLink, setting up handler');
+        myLinksLink.onclick = (event) => {
+            console.log('🔍 My links link clicked');
+            event.preventDefault();
+            window.location.href = '/my-links';
+        };
+    } else {
+        console.log('🔍 myLinksLink not found');
     }
 
-    // Рендерим footer с текущим языком
-    const footerContainer = document.getElementById('footer-container');
-    console.log('Footer container found:', !!footerContainer);
-    if (footerContainer) {
-        // Очищаем контейнер
-        footerContainer.innerHTML = '';
-        // Создаем footer элемент безопасно через DOM API
-        const footer = FooterComponent.render(currentLang);
-        footerContainer.appendChild(footer);
-
-        console.log('Footer rendered, checking for version-info element...');
-        // Проверяем, появился ли элемент версии сразу после рендеринга
-        setTimeout(() => {
-            const versionElement = document.getElementById('version-info');
-            console.log('Version element exists after footer render:', !!versionElement);
-        }, 10);
+    if (profileLink) {
+        console.log('🔍 Found profileLink - using HTML href="/profile"');
+        // Remove onclick handler - let HTML href handle navigation
+        profileLink.onclick = null;
+    } else {
+        console.log('🔍 profileLink not found');
     }
+}
 
-    // Устанавливаем активную ссылку в навигации
-    HeaderComponent.setActiveLink(currentPage);
+// Initialize basic functionality when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing basic components...');
 
-    // Загружаем версию с небольшой задержкой, чтобы DOM обновился
+    // Determine current page path
+    const currentPath = window.location.pathname;
+    const currentLang = document.documentElement?.lang || 'ru';
+
+    // Load version with a small delay to ensure DOM is ready
     setTimeout(() => loadVersion(currentLang), 100);
 
-    // После перестройки общего UI пересоединяем обработчики авторизации
-    if (window.authManager) {
-        try {
-            window.authManager.setupEventListeners();
-            window.authManager.updateUI();
-        } catch (error) {
-            console.error('Failed to refresh auth event listeners:', error);
-        }
-    }
-}
+    // Setup navigation handlers
+    setupNavigationHandlers();
+
+    // Listen for auth ready event (for pages with AuthManager)
+    window.addEventListener('auth:ready', () => {
+        console.log('Auth ready, refreshing navigation handlers...');
+        setupNavigationHandlers();
+    });
+});

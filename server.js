@@ -10,7 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: true, // Allow all origins in development
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -103,12 +108,14 @@ app.use((err, req, res, next) => {
 
 
 
-// Запуск сервера
-app.listen(PORT, () => {
-  console.log(`🚀 URL Shortener сервер запущен на http://localhost:${PORT}`);
-  console.log(`📱 Веб-интерфейс доступен по адресу: http://localhost:${PORT}`);
-  console.log(`🔗 API доступно по адресу: http://localhost:${PORT}/api`);
-  console.log(`📋 Версия: 1.1.0`);
-});
+// Запуск сервера только если файл запущен напрямую
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 URL Shortener сервер запущен на http://localhost:${PORT}`);
+    console.log(`📱 Веб-интерфейс доступен по адресу: http://localhost:${PORT}`);
+    console.log(`🔗 API доступно по адресу: http://localhost:${PORT}/api`);
+    console.log(`📋 Версия: 1.1.0`);
+  });
+}
 
 module.exports = app;

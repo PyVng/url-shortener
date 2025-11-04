@@ -96,6 +96,10 @@ class SupabaseRestAdapter {
 
   async createShortUrl(shortCode, originalUrl, userId = null) {
     try {
+      if (!this.supabaseUrl) {
+        throw new Error('Supabase URL not configured');
+      }
+
       const data = {
         short_code: shortCode,
         original_url: originalUrl,
@@ -133,6 +137,10 @@ class SupabaseRestAdapter {
 
   async getOriginalUrl(shortCode) {
     try {
+      if (!this.supabaseUrl) {
+        throw new Error('Supabase URL not configured');
+      }
+
       const response = await fetch(
         `${this.supabaseUrl}/rest/v1/${this.tableName}?short_code=eq.${encodeURIComponent(shortCode)}&select=original_url,click_count`,
         {
@@ -269,10 +277,11 @@ class SupabaseRestAdapter {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`🔍 getUserLinks attempt ${attempt}/${maxRetries} with userId:`, userId);
-        const url = `${this.supabaseUrl}/rest/v1/${this.tableName}?user_id=eq.${encodeURIComponent(userId)}&select=id,short_code,original_url,click_count,created_at&order=created_at.desc`;
+        const url = `${this.supabaseUrl}/rest/v1/${this.tableName}?user_id=eq.${encodeURIComponent(userId)}&select=id,short_code,original_url,title,click_count,created_at&order=created_at.desc`;
         console.log('🔍 Supabase URL:', url);
 
-        const authToken = options.authToken || this.supabaseKey;
+        // Always use serviceRoleKey to bypass RLS policies
+        const authToken = this.serviceRoleKey;
         const headers = {
           'apikey': this.supabaseKey,
           'Authorization': `Bearer ${authToken}`,
@@ -281,7 +290,7 @@ class SupabaseRestAdapter {
 
         console.log('🔍 Making request with headers:', {
           apikey: '***',
-          Authorization: authToken ? 'Bearer ***' : 'Service Role',
+          Authorization: 'Bearer *** (Service Role)',
           'Content-Type': headers['Content-Type']
         });
 

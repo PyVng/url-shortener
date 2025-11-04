@@ -19,129 +19,37 @@ class MyLinksManager {
     }
 
     async checkAuth() {
+        console.log('MyLinks: Checking authentication...');
+
         try {
-            console.log('MyLinks: Starting auth check...');
-
-            // Supabase should be ready now (initialized synchronously)
+            // Wait for Supabase to be ready
             if (!window.supabase) {
-                console.error('MyLinks: Supabase not available');
-                this.showAuthRequiredMessage();
-                return;
+                console.log('MyLinks: Waiting for Supabase to be ready...');
+                await new Promise(resolve => {
+                    const checkSupabase = () => {
+                        if (window.supabase) {
+                            resolve();
+                        } else {
+                            setTimeout(checkSupabase, 100);
+                        }
+                    };
+                    checkSupabase();
+                });
             }
 
-            console.log('MyLinks: Supabase is ready, attempting to recover session...');
+            const { data: { session }, error } = await window.supabase.auth.getSession();
+            console.log('MyLinks: Auth check result:', { hasSession: !!session, error: error?.message });
 
-            // Debug: Check all localStorage keys
-            console.log('MyLinks: Checking ALL localStorage keys...');
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                const value = localStorage.getItem(key);
-                console.log(`MyLinks: localStorage[${key}] =`, value ? value.substring(0, 100) + '...' : 'null');
-            }
-
-            // Debug: Check all localStorage keys related to Supabase
-            console.log('MyLinks: Checking Supabase-related keys...');
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && (key.includes('supabase') || key.includes('sb-'))) {
-                    console.log('MyLinks: Found Supabase-related key:', key, '=', localStorage.getItem(key));
-                }
-            }
-
-            // Try to recover session from localStorage first
-            // Use the correct key that we found in logs: sb-dkbvavfdjpamsmezfrrt-auth-token
-            const sessionKey = 'sb-dkbvavfdjpamsmezfrrt-auth-token';
-            const storedSession = localStorage.getItem(sessionKey);
-
-            if (storedSession) {
-                try {
-                    const sessionData = JSON.parse(storedSession);
-                    console.log('MyLinks: Found session data:', {
-                        hasAccessToken: !!sessionData.access_token,
-                        hasRefreshToken: !!sessionData.refresh_token,
-                        hasUser: !!sessionData.user
-                    });
-
-                    // Double-check Supabase is ready before calling setSession
-                    if (!window.supabase) {
-                        console.log('MyLinks: Supabase still not ready for setSession, waiting...');
-                        await new Promise(resolve => {
-                            const checkSupabase = () => {
-                                if (window.supabase) {
-                                    resolve();
-                                } else {
-                                    setTimeout(checkSupabase, 50);
-                                }
-                            };
-                            checkSupabase();
-                        });
-                    }
-
-                    console.log('MyLinks: Supabase ready, setting session...');
-
-                    // Try to set the session using Supabase
-                    const { data, error } = await window.supabase.auth.setSession({
-                        access_token: sessionData.access_token,
-                        refresh_token: sessionData.refresh_token
-                    });
-
-                    if (error) {
-                        console.log('MyLinks: Failed to set stored session:', error);
-                    } else {
-                        console.log('MyLinks: Successfully recovered session from storage');
-                    }
-                } catch (parseError) {
-                    console.warn('MyLinks: Failed to parse stored session:', parseError);
-                }
-            } else {
-                console.log('MyLinks: No session found in localStorage');
-            }
-
-            // Now check for active session
-            const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
-            console.log('MyLinks: Session check result:', { session: !!session, sessionError });
-
-            if (sessionError) {
-                console.error('MyLinks: Session error:', sessionError);
-                this.showAuthRequiredMessage();
-                return;
-            }
-
-            if (!session?.access_token) {
-                console.log('MyLinks: No active session found');
-                this.showAuthRequiredMessage();
-                return;
-            }
-
-            console.log('MyLinks: Session found, access_token exists:', !!session.access_token);
-            console.log('MyLinks: Token preview:', session.access_token.substring(0, 20) + '...');
-
-            // Validate token with server
-            const response = await fetch('/api/auth/me', {
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`
-                }
-            });
-
-            console.log('MyLinks: Auth validation response status:', response.status);
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('MyLinks: Auth validation successful, user:', data.data.user.email);
-                this.currentUser = data.data.user;
+            if (session?.user) {
+                this.currentUser = session.user;
                 this.updateAuthUI();
-                this.hideAuthRequiredMessage();
-                // Load user links only after successful authentication
-                this.loadUserLinks();
-                console.log('MyLinks: Authentication successful');
+                await this.loadUserLinks('checkAuth');
             } else {
-                const errorText = await response.text();
-                console.log('MyLinks: Token validation failed:', response.status, errorText);
+                console.log('MyLinks: No authenticated user, showing auth required message');
                 this.showAuthRequiredMessage();
             }
-
         } catch (error) {
-            console.error('MyLinks: Auth check failed:', error);
+            console.error('MyLinks: Auth check error:', error);
             this.showAuthRequiredMessage();
         }
     }
@@ -181,7 +89,7 @@ class MyLinksManager {
                     console.log('Token refreshed successfully, retrying request');
 
                     // Retry the original request
-                    await this.loadUserLinks();
+                    await this.loadUserLinks('handleTokenRefresh');
                     return;
                 }
             }
@@ -319,9 +227,11 @@ class MyLinksManager {
             });
         }
 
-        window.addEventListener('auth:login', () => {
-            this.checkAuth();
-        });
+        // Remove auth event listeners that cause infinite loops
+        // On my-links page, we only check auth once during initialization
+        // window.addEventListener('auth:login', () => {
+        //     this.checkAuth();
+        // });
 
         window.addEventListener('auth:logout', () => {
             this.currentUser = null;
@@ -383,7 +293,16 @@ class MyLinksManager {
         });
     }
 
-    async loadUserLinks() {
+    async loadUserLinks(caller = 'unknown') {
+        console.log(`MyLinks: loadUserLinks called from ${caller} - checking if already loading...`);
+
+        // Prevent multiple simultaneous calls
+        if (this.isLoading) {
+            console.log('MyLinks: Already loading, skipping...');
+            return;
+        }
+
+        this.isLoading = true;
         this.showLoading();
 
         try {
@@ -433,7 +352,9 @@ class MyLinksManager {
             console.error('MyLinks: Load links error:', error);
             this.showError('Ошибка сети при загрузке ссылок');
         } finally {
+            this.isLoading = false;
             this.hideLoading();
+            console.log('MyLinks: loadUserLinks completed');
         }
     }
 
@@ -629,7 +550,7 @@ class MyLinksManager {
                 const data = await response.json();
                 if (data.success) {
                     this.hideEditModal();
-                    this.loadUserLinks(); // Reload links
+                    this.loadUserLinks('saveLinkEdit'); // Reload links
                     this.showToast('Ссылка обновлена!', 'success');
                 } else {
                     this.showToast(data.error || 'Ошибка обновления', 'error');
@@ -680,7 +601,7 @@ class MyLinksManager {
 
             if (response.ok) {
                 this.hideDeleteModal();
-                this.loadUserLinks(); // Reload links
+                this.loadUserLinks('confirmDelete'); // Reload links
                 this.showToast('Ссылка удалена!', 'success');
             } else {
                 this.showToast('Ошибка удаления ссылки', 'error');
@@ -781,14 +702,9 @@ class MyLinksManager {
             return;
         }
 
-        const loadingState = document.getElementById('loadingState');
-        if (loadingState) loadingState.style.display = 'none';
-        const linksGrid = document.getElementById('linksGrid');
-        if (linksGrid) linksGrid.style.display = 'none';
-
-        // Hide the main content and show auth required message
-        const mainContent = document.querySelector('main');
-        if (mainContent) mainContent.style.display = 'none';
+        // Hide only the dashboard content, keep header/footer visible
+        const dashboardMain = document.querySelector('.dashboard-main');
+        if (dashboardMain) dashboardMain.style.display = 'none';
 
         const authRequired = document.createElement('div');
         authRequired.id = 'auth-required';
@@ -805,8 +721,13 @@ class MyLinksManager {
             </div>
         `;
 
-        // Hide main content
+        // Add auth message to container (replace main content)
         const container = document.querySelector('.container');
+        const mainElement = document.querySelector('main');
+        if (mainElement) {
+            // Hide the main element completely
+            mainElement.style.display = 'none';
+        }
         if (container) {
             container.appendChild(authRequired);
         }
@@ -905,8 +826,5 @@ document.head.appendChild(style);
 // Initialize the manager when DOM is loaded
 let myLinksManager;
 document.addEventListener('DOMContentLoaded', async () => {
-    // Initialize common components with auth state
-    initCommonComponents('/my-links', 'ru');
-
     myLinksManager = new MyLinksManager();
 });

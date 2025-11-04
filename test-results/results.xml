@@ -1,0 +1,320 @@
+<testsuites id="" name="" tests="35" failures="6" skipped="0" errors="0" time="62.956783">
+<testsuite name="url-shortener/create-link.test.js" timestamp="2025-11-04T09:52:13.063Z" hostname="chromium" tests="8" failures="6" skipped="0" time="186.622" errors="0">
+<testcase name="URL Shortener - Create Link › should load homepage successfully" classname="url-shortener/create-link.test.js" time="0.971">
+</testcase>
+<testcase name="URL Shortener - Create Link › should create short URL successfully" classname="url-shortener/create-link.test.js" time="30.853">
+<failure message="create-link.test.js:19:7 should create short URL successfully" type="FAILURE">
+<![CDATA[  [chromium] › url-shortener/create-link.test.js:19:7 › URL Shortener - Create Link › should create short URL successfully 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('#result') to be visible
+        62 × locator resolved to hidden <div id="result" class="result">…</div>
+
+
+      27 |
+      28 |     // Wait for success result
+    > 29 |     await page.waitForSelector('#result', { state: 'visible' });
+         |                ^
+      30 |
+      31 |     // Check success message
+      32 |     await expect(page.locator('#result h3')).toContainText('✅ URL успешно сокращен');
+        at /Users/sergeykrupnov/Dev/4_build a URL shortener/tests/e2e/url-shortener/create-link.test.js:29:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--b0701-eate-short-URL-successfully-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--b0701-eate-short-URL-successfully-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/url-shortener-create-link--b0701-eate-short-URL-successfully-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|url-shortener-create-link--b0701-eate-short-URL-successfully-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|url-shortener-create-link--b0701-eate-short-URL-successfully-chromium/video.webm]]
+
+[[ATTACHMENT|url-shortener-create-link--b0701-eate-short-URL-successfully-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="URL Shortener - Create Link › should show error for invalid URL" classname="url-shortener/create-link.test.js" time="30.254">
+<failure message="create-link.test.js:45:7 should show error for invalid URL" type="FAILURE">
+<![CDATA[  [chromium] › url-shortener/create-link.test.js:45:7 › URL Shortener - Create Link › should show error for invalid URL 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('#error') to be visible
+        62 × locator resolved to hidden <div id="error" class="error">…</div>
+
+
+      51 |
+      52 |     // Wait for error result
+    > 53 |     await page.waitForSelector('#error', { state: 'visible' });
+         |                ^
+      54 |
+      55 |     // Check error message
+      56 |     await expect(page.locator('#error h3')).toContainText('❌ Ошибка');
+        at /Users/sergeykrupnov/Dev/4_build a URL shortener/tests/e2e/url-shortener/create-link.test.js:53:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--43e2c--show-error-for-invalid-URL-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--43e2c--show-error-for-invalid-URL-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/url-shortener-create-link--43e2c--show-error-for-invalid-URL-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|url-shortener-create-link--43e2c--show-error-for-invalid-URL-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|url-shortener-create-link--43e2c--show-error-for-invalid-URL-chromium/video.webm]]
+
+[[ATTACHMENT|url-shortener-create-link--43e2c--show-error-for-invalid-URL-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="URL Shortener - Create Link › should show error for empty URL" classname="url-shortener/create-link.test.js" time="30.265">
+<failure message="create-link.test.js:60:7 should show error for empty URL" type="FAILURE">
+<![CDATA[  [chromium] › url-shortener/create-link.test.js:60:7 › URL Shortener - Create Link › should show error for empty URL 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('#error') to be visible
+        62 × locator resolved to hidden <div id="error" class="error">…</div>
+
+
+      65 |
+      66 |     // Wait for error result
+    > 67 |     await page.waitForSelector('#error', { state: 'visible' });
+         |                ^
+      68 |
+      69 |     // Check error message
+      70 |     await expect(page.locator('#error h3')).toContainText('❌ Ошибка');
+        at /Users/sergeykrupnov/Dev/4_build a URL shortener/tests/e2e/url-shortener/create-link.test.js:67:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--e9b17-ld-show-error-for-empty-URL-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--e9b17-ld-show-error-for-empty-URL-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/url-shortener-create-link--e9b17-ld-show-error-for-empty-URL-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|url-shortener-create-link--e9b17-ld-show-error-for-empty-URL-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|url-shortener-create-link--e9b17-ld-show-error-for-empty-URL-chromium/video.webm]]
+
+[[ATTACHMENT|url-shortener-create-link--e9b17-ld-show-error-for-empty-URL-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="URL Shortener - Create Link › should copy short URL to clipboard" classname="url-shortener/create-link.test.js" time="31.804">
+<failure message="create-link.test.js:74:7 should copy short URL to clipboard" type="FAILURE">
+<![CDATA[  [chromium] › url-shortener/create-link.test.js:74:7 › URL Shortener - Create Link › should copy short URL to clipboard 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('#result') to be visible
+        63 × locator resolved to hidden <div id="result" class="result">…</div>
+
+
+      80 |     await page.fill('#originalUrl', testUrl);
+      81 |     await page.click('#shortenBtn');
+    > 82 |     await page.waitForSelector('#result', { state: 'visible' });
+         |                ^
+      83 |
+      84 |     // Click copy button
+      85 |     await page.click('#copyBtn');
+        at /Users/sergeykrupnov/Dev/4_build a URL shortener/tests/e2e/url-shortener/create-link.test.js:82:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--93655-copy-short-URL-to-clipboard-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--93655-copy-short-URL-to-clipboard-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/url-shortener-create-link--93655-copy-short-URL-to-clipboard-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|url-shortener-create-link--93655-copy-short-URL-to-clipboard-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|url-shortener-create-link--93655-copy-short-URL-to-clipboard-chromium/video.webm]]
+
+[[ATTACHMENT|url-shortener-create-link--93655-copy-short-URL-to-clipboard-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="URL Shortener - Create Link › should navigate to short URL" classname="url-shortener/create-link.test.js" time="30.881">
+<failure message="create-link.test.js:92:7 should navigate to short URL" type="FAILURE">
+<![CDATA[  [chromium] › url-shortener/create-link.test.js:92:7 › URL Shortener - Create Link › should navigate to short URL 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('#result') to be visible
+        63 × locator resolved to hidden <div id="result" class="result">…</div>
+
+
+       98 |     await page.fill('#originalUrl', testUrl);
+       99 |     await page.click('#shortenBtn');
+    > 100 |     await page.waitForSelector('#result', { state: 'visible' });
+          |                ^
+      101 |
+      102 |     // Get the short URL
+      103 |     const shortUrl = await page.locator('#shortUrlInput').inputValue();
+        at /Users/sergeykrupnov/Dev/4_build a URL shortener/tests/e2e/url-shortener/create-link.test.js:100:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--aa8d3-hould-navigate-to-short-URL-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--aa8d3-hould-navigate-to-short-URL-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/url-shortener-create-link--aa8d3-hould-navigate-to-short-URL-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|url-shortener-create-link--aa8d3-hould-navigate-to-short-URL-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|url-shortener-create-link--aa8d3-hould-navigate-to-short-URL-chromium/video.webm]]
+
+[[ATTACHMENT|url-shortener-create-link--aa8d3-hould-navigate-to-short-URL-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="URL Shortener - Create Link › should allow creating new link after success" classname="url-shortener/create-link.test.js" time="30.875">
+<failure message="create-link.test.js:114:7 should allow creating new link after success" type="FAILURE">
+<![CDATA[  [chromium] › url-shortener/create-link.test.js:114:7 › URL Shortener - Create Link › should allow creating new link after success 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('#result') to be visible
+        63 × locator resolved to hidden <div id="result" class="result">…</div>
+
+
+      121 |     await page.fill('#originalUrl', testUrl1);
+      122 |     await page.click('#shortenBtn');
+    > 123 |     await page.waitForSelector('#result', { state: 'visible' });
+          |                ^
+      124 |
+      125 |     // Click "Create new" button
+      126 |     await page.click('#createNewBtn');
+        at /Users/sergeykrupnov/Dev/4_build a URL shortener/tests/e2e/url-shortener/create-link.test.js:123:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--66c92-ting-new-link-after-success-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/url-shortener-create-link--66c92-ting-new-link-after-success-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/url-shortener-create-link--66c92-ting-new-link-after-success-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|url-shortener-create-link--66c92-ting-new-link-after-success-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|url-shortener-create-link--66c92-ting-new-link-after-success-chromium/video.webm]]
+
+[[ATTACHMENT|url-shortener-create-link--66c92-ting-new-link-after-success-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="URL Shortener - Create Link › should handle network errors gracefully" classname="url-shortener/create-link.test.js" time="0.719">
+</testcase>
+</testsuite>
+<testsuite name="user-pages/my-links-page.test.js" timestamp="2025-11-04T09:52:13.063Z" hostname="chromium" tests="9" failures="0" skipped="0" time="5.978" errors="0">
+<testcase name="My Links Page Tests › should load my-links page with header and footer components" classname="user-pages/my-links-page.test.js" time="0.854">
+</testcase>
+<testcase name="My Links Page Tests › should show auth required message when not authenticated" classname="user-pages/my-links-page.test.js" time="2.318">
+</testcase>
+<testcase name="My Links Page Tests › should have working navigation links in header" classname="user-pages/my-links-page.test.js" time="0.961">
+</testcase>
+<testcase name="My Links Page Tests › should have create new link button (when authenticated)" classname="user-pages/my-links-page.test.js" time="0.176">
+</testcase>
+<testcase name="My Links Page Tests › should have search and filter controls (when authenticated)" classname="user-pages/my-links-page.test.js" time="0.191">
+</testcase>
+<testcase name="My Links Page Tests › should show loading state initially (when authenticated)" classname="user-pages/my-links-page.test.js" time="0.211">
+</testcase>
+<testcase name="My Links Page Tests › should have modal dialogs for edit and delete" classname="user-pages/my-links-page.test.js" time="0.212">
+</testcase>
+<testcase name="My Links Page Tests › should handle API errors gracefully" classname="user-pages/my-links-page.test.js" time="0.218">
+</testcase>
+<testcase name="My Links Page Tests › should allow language switching" classname="user-pages/my-links-page.test.js" time="0.837">
+</testcase>
+</testsuite>
+<testsuite name="user-pages/profile-page.test.js" timestamp="2025-11-04T09:52:13.063Z" hostname="chromium" tests="10" failures="0" skipped="0" time="4.476" errors="0">
+<testcase name="Profile Page Tests › should load profile page with header and footer components" classname="user-pages/profile-page.test.js" time="0.934">
+</testcase>
+<testcase name="Profile Page Tests › should show profile card with user information" classname="user-pages/profile-page.test.js" time="0.216">
+</testcase>
+<testcase name="Profile Page Tests › should have profile settings form" classname="user-pages/profile-page.test.js" time="0.216">
+</testcase>
+<testcase name="Profile Page Tests › should have account management actions" classname="user-pages/profile-page.test.js" time="0.24">
+</testcase>
+<testcase name="Profile Page Tests › should have working navigation links in header" classname="user-pages/profile-page.test.js" time="1.11">
+</testcase>
+<testcase name="Profile Page Tests › should allow language switching" classname="user-pages/profile-page.test.js" time="0.953">
+</testcase>
+<testcase name="Profile Page Tests › should handle API errors gracefully" classname="user-pages/profile-page.test.js" time="0.218">
+</testcase>
+<testcase name="Profile Page Tests › should have proper form validation" classname="user-pages/profile-page.test.js" time="0.208">
+</testcase>
+<testcase name="Profile Page Tests › should have responsive design elements" classname="user-pages/profile-page.test.js" time="0.211">
+</testcase>
+<testcase name="Profile Page Tests › should load Supabase client" classname="user-pages/profile-page.test.js" time="0.17">
+</testcase>
+</testsuite>
+<testsuite name="user-pages/unauthenticated-access.test.js" timestamp="2025-11-04T09:52:13.063Z" hostname="chromium" tests="8" failures="0" skipped="0" time="4.431" errors="0">
+<testcase name="Unauthenticated Access Tests › should load homepage without authentication" classname="user-pages/unauthenticated-access.test.js" time="0.211">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should show login/register buttons in header when not authenticated" classname="user-pages/unauthenticated-access.test.js" time="0.857">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should redirect to login when accessing my-links without authentication" classname="user-pages/unauthenticated-access.test.js" time="0.346">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should redirect to login when accessing profile without authentication" classname="user-pages/unauthenticated-access.test.js" time="0.224">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should load header and footer components" classname="user-pages/unauthenticated-access.test.js" time="0.799">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should allow language switching in header" classname="user-pages/unauthenticated-access.test.js" time="0.828">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should have working navigation links" classname="user-pages/unauthenticated-access.test.js" time="0.9">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should handle API errors gracefully on homepage" classname="user-pages/unauthenticated-access.test.js" time="0.266">
+</testcase>
+</testsuite>
+</testsuites>

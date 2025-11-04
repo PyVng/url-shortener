@@ -1,0 +1,48 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: "Язык:"
+        - combobox "Язык:" [ref=e8] [cursor=pointer]:
+          - option "English"
+          - option "中文"
+          - option "Español"
+          - option "العربية"
+          - option "हिन्दी"
+          - option "Русский" [selected]
+          - option "Français"
+          - option "日本語"
+          - option "Deutsch"
+          - option "Português"
+          - option "Italiano"
+          - option "한국어"
+          - option "Türkçe"
+          - option "Polski"
+          - option "Nederlands"
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - link "Главная" [ref=e11] [cursor=pointer]:
+            - /url: /
+          - link "Мои ссылки" [ref=e12] [cursor=pointer]:
+            - /url: /my-links
+        - generic [ref=e13]:
+          - button "Войти" [ref=e14] [cursor=pointer]
+          - button "Регистрация" [ref=e15] [cursor=pointer]
+  - main [ref=e16]:
+    - generic [ref=e17]:
+      - heading "🔗 URL Shortener" [level=1] [ref=e18]
+      - paragraph [ref=e19]: Сократите длинные ссылки в короткие и удобные
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]: "Введите длинный URL:"
+        - textbox "Введите длинный URL:" [active] [ref=e24]:
+          - /placeholder: https://example.com/very/long/url/that/needs/to/be/shortened
+      - button "Сократить URL" [ref=e25] [cursor=pointer]:
+        - generic [ref=e26]: Сократить URL
+    - text: ✓
+  - contentinfo [ref=e27]:
+    - paragraph [ref=e28]: "© 2025 URL Shortener. Created with Node.js and Express. Версия: 1.0.0 (851c678 04.11.2025)"
+```

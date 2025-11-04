@@ -1,8 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const { databaseConfigs } = require('./config');
-
-// Supabase client for authentication
-const supabaseConfig = databaseConfigs.supabase_auth;
+const { supabaseConfig } = require('./config');
 
 console.log('🔍 Supabase Config Debug:');
 console.log('SUPABASE_URL:', supabaseConfig.url ? '✅ Set' : '❌ Missing');

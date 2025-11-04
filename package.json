@@ -8,7 +8,13 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:all": "npm run test && npm run test:e2e"
   },
   "keywords": [
     "url-shortener",
@@ -20,15 +26,21 @@
   "license": "ISC",
   "description": "A multilingual URL shortener service built with Node.js, Express, and PostgreSQL",
   "dependencies": {
+    "@libsql/client": "^0.6.0",
+    "@neondatabase/serverless": "^0.9.3",
+    "@supabase/supabase-js": "^2.39.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "mongodb": "^6.5.0",
     "pg": "^8.16.3",
     "redis": "^4.6.13",
-    "mongodb": "^6.5.0",
-    "sqlite3": "^5.1.6",
-    "@libsql/client": "^0.6.0",
-    "@supabase/supabase-js": "^2.39.7",
-    "@neondatabase/serverless": "^0.9.3"
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "jest": "^30.2.0",
+    "playwright": "^1.56.1",
+    "supertest": "^7.1.4"
   }
 }

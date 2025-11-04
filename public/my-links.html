@@ -9,7 +9,65 @@
 </head>
 <body>
     <div class="container">
-        <div id="header-container"></div>
+        <nav class="top-nav">
+            <div class="nav-container">
+                <div class="nav-left">
+                    <div class="language-selector">
+                        <label for="languageSelect">Язык:</label>
+                        <select id="languageSelect">
+                            <option value="en">English</option>
+                            <option value="zh">中文</option>
+                            <option value="es">Español</option>
+                            <option value="ar">العربية</option>
+                            <option value="hi">हिन्दी</option>
+                            <option value="ru" selected>Русский</option>
+                            <option value="fr">Français</option>
+                            <option value="ja">日本語</option>
+                            <option value="de">Deutsch</option>
+                            <option value="pt">Português</option>
+                            <option value="it">Italiano</option>
+                            <option value="ko">한국어</option>
+                            <option value="tr">Türkçe</option>
+                            <option value="pl">Polski</option>
+                            <option value="nl">Nederlands</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="nav-right">
+                    <div class="nav-links">
+                        <a href="/" class="nav-link">Главная</a>
+                        <a href="/my-links" class="nav-link active">Мои ссылки</a>
+                    </div>
+                    <div class="auth-section">
+                        <button id="loginBtn" class="btn btn-outline auth-btn">Войти</button>
+                        <button id="registerBtn" class="btn btn-primary auth-btn">Регистрация</button>
+                        <div id="userInfo" class="user-info" style="display: none;">
+                            <div class="user-avatar">👤</div>
+                            <div class="user-details">
+                                <div class="user-display-name" id="userDisplayName"></div>
+                                <div class="user-email" id="userEmail"></div>
+                            </div>
+                            <div class="user-menu-toggle">▼</div>
+                            <div class="user-dropdown" id="userDropdown">
+                                <a href="#" class="dropdown-item" id="myLinksLink">
+                                    <span class="dropdown-icon">🔗</span>
+                                    Мои ссылки
+                                </a>
+                                <a href="/profile" class="dropdown-item" id="profileLink">
+                                    <span class="dropdown-icon">👤</span>
+                                    Профиль
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item logout-link" id="logoutBtn">
+                                    <span class="dropdown-icon">🚪</span>
+                                    Выйти
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
 
         <main class="dashboard-main">
             <div class="dashboard-header">
@@ -64,7 +122,9 @@
             </div>
         </main>
 
-        <div id="footer-container"></div>
+        <footer>
+            <p>© 2025 URL Shortener. Created with Node.js and Express. <span id="version-info">Версия: загружается...</span></p>
+        </footer>
     </div>
 
     <!-- Link Edit Modal -->
@@ -118,25 +178,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <!-- Load components and my-links functionality -->
     <script src="components.js"></script>
-    <script>
-        // Initialize Supabase client immediately (synchronous approach)
-        const SUPABASE_URL = window.APP_CONFIG?.SUPABASE_URL || 'https://dkbvavfdjpamsmezfrrt.supabase.co';
-        const SUPABASE_ANON_KEY = window.APP_CONFIG?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrYnZhdmZkanBhbXNtZXpmcnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxNDc0MzEsImV4cCI6MjA3NzcyMzQzMX0.4NBBusEGQyfikpidc8QCoqhIjWs_7FoJCCNwjJ8C-cI';
-
-        // Initialize Supabase synchronously
-        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                autoRefreshToken: true,
-                persistSession: true,
-                detectSessionInUrl: true
-            }
-        });
-
-        // Dispatch event to signal Supabase is ready
-        window.dispatchEvent(new Event('supabaseReady'));
-    </script>
     <script src="my-links.js"></script>
 </body>
 </html>

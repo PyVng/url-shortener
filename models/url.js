@@ -9,15 +9,16 @@ class UrlModel {
 
   // Валидация URL
   static validateUrl(url) {
+    // Проверяем максимальную длину
+    if (url.length > 2048) {
+      return { valid: false, error: 'URL слишком длинный (максимум 2048 символов)' };
+    }
+
     try {
       const urlObj = new URL(url);
       // Проверяем, что это HTTP или HTTPS
       if (!['http:', 'https:'].includes(urlObj.protocol)) {
         return { valid: false, error: 'URL должен начинаться с http:// или https://' };
-      }
-      // Проверяем максимальную длину
-      if (url.length > 2048) {
-        return { valid: false, error: 'URL слишком длинный (максимум 2048 символов)' };
       }
       return { valid: true };
     } catch (error) {

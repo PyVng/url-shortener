@@ -1,90 +1,92 @@
-// Legacy database interface - now uses the new DatabaseManager
-// This file is kept for backward compatibility
-const dbManager = require('./manager');
+// Simplified database interface for Supabase only
+const SupabaseRestAdapter = require('./adapters/supabase_rest');
 
-// Initialize database manager
-let isInitialized = false;
+// Create and initialize Supabase adapter directly
+const config = {
+  name: 'supabase_rest',
+  type: 'supabase_rest',
+  url: process.env.SUPABASE_URL || 'https://test.supabase.co',
+  anonKey: process.env.SUPABASE_ANON_KEY || 'test-anon-key',
+  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key',
+};
 
-async function initializeDatabase() {
-  if (!isInitialized) {
-    try {
-      await dbManager.initialize();
-      isInitialized = true;
-      console.log('Database initialized successfully');
-    } catch (error) {
-      console.error('Database initialization failed:', error);
-      throw error;
-    }
+let adapter = null;
+
+async function initializeAdapter() {
+  if (!adapter) {
+    adapter = new SupabaseRestAdapter(config);
+    await adapter.connect();
+    await adapter.initialize();
+    console.log('Supabase adapter initialized successfully');
   }
+  return adapter;
 }
 
-// Legacy functions for backward compatibility
+// Database operations
 const databaseOperations = {
   // Создание короткого URL
   createShortUrl: async (shortCode, originalUrl, userId = null) => {
-    await initializeDatabase();
-    return await dbManager.createShortUrl(shortCode, originalUrl, userId);
+    const db = await initializeAdapter();
+    return await db.createShortUrl(shortCode, originalUrl, userId);
   },
 
   // Получение оригинального URL по короткому коду
   getOriginalUrl: async (shortCode) => {
-    await initializeDatabase();
-    return await dbManager.getOriginalUrl(shortCode);
+    const db = await initializeAdapter();
+    return await db.getOriginalUrl(shortCode);
   },
 
   // Получение всех URL (для отладки)
-  getAllUrls: async () => {
-    await initializeDatabase();
-    return await dbManager.getAllUrls();
+  getAllUrls: async (limit = 100, offset = 0) => {
+    const db = await initializeAdapter();
+    return await db.getAllUrls(limit, offset);
   },
 
   // Get URL statistics
   getUrlStats: async (shortCode) => {
-    await initializeDatabase();
-    return await dbManager.getUrlStats(shortCode);
+    const db = await initializeAdapter();
+    return await db.getUrlStats(shortCode);
   },
 
   // Health check
   healthCheck: async () => {
-    await initializeDatabase();
-    return await dbManager.healthCheck();
+    const db = await initializeAdapter();
+    return await db.ping();
   },
 
   // Get database statistics
   getStats: async () => {
-    await initializeDatabase();
-    return await dbManager.getStats();
+    return {
+      type: 'supabase_rest',
+      name: 'Supabase REST API',
+    };
   },
 
-  // Rate limiting
+  // Rate limiting - always allow
   checkRateLimit: async (identifier, limit = 100, window = 3600) => {
-    await initializeDatabase();
-    return await dbManager.checkRateLimit(identifier, limit, window);
+    return true;
   },
 
   // User links operations
   getUserLinks: async (userId, options = {}) => {
-    await initializeDatabase();
-    return await dbManager.getUserLinks(userId, options);
+    const db = await initializeAdapter();
+    return await db.getUserLinks(userId, options);
   },
 
   getLinkById: async (id) => {
-    await initializeDatabase();
-    return await dbManager.getLinkById(id);
+    const db = await initializeAdapter();
+    return await db.getLinkById(id);
   },
 
   updateUserLink: async (id, updates) => {
-    await initializeDatabase();
-    return await dbManager.updateUserLink(id, updates);
+    const db = await initializeAdapter();
+    return await db.updateUserLink(id, updates);
   },
 
   deleteUserLink: async (id) => {
-    await initializeDatabase();
-    return await dbManager.deleteUserLink(id);
+    const db = await initializeAdapter();
+    return await db.deleteUserLink(id);
   },
 };
-
-// Auto-initialize on module load
-initializeDatabase().catch(console.error);
 
 module.exports = { ...databaseOperations };

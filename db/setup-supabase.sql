@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS urls (
   id SERIAL PRIMARY KEY,
   short_code TEXT UNIQUE NOT NULL,
   original_url TEXT NOT NULL,
+  title TEXT,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   click_count INTEGER DEFAULT 0
@@ -20,7 +21,15 @@ CREATE INDEX IF NOT EXISTS idx_urls_created_at ON urls(created_at DESC);
 ALTER TABLE urls ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for URLs table
--- Users can only see their own URLs
+-- Allow anonymous read access for ALL urls (for redirect functionality)
+CREATE POLICY "Allow anonymous read all urls" ON urls
+  FOR SELECT USING (true);
+
+-- Allow anonymous insert (for creating short URLs without login)
+CREATE POLICY "Allow anonymous insert" ON urls
+  FOR INSERT WITH CHECK (true);
+
+-- Users can view their own URLs
 CREATE POLICY "Users can view own urls" ON urls
   FOR SELECT USING (auth.uid() = user_id);
 

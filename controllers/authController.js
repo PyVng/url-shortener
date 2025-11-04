@@ -29,8 +29,8 @@ const createUserSupabaseClient = (token) => {
   });
 };
 
-const getAuthContext = async (req) => {
-  console.log('🔍 getAuthContext called');
+const getAuthContext = async (req, caller = 'unknown') => {
+  console.log(`🔍 getAuthContext called from ${caller}`);
   console.log('🔍 supabaseConfig.url:', supabaseConfig.url ? 'SET' : 'NOT SET');
   console.log('🔍 supabaseConfig.anonKey:', supabaseConfig.anonKey ? 'SET' : 'NOT SET');
 
@@ -250,7 +250,7 @@ class AuthController {
       console.log('Headers:', req.headers.authorization ? 'Bearer token present' : 'No auth header');
       console.log('Environment:', process.env.VERCEL ? 'Vercel' : 'Local');
 
-      const context = await getAuthContext(req);
+      const context = await getAuthContext(req, 'requireAuth');
       if (context.error) {
         console.log('❌ Auth context error:', context.error, 'Status:', context.status);
         return res.status(context.status).json({
@@ -278,7 +278,7 @@ class AuthController {
     try {
       const { name } = req.body;
 
-      const context = req.supabaseAuth || await getAuthContext(req);
+      const context = req.supabaseAuth || await getAuthContext(req, 'updateProfile');
       if (context.error) {
         return res.status(context.status).json({
           success: false,
@@ -514,7 +514,7 @@ class AuthController {
       console.log('🔐 Request path:', req.path);
       console.log('🔐 Headers present:', !!req.headers.authorization);
 
-      const context = await getAuthContext(req);
+      const context = await getAuthContext(req, 'requireAuth');
       if (context.error) {
         console.log('❌ Auth middleware failed:', context.error, 'Status:', context.status);
         return res.status(context.status).json({
@@ -533,6 +533,42 @@ class AuthController {
         success: false,
         error: 'Authentication error'
       });
+    }
+  }
+
+  // Middleware для опциональной аутентификации (анонимный доступ разрешен)
+  optionalAuth = async (req, res, next) => {
+    try {
+      console.log('🔓 OPTIONAL AUTH MIDDLEWARE CALLED');
+      console.log('🔓 Request path:', req.path);
+      console.log('🔓 Headers present:', !!req.headers.authorization);
+
+      const token = getBearerToken(req);
+      if (!token) {
+        console.log('🔓 No token, proceeding as anonymous');
+        req.user = null;
+        req.supabaseAuth = null;
+        return next();
+      }
+
+      const context = await getAuthContext(req, 'optionalAuth');
+      if (context.error) {
+        console.log('🔓 Auth failed, proceeding as anonymous:', context.error);
+        req.user = null;
+        req.supabaseAuth = null;
+        return next();
+      }
+
+      console.log('✅ Optional auth passed for user:', context.user.email);
+      req.user = context.user;
+      req.supabaseAuth = context;
+      next();
+    } catch (error) {
+      console.error('❌ Optional auth middleware exception:', error);
+      // Даже при ошибке продолжаем как анонимный пользователь
+      req.user = null;
+      req.supabaseAuth = null;
+      next();
     }
   }
 }

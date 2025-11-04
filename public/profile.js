@@ -1,4 +1,4 @@
-// Profile Page JavaScript
+console.log('🔍 Profile: profile.js loaded successfully');
 
 class ProfileManager {
     constructor() {
@@ -19,72 +19,97 @@ class ProfileManager {
     }
 
     async checkAuth() {
+        console.log('🔍 Profile: checkAuth called - PAGE LOADED SUCCESSFULLY!');
+
         try {
-            // Try to get stored session first (new format)
-            let sessionStr = localStorage.getItem('supabase_auth_session');
-            let session = null;
-
-            if (sessionStr) {
-                try {
-                    session = JSON.parse(sessionStr);
-                } catch (e) {
-                    console.warn('Failed to parse session, removing:', e);
-                    localStorage.removeItem('supabase_auth_session');
+            console.log('🔍 Profile: Checking all localStorage keys...');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('auth') || key.includes('supabase'))) {
+                    console.log('🔍 Profile: Found key:', key, '=', localStorage.getItem(key)?.substring(0, 50) + '...');
                 }
             }
 
-            // Fallback to old token format for backward compatibility
-            if (!session?.access_token) {
-                const oldToken = localStorage.getItem('supabase_auth_token');
-                if (oldToken) {
-                    console.log('Using old token format, will migrate on next login');
-                    session = { access_token: oldToken };
-                }
+            // Wait for Supabase to be ready
+            if (typeof supabase === 'undefined') {
+                console.log('🔍 Profile: Supabase not loaded yet, waiting...');
+                setTimeout(() => this.checkAuth(), 100);
+                return;
             }
 
-            if (!session?.access_token) {
-                const oauthTokenRaw = localStorage.getItem('supabase.auth.token');
-                if (oauthTokenRaw) {
-                    try {
-                        const parsed = JSON.parse(oauthTokenRaw);
-                        if (parsed?.access_token) {
-                            console.log('Migrating OAuth token to session storage');
-                            session = {
-                                access_token: parsed.access_token,
-                                refresh_token: parsed.refresh_token,
-                                token_type: parsed.token_type || 'bearer',
-                                expires_in: parsed.expires_in || 3600,
-                                expires_at: parsed.expires_at || Math.floor(Date.now() / 1000) + 3600
-                            };
+            // Initialize Supabase client if not already done
+            if (!window.supabase) {
+                console.log('🔍 Profile: Initializing Supabase client...');
+                window.supabase = supabase.createClient(
+                    window.APP_CONFIG?.SUPABASE_URL || 'https://dkbvavfdjpamsmezfrrt.supabase.co',
+                    window.APP_CONFIG?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrYnZhdmZkanBhbXNtZXpmcnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxNDc0MzEsImV4cCI6MjA3NzcyMzQzMX0.4NBBusEGQyfikpidc8QCoqhIjWs_7FoJCCNwjJ8C-cI',
+                    {
+                        auth: {
+                            autoRefreshToken: true,
+                            persistSession: true,
+                            detectSessionInUrl: true
                         }
-                    } catch (parseError) {
-                        console.warn('Failed to parse OAuth token, removing:', parseError);
-                        localStorage.removeItem('supabase.auth.token');
                     }
-                }
+                );
             }
 
-            if (!session?.access_token) {
+            // Get current session from Supabase
+            console.log('🔍 Profile: Getting session from Supabase...');
+            const { data: { session }, error } = await window.supabase.auth.getSession();
+
+            if (error) {
+                console.error('🔍 Profile: Error getting session:', error);
+                console.log('🔍 Profile: No valid session found, redirecting to home');
                 window.location.href = '/';
                 return;
             }
 
+            if (!session?.access_token) {
+                console.log('🔍 Profile: No access token in session, redirecting to home');
+                window.location.href = '/';
+                return;
+            }
+
+            console.log('🔍 Profile: Found valid session with access token, length:', session.access_token.length);
+
+            console.log('🔍 Profile: Found access token, length:', session.access_token.length);
             localStorage.setItem('supabase_auth_session', JSON.stringify(session));
             localStorage.removeItem('supabase_auth_token');
             localStorage.removeItem('supabase.auth.token');
 
             // First try with current token
-            let response = await fetch('/api/auth/me', {
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`
-                }
-            });
+            console.log('🔍 Profile: Making request to /api/auth/me');
+            console.log('🔍 Profile: Token preview:', session.access_token.substring(0, 20) + '...');
 
-            if (response.ok) {
-                const data = await response.json();
-                this.currentUser = data.data.user;
-                this.loadProfileData();
-                this.updateAuthUI();
+            let response;
+            try {
+                response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`
+                    }
+                });
+
+                console.log('🔍 Profile: Response status:', response.status);
+                console.log('🔍 Profile: Response headers:', Object.fromEntries(response.headers.entries()));
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('🔍 Profile: Auth successful, user data:', data);
+                    this.currentUser = data.data.user;
+                    this.loadProfileData();
+                    this.updateAuthUI();
+                    return;
+                } else {
+                    const errorText = await response.text().catch(() => 'Unable to read error');
+                    console.log('🔍 Profile: Auth failed, status:', response.status, 'response:', errorText);
+                    // Don't redirect immediately, show the error
+                    alert('Authentication failed: ' + errorText);
+                    return;
+                }
+            } catch (fetchError) {
+                console.error('🔍 Profile: Fetch error:', fetchError);
+                // Don't redirect immediately, show the error
+                alert('Network error: ' + fetchError.message);
                 return;
             }
 
@@ -131,18 +156,12 @@ class ProfileManager {
             }
 
             // If we get here, authentication failed
-            console.log('Authentication failed, redirecting to home');
-            localStorage.removeItem('supabase_auth_session');
-            localStorage.removeItem('supabase_auth_token');
-            localStorage.removeItem('supabase.auth.token');
-            window.location.href = '/';
+            console.log('Authentication failed, showing error instead of redirect');
+            alert('Authentication failed completely');
 
         } catch (error) {
             console.error('Auth check failed:', error);
-            localStorage.removeItem('supabase_auth_session');
-            localStorage.removeItem('supabase_auth_token');
-            localStorage.removeItem('supabase.auth.token');
-            window.location.href = '/';
+            alert('Auth check failed: ' + error.message);
         }
     }
 
@@ -229,8 +248,8 @@ class ProfileManager {
             // Load user profile info
             this.displayUserInfo();
 
-            // Load user statistics
-            await this.loadUserStats();
+            // Load user statistics - temporarily disabled to stop infinite requests
+            // await this.loadUserStats();
 
         } catch (error) {
             console.error('Failed to load profile data:', error);

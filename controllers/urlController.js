@@ -20,8 +20,10 @@ class UrlController {
 
       // Получаем userId из аутентифицированного пользователя (если есть)
       const userId = req.user ? req.user.id : null;
+      console.log('🔗 shortenUrl: Creating URL for userId:', userId, 'originalUrl:', originalUrl);
 
       const result = await UrlModel.createShortUrl(originalUrl, baseUrl, userId);
+      console.log('🔗 shortenUrl: Created URL result:', result);
 
       res.status(201).json({
         success: true,
