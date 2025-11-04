@@ -1,412 +1,187 @@
-# 🌐 URL Shortener - Многоязычный сервис сокращения ссылок с аутентификацией
+# URL Shortener - FastAPI Edition
 
-Полнофункциональный сервис для сокращения длинных URL-адресов с поддержкой 15 языков интерфейса и аутентификацией пользователей через Supabase.
+A modern URL shortener service built with FastAPI, SQLAlchemy, and Vercel Postgres.
 
-## ✨ Возможности
+## 🚀 Features
 
-- 🔗 Сокращение длинных URL в короткие
-- 🔐 **Аутентификация пользователей через Supabase**
-- 👤 **Личный кабинет с историей URL**
-- 🌍 Многоязычный интерфейс (15 языков)
-- 📱 Адаптивный дизайн
-- 🚀 Быстрый редирект
-- 💾 Множество баз данных (PostgreSQL, MongoDB, SQLite, Redis)
-- ⚡ Redis кэширование для высокой производительности
-- ☁️ Готов к деплою на Vercel
+- **FastAPI Backend**: High-performance async API with automatic OpenAPI/Swagger docs
+- **SQLAlchemy ORM**: Robust database operations with PostgreSQL support
+- **Vercel Deployment**: Optimized for serverless deployment on Vercel
+- **URL Validation**: Built-in URL format validation
+- **Click Tracking**: Track URL click counts
+- **Responsive UI**: Clean, modern web interface
 
-## 🔐 Настройка Supabase + Vercel (Рекомендуемый способ)
+## 🛠️ Tech Stack
 
-### Шаг 1: Создание проекта Supabase
+- **Backend**: FastAPI, Uvicorn, SQLAlchemy, Pydantic
+- **Database**: Vercel Postgres (production) / SQLite (development)
+- **Frontend**: HTML, CSS, JavaScript
+- **Deployment**: Vercel Functions
+- **Testing**: Pytest, Playwright
 
-1. **Зарегистрируйтесь** на [supabase.com](https://supabase.com)
-2. **Создайте новый проект**:
-   - Project name: `url-shortener`
-   - Database password: придумайте надежный пароль
-   - Region: выберите ближайший (например, EU West)
-3. **Дождитесь создания проекта** (2-3 минуты)
+## 📦 Installation
 
-### Шаг 2: Настройка базы данных Supabase
-
-1. **Откройте SQL Editor** в Supabase Dashboard
-2. **Скопируйте и выполните** SQL из файла `db/setup-supabase.sql`:
-   ```sql
-   -- Вставьте содержимое файла db/setup-supabase.sql
-   ```
-3. **Проверьте выполнение** - все команды должны выполниться успешно
-
-### Шаг 3: Получение API ключей
-
-1. **Перейдите в Settings → API**
-2. **Скопируйте ключи**:
-   - `Project URL`: `https://xxxxx.supabase.co`
-   - `anon public` key: ваш анонимный ключ
-   - `service_role` key: сервисный ключ (секретный!)
-
-### Шаг 4: Деплой на Vercel
-
-1. **Создайте репозиторий** на GitHub и загрузите код:
+1. **Clone the repository**
    ```bash
-   git add .
-   git commit -m "Add Supabase authentication"
-   git push origin main
-   ```
-
-2. **Импортируйте проект** в [Vercel](https://vercel.com):
-   - Выберите ваш GitHub репозиторий
-   - Vercel автоматически обнаружит настройки
-
-3. **Настройте переменные окружения** в Vercel:
-   ```
-   ACTIVE_DATABASE=supabase
-   SUPABASE_URL=https://xxxxx.supabase.co
-   SUPABASE_ANON_KEY=ваш_анонимный_ключ
-   SUPABASE_SERVICE_ROLE_KEY=ваш_сервисный_ключ
-   SUPABASE_DATABASE_URL=postgresql://postgres:[пароль]@db.xxxxx.supabase.co:5432/postgres
-   NODE_ENV=production
-   ```
-
-4. **Деплой проекта** - нажмите "Deploy"
-
-### Шаг 5: Проверка работы
-
-1. **Откройте приложение** по ссылке Vercel
-2. **Зарегистрируйтесь** как новый пользователь
-3. **Создайте короткий URL** - он будет связан с вашим аккаунтом
-4. **Проверьте личный кабинет** - ваши URL должны отображаться
-
-### 🔑 Безопасность Supabase
-
-- ✅ **Row Level Security (RLS)** - пользователи видят только свои URL
-- ✅ **JWT токены** - безопасная аутентификация
-- ✅ **Автоматическое обновление токенов**
-- ✅ **Защищенные API endpoints**
-
-### 🔐 Настройка OAuth провайдеров для Production
-
-**Важно!** OAuth провайдеры нужно настроить отдельно для каждого Supabase проекта.
-
-#### Шаг 1: Включение OAuth провайдеров в Supabase Dashboard
-
-1. **Откройте Supabase Dashboard** вашего production проекта
-2. **Перейдите в Authentication → Providers**
-3. **Включите нужные провайдеры**:
-   - **Google**: Введите Client ID и Client Secret из Google Cloud Console
-   - **GitHub**: Создайте OAuth App в GitHub Settings → Developer settings
-   - **Discord**: Создайте приложение в Discord Developer Portal
-   - **Twitter**: Настройте в Twitter Developer Portal
-   - **Apple**: Настройте в Apple Developer Program
-   - **Facebook**: Создайте приложение в Facebook Developers
-
-#### Шаг 2: Настройка Redirect URLs
-
-Для каждого провайдера добавьте **Redirect URL**:
-```
-https://your-vercel-app.vercel.app/auth/callback
-```
-
-Где `your-vercel-app.vercel.app` - ваш домен на Vercel.
-
-#### Шаг 3: Проверка переменных окружения на Vercel
-
-Убедитесь, что в Vercel установлены правильные переменные:
-```
-SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
-
-#### Шаг 4: Тестирование OAuth
-
-1. **Передеплойте** приложение на Vercel после настройки провайдеров
-2. **Попробуйте войти** через OAuth кнопку
-3. **Проверьте логи Vercel** при ошибках
-
-#### Распространенные проблемы:
-
-- **"Provider not enabled"** → Включите провайдера в Supabase Dashboard
-- **"Invalid redirect URL"** → Добавьте правильный Redirect URL
-- **"Invalid client"** → Проверьте Client ID/Secret в настройках провайдера
-- **CORS ошибки** → Проверьте, что домен добавлен в Supabase Auth settings
-
-#### Получение API ключей для провайдеров:
-
-**Google:**
-1. Перейдите в [Google Cloud Console](https://console.cloud.google.com)
-2. Создайте проект или выберите существующий
-3. Включите Google+ API
-4. Создайте OAuth 2.0 credentials
-5. Добавьте redirect URL: `https://your-app.vercel.app/auth/callback`
-
-**GitHub:**
-1. Перейдите в GitHub Settings → Developer settings → OAuth Apps
-2. Создайте новое OAuth приложение
-3. Homepage URL: `https://your-app.vercel.app`
-4. Authorization callback URL: `https://your-app.vercel.app/auth/callback`
-
-**Discord:**
-1. Перейдите в [Discord Developer Portal](https://discord.com/developers/applications)
-2. Создайте новое приложение
-3. В OAuth2 settings добавьте redirect: `https://your-app.vercel.app/auth/callback`
-
-**И так далее для остальных провайдеров...**
-
-### 🛠 Доступные API endpoints с аутентификацией:
-
-```
-POST /api/auth/register   - Регистрация
-POST /api/auth/login      - Вход
-POST /api/auth/logout     - Выход
-GET  /api/auth/me         - Текущий пользователь
-PUT  /api/auth/profile    - Обновление профиля
-POST /api/shorten         - Создание URL (связан с пользователем)
-```
-
-### 🚨 Важные замечания:
-
-- **Никогда не публикуйте** `SUPABASE_SERVICE_ROLE_KEY` в клиентском коде
-- **Используйте только** `SUPABASE_ANON_KEY` на frontend
-- **Храните ключи** в переменных окружения Vercel, не в коде
-- **База данных Supabase** имеет бесплатный лимит 500MB
-
-## 🛠 Технологии
-
-- **Backend**: Node.js + Express
-- **Database**: PostgreSQL, MongoDB, SQLite, Redis
-- **Frontend**: HTML/CSS/JavaScript (Vanilla)
-- **Deployment**: Vercel
-- **Internationalization**: Собственная реализация i18n
-
-## 💾 Настройка баз данных
-
-Этот проект поддерживает несколько провайдеров баз данных. Вы можете легко переключаться между ними, изменяя переменную `ACTIVE_DATABASE` в файле `.env`.
-
-### 🚀 **Для пользователей Vercel (самый простой вариант)**
-
-Если вы деплоите на Vercel, **Vercel Postgres** - самый простой выбор:
-
-1. В [Vercel Dashboard](https://vercel.com/dashboard) → **Storage** → **Create Database** → **Postgres**
-2. Создайте базу данных (бесплатный тариф доступен)
-3. Скопируйте `POSTGRES_URL` из настроек
-4. В `.env` установите:
-   ```env
-   ACTIVE_DATABASE=vercel_postgres
-   POSTGRES_URL=ваш_postgres_url_из_vercel
-   ```
-5. Готово! База данных автоматически подключится
-
-**Альтернативы для Vercel:**
-- **Vercel KV** (Redis): `ACTIVE_DATABASE=vercel_kv` + `KV_URL` + `KV_REST_API_TOKEN`
-- **Vercel Edge Config**: Для простых данных (ограничения по записи)
-
-### Поддерживаемые базы данных
-
-#### 1. **PostgreSQL** (по умолчанию)
-- **Локальный PostgreSQL**: Для разработки
-- **Neon**: Serverless PostgreSQL
-- **Supabase**: PostgreSQL с дополнительными функциями
-- **Vercel Postgres**: Интегрированная с Vercel
-
-#### 2. **MongoDB Atlas**
-- Документо-ориентированная NoSQL база данных
-- Отличная масштабируемость
-
-#### 3. **SQLite**
-- **Локальный SQLite**: Для быстрой разработки
-- **Turso**: Распределенный SQLite в облаке
-
-#### 4. **Redis (Upstash/Vercel KV)**
-- Кэширование для повышения производительности
-- Ограничение скорости запросов
-- Подсчет кликов в реальном времени
-
-### Конфигурация
-
-1. **Выберите активную базу данных** в `.env`:
-   ```env
-   ACTIVE_DATABASE=vercel_postgres  # Для Vercel (самый простой)
-   # Или: postgresql, neon, supabase, mongodb, sqlite, turso, vercel_kv, vercel_edge_config
-   ```
-
-2. **Настройте подключения** для выбранных провайдеров:
-
-   ```env
-   # Vercel базы данных (самые простые)
-   POSTGRES_URL=postgresql://user:pass@ep-xxx.us-east-1.aws.neon.tech/dbname  # Vercel Postgres
-   KV_URL=rediss://:token@xxx.upstash.io:6379                              # Vercel KV
-   KV_REST_API_TOKEN=your_kv_token
-   EDGE_CONFIG=https://edge-config.vercel.com/xxx?token=token             # Vercel Edge Config
-
-   # PostgreSQL варианты
-   DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
-   NEON_DATABASE_URL=postgresql://user:pass@ep-xxx.neon.tech/dbname
-   SUPABASE_DATABASE_URL=postgresql://user:pass@db.xxx.supabase.co:5432/db
-
-   # MongoDB Atlas
-   MONGODB_ATLAS_URL=mongodb+srv://user:pass@cluster0.xxx.mongodb.net/dbname
-   MONGODB_DATABASE_NAME=url_shortener
-
-   # SQLite варианты
-   SQLITE_DATABASE_PATH=./db/local.db
-   TURSO_DATABASE_URL=libsql://xxx.turso.io
-   TURSO_AUTH_TOKEN=your_token
-
-   # Redis для кэширования (опционально)
-   UPSTASH_REDIS_URL=rediss://:token@xxx.upstash.io:6379
-   UPSTASH_REDIS_TOKEN=your_token
-   ```
-
-### Рекомендуемые комбинации
-
-- **Разработка**: `ACTIVE_DATABASE=sqlite` + локальный Redis
-- **Production**: `ACTIVE_DATABASE=neon` + Upstash Redis
-- **Масштабируемость**: `ACTIVE_DATABASE=mongodb` + Upstash Redis
-
-### Переключение между базами данных
-
-1. Измените `ACTIVE_DATABASE` в `.env`
-2. Перезапустите приложение
-3. База данных будет автоматически инициализирована
-
-> **Примечание**: Redis для кэширования работает с любой основной базой данных и включается автоматически при наличии `UPSTASH_REDIS_URL`.
-
-## 🚀 Быстрый старт
-
-### Локальная разработка
-
-1. **Клонируйте репозиторий**
-   ```bash
-   git clone <your-repo-url>
+   git clone <repository-url>
    cd url-shortener
    ```
 
-2. **Установите зависимости**
+2. **Install dependencies**
    ```bash
-   npm install
+   pip install -r requirements.txt
    ```
 
-3. **Настройте базу данных**
-   - Создайте PostgreSQL базу данных
-   - Обновите `.env` файл:
-   ```env
-   DATABASE_URL=postgresql://username:password@localhost:5432/your_database
-   ```
-
-4. **Запустите приложение**
+3. **Set up environment variables**
    ```bash
-   npm run dev
+   cp .env.example .env
+   # Edit .env with your database credentials
    ```
 
-5. **Откройте в браузере**
+4. **Run locally**
+   ```bash
+   python main.py
    ```
-   http://localhost:3000
-   ```
 
-## 📦 Деплой на Vercel
+   Visit `http://localhost:8000`
 
-### 1. Подготовка базы данных
+## 🧪 Testing
 
-1. Перейдите в [Vercel Dashboard](https://vercel.com/dashboard)
-2. Откройте раздел **Storage** → **Create Database** → **Postgres**
-3. Создайте базу данных (бесплатный план доступен)
-4. Скопируйте `DATABASE_URL` из настроек базы данных
-
-### 2. Деплой приложения
-
-1. **Подключите Git репозиторий**
-   - Создайте новый репозиторий на GitHub
-   - Загрузите код: `git add . && git commit -m "Initial commit" && git push`
-
-2. **Импортируйте проект в Vercel**
-   - В Vercel нажмите **"Import Project"**
-   - Выберите ваш GitHub репозиторий
-   - Vercel автоматически обнаружит `vercel.json`
-
-3. **Настройте переменные окружения**
-   - В настройках проекта добавьте:
-     - `DATABASE_URL` (из шага 1)
-     - `NODE_ENV=production`
-
-4. **Деплой**
-   - Нажмите **"Deploy"**
-   - Дождитесь завершения деплоя
-
-### 3. Проверка работы
-
-После деплоя ваш URL Shortener будет доступен по адресу, предоставленному Vercel (например: `https://your-project.vercel.app`)
-
-## 🌍 Поддерживаемые языки
-
-- 🇷🇺 Русский
-- 🇺🇸 English
-- 🇪🇸 Español
-- 🇫🇷 Français
-- 🇩🇪 Deutsch
-- 🇨🇳 中文
-- 🇯🇵 日本語
-- 🇸🇦 العربية
-- 🇵🇹 Português
-- 🇮🇹 Italiano
-- 🇮🇳 हिन्दी
-- 🇰🇷 한국어
-- 🇹🇷 Türkçe
-- 🇵🇱 Polski
-- 🇳🇱 Nederlands
-
-## 📁 Структура проекта
-
-```
-url-shortener/
-├── server.js              # Главный серверный файл
-├── vercel.json           # Конфигурация Vercel
-├── package.json          # Зависимости и скрипты
-├── .env                  # Переменные окружения (локально)
-├── db/
-│   ├── database.js       # Устаревший интерфейс (для совместимости)
-│   ├── manager.js        # Менеджер баз данных
-│   ├── config.js         # Конфигурация подключений
-│   └── adapters/         # Адаптеры для разных БД
-│       ├── postgresql.js # PostgreSQL (Neon, Supabase, локальный)
-│       ├── redis.js      # Redis (Upstash)
-│       ├── mongodb.js    # MongoDB Atlas
-│       └── sqlite.js     # SQLite (Turso, локальный)
-├── models/
-│   └── url.js           # Модель URL
-├── controllers/
-│   └── urlController.js # Бизнес-логика
-├── routes/
-│   └── api.js           # API маршруты
-├── public/
-│   ├── index.html       # Главная страница
-│   ├── style.css        # Стили
-│   └── app.js           # Клиентский JavaScript
-└── utils/               # Вспомогательные функции
-```
-
-## 🔧 API Endpoints
-
-- `POST /api/shorten` - Создать короткий URL
-- `GET /:shortCode` - Редирект на оригинальный URL
-
-### Пример запроса сокращения URL:
-
+### Unit Tests
 ```bash
-curl -X POST http://localhost:3000/api/shorten \
-  -H "Content-Type: application/json" \
-  -d '{"originalUrl": "https://example.com/very/long/url"}'
+python -m pytest tests/ -v
 ```
 
-## 🤝 Вклад в проект
+### API Tests
+```bash
+python -m pytest test_main.py -v
+```
 
-1. Fork репозиторий
-2. Создайте feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit изменения (`git commit -m 'Add some AmazingFeature'`)
-4. Push в branch (`git push origin feature/AmazingFeature`)
-5. Откройте Pull Request
+### E2E Tests
+```bash
+npx playwright test
+```
 
-## 📄 Лицензия
+## 🚀 Deployment
 
-Этот проект распространяется под лицензией ISC.
+### Vercel Deployment
 
-## 📞 Контакты
+1. **Connect to Vercel**
+   ```bash
+   vercel login
+   vercel link
+   ```
 
-Если у вас есть вопросы или предложения, создайте issue в репозитории.
+2. **Deploy**
+   ```bash
+   vercel --prod
+   ```
+
+### Environment Variables for Vercel
+
+Set these in your Vercel dashboard:
+
+- `DATABASE_URL`: PostgreSQL connection string
+- `POSTGRES_URL`: Alternative PostgreSQL URL
+- `ENVIRONMENT`: Set to `production`
+
+## 📡 API Endpoints
+
+### Create Short URL
+```http
+POST /api/shorten
+Content-Type: application/json
+
+{
+  "original_url": "https://example.com/very/long/url"
+}
+```
+
+Response:
+```json
+{
+  "id": 1,
+  "short_code": "abc123",
+  "original_url": "https://example.com/very/long/url",
+  "short_url": "https://your-domain.com/abc123",
+  "created_at": "2023-01-01T00:00:00Z"
+}
+```
+
+### Get URL Info
+```http
+GET /api/info/{short_code}
+```
+
+### Redirect to Original URL
+```http
+GET /{short_code}
+```
+
+## 🗄️ Database Schema
+
+```sql
+CREATE TABLE urls (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    short_code VARCHAR(20) UNIQUE NOT NULL,
+    original_url TEXT NOT NULL,
+    user_id VARCHAR(100),
+    title VARCHAR(255),
+    click_count INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## 🔧 Development
+
+### Project Structure
+```
+├── main.py              # FastAPI application
+├── models.py            # SQLAlchemy models
+├── schemas.py           # Pydantic schemas
+├── database.py          # Database connection
+├── requirements.txt     # Python dependencies
+├── vercel.json          # Vercel configuration
+├── public/              # Static files
+│   ├── index.html
+│   ├── style.css
+│   └── app.js
+└── tests/               # Test files
+```
+
+### Adding New Features
+
+1. **API Endpoints**: Add routes in `main.py`
+2. **Database Models**: Define in `models.py`
+3. **Validation**: Create Pydantic schemas in `schemas.py`
+4. **Tests**: Add tests in `test_main.py`
+
+## 📈 Performance
+
+- **FastAPI**: High-performance async framework
+- **SQLAlchemy**: Efficient ORM with connection pooling
+- **Vercel Postgres**: Managed PostgreSQL with automatic scaling
+- **CDN**: Static assets served via Vercel's CDN
+
+## 🔒 Security
+
+- Input validation with Pydantic
+- SQL injection prevention with SQLAlchemy
+- CORS protection
+- Rate limiting ready
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass
+5. Submit a pull request
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## 📞 Support
+
+For issues and questions, please open a GitHub issue.

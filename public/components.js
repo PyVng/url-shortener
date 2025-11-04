@@ -56,6 +56,8 @@
             console.log('Components: Supabase client initialized');
             console.log('Components: Supabase client auth object:', window.supabase.auth ? 'exists' : 'missing');
             console.log('Components: Supabase auth methods available:', Object.getOwnPropertyNames(window.supabase.auth).filter(name => typeof window.supabase.auth[name] === 'function'));
+
+            // For frontend, we don't need full Supabase auth - just initialize a basic client
             window.dispatchEvent(new Event('supabaseReady'));
         } catch (error) {
             console.error('Components: Failed to initialize Supabase client:', error);

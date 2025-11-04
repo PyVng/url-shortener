@@ -1,6 +1,7 @@
 // Simplified database interface with Vercel Postgres support for production
 const SupabaseRestAdapter = require('./adapters/supabase_rest');
 const JsonFileAdapter = require('./adapters/json_file');
+const SqliteAdapter = require('./adapters/sqlite');
 const VercelKvAdapter = require('./adapters/vercel_kv');
 const VercelPostgresAdapter = require('./adapters/vercel_postgres');
 
@@ -21,6 +22,8 @@ function getAdapterClass() {
       return SupabaseRestAdapter;
     case 'json_file':
       return JsonFileAdapter;
+    case 'sqlite':
+      return SqliteAdapter;
     case 'vercel_kv':
       return VercelKvAdapter;
     case 'vercel_postgres':

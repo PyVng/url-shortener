@@ -45,5 +45,5 @@
         - generic [ref=e26]: Сократить URL
     - text: ✓
   - contentinfo [ref=e27]:
-    - paragraph [ref=e28]: "© 2025 URL Shortener. Created with Node.js and Express. Версия: 1.0.0 (851c678 04.11.2025)"
+    - paragraph [ref=e28]: "© 2025 URL Shortener. Created with Node.js and Express. Версия: 1.0.0 (698cad2 04.11.2025)"
 ```

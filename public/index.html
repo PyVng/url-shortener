@@ -139,7 +139,7 @@
             script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
             script.onload = function() {
                 // Dispatch custom event when Supabase is loaded
-                window.dispatchEvent(new Event('supabaseLoaded'));
+                window.dispatchEvent(new Event('supabaseReady'));
             };
             script.onerror = function() {
                 console.error('Failed to load Supabase script');

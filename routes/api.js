@@ -11,7 +11,7 @@ router.use(express.json());
 // API маршруты для URL shortener
 
 // POST /api/shorten - создание короткого URL (опциональная аутентификация)
-router.post('/shorten', SimpleAuth.optionalAuth, UrlController.shortenUrl);
+router.post('/shorten', SimpleAuth.optionalAuth(), UrlController.shortenUrl);
 
 // GET /api/info/:shortCode - получение информации о коротком URL (для отладки)
 router.get('/info/:shortCode', UrlController.getUrlInfo);

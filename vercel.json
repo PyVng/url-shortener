@@ -1,23 +1,26 @@
 {
   "version": 2,
-  "functions": {
-    "server.js": {
-      "maxDuration": 25
-    }
-  },
-  "routes": [
+  "builds": [
     {
-      "src": "/api/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/server.js"
+      "src": "main.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/main.py"
+    }
+  ],
+  "functions": {
+    "main.py": {
+      "maxDuration": 10
+    }
+  },
   "env": {
-    "NODE_ENV": "production",
-    "ACTIVE_DATABASE": "vercel_postgres",
-    "PGSSLMODE": "require"
+    "ENVIRONMENT": "production"
   }
 }

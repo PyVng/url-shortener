@@ -1,8 +1,8 @@
-<testsuites id="" name="" tests="35" failures="6" skipped="0" errors="0" time="62.956783">
-<testsuite name="url-shortener/create-link.test.js" timestamp="2025-11-04T09:52:13.063Z" hostname="chromium" tests="8" failures="6" skipped="0" time="186.622" errors="0">
-<testcase name="URL Shortener - Create Link › should load homepage successfully" classname="url-shortener/create-link.test.js" time="0.971">
+<testsuites id="" name="" tests="35" failures="6" skipped="0" errors="0" time="63.941492999999994">
+<testsuite name="url-shortener/create-link.test.js" timestamp="2025-11-04T13:35:51.355Z" hostname="chromium" tests="8" failures="6" skipped="0" time="188.364" errors="0">
+<testcase name="URL Shortener - Create Link › should load homepage successfully" classname="url-shortener/create-link.test.js" time="1.008">
 </testcase>
-<testcase name="URL Shortener - Create Link › should create short URL successfully" classname="url-shortener/create-link.test.js" time="30.853">
+<testcase name="URL Shortener - Create Link › should create short URL successfully" classname="url-shortener/create-link.test.js" time="32.28">
 <failure message="create-link.test.js:19:7 should create short URL successfully" type="FAILURE">
 <![CDATA[  [chromium] › url-shortener/create-link.test.js:19:7 › URL Shortener - Create Link › should create short URL successfully 
 
@@ -11,7 +11,7 @@
     Error: page.waitForSelector: Test timeout of 30000ms exceeded.
     Call log:
       - waiting for locator('#result') to be visible
-        62 × locator resolved to hidden <div id="result" class="result">…</div>
+        59 × locator resolved to hidden <div id="result" class="result">…</div>
 
 
       27 |
@@ -44,7 +44,7 @@
 ]]>
 </system-out>
 </testcase>
-<testcase name="URL Shortener - Create Link › should show error for invalid URL" classname="url-shortener/create-link.test.js" time="30.254">
+<testcase name="URL Shortener - Create Link › should show error for invalid URL" classname="url-shortener/create-link.test.js" time="30.257">
 <failure message="create-link.test.js:45:7 should show error for invalid URL" type="FAILURE">
 <![CDATA[  [chromium] › url-shortener/create-link.test.js:45:7 › URL Shortener - Create Link › should show error for invalid URL 
 
@@ -53,7 +53,7 @@
     Error: page.waitForSelector: Test timeout of 30000ms exceeded.
     Call log:
       - waiting for locator('#error') to be visible
-        62 × locator resolved to hidden <div id="error" class="error">…</div>
+        60 × locator resolved to hidden <div id="error" class="error">…</div>
 
 
       51 |
@@ -86,7 +86,7 @@
 ]]>
 </system-out>
 </testcase>
-<testcase name="URL Shortener - Create Link › should show error for empty URL" classname="url-shortener/create-link.test.js" time="30.265">
+<testcase name="URL Shortener - Create Link › should show error for empty URL" classname="url-shortener/create-link.test.js" time="30.19">
 <failure message="create-link.test.js:60:7 should show error for empty URL" type="FAILURE">
 <![CDATA[  [chromium] › url-shortener/create-link.test.js:60:7 › URL Shortener - Create Link › should show error for empty URL 
 
@@ -95,7 +95,7 @@
     Error: page.waitForSelector: Test timeout of 30000ms exceeded.
     Call log:
       - waiting for locator('#error') to be visible
-        62 × locator resolved to hidden <div id="error" class="error">…</div>
+        60 × locator resolved to hidden <div id="error" class="error">…</div>
 
 
       65 |
@@ -128,7 +128,7 @@
 ]]>
 </system-out>
 </testcase>
-<testcase name="URL Shortener - Create Link › should copy short URL to clipboard" classname="url-shortener/create-link.test.js" time="31.804">
+<testcase name="URL Shortener - Create Link › should copy short URL to clipboard" classname="url-shortener/create-link.test.js" time="31.948">
 <failure message="create-link.test.js:74:7 should copy short URL to clipboard" type="FAILURE">
 <![CDATA[  [chromium] › url-shortener/create-link.test.js:74:7 › URL Shortener - Create Link › should copy short URL to clipboard 
 
@@ -137,7 +137,7 @@
     Error: page.waitForSelector: Test timeout of 30000ms exceeded.
     Call log:
       - waiting for locator('#result') to be visible
-        63 × locator resolved to hidden <div id="result" class="result">…</div>
+        60 × locator resolved to hidden <div id="result" class="result">…</div>
 
 
       80 |     await page.fill('#originalUrl', testUrl);
@@ -170,7 +170,7 @@
 ]]>
 </system-out>
 </testcase>
-<testcase name="URL Shortener - Create Link › should navigate to short URL" classname="url-shortener/create-link.test.js" time="30.881">
+<testcase name="URL Shortener - Create Link › should navigate to short URL" classname="url-shortener/create-link.test.js" time="30.974">
 <failure message="create-link.test.js:92:7 should navigate to short URL" type="FAILURE">
 <![CDATA[  [chromium] › url-shortener/create-link.test.js:92:7 › URL Shortener - Create Link › should navigate to short URL 
 
@@ -212,7 +212,7 @@
 ]]>
 </system-out>
 </testcase>
-<testcase name="URL Shortener - Create Link › should allow creating new link after success" classname="url-shortener/create-link.test.js" time="30.875">
+<testcase name="URL Shortener - Create Link › should allow creating new link after success" classname="url-shortener/create-link.test.js" time="30.967">
 <failure message="create-link.test.js:114:7 should allow creating new link after success" type="FAILURE">
 <![CDATA[  [chromium] › url-shortener/create-link.test.js:114:7 › URL Shortener - Create Link › should allow creating new link after success 
 
@@ -254,67 +254,67 @@
 ]]>
 </system-out>
 </testcase>
-<testcase name="URL Shortener - Create Link › should handle network errors gracefully" classname="url-shortener/create-link.test.js" time="0.719">
+<testcase name="URL Shortener - Create Link › should handle network errors gracefully" classname="url-shortener/create-link.test.js" time="0.74">
 </testcase>
 </testsuite>
-<testsuite name="user-pages/my-links-page.test.js" timestamp="2025-11-04T09:52:13.063Z" hostname="chromium" tests="9" failures="0" skipped="0" time="5.978" errors="0">
-<testcase name="My Links Page Tests › should load my-links page with header and footer components" classname="user-pages/my-links-page.test.js" time="0.854">
+<testsuite name="user-pages/my-links-page.test.js" timestamp="2025-11-04T13:35:51.355Z" hostname="chromium" tests="9" failures="0" skipped="0" time="6.473" errors="0">
+<testcase name="My Links Page Tests › should load my-links page with header and footer components" classname="user-pages/my-links-page.test.js" time="0.946">
 </testcase>
-<testcase name="My Links Page Tests › should show auth required message when not authenticated" classname="user-pages/my-links-page.test.js" time="2.318">
+<testcase name="My Links Page Tests › should show auth required message when not authenticated" classname="user-pages/my-links-page.test.js" time="2.358">
 </testcase>
-<testcase name="My Links Page Tests › should have working navigation links in header" classname="user-pages/my-links-page.test.js" time="0.961">
+<testcase name="My Links Page Tests › should have working navigation links in header" classname="user-pages/my-links-page.test.js" time="0.898">
 </testcase>
-<testcase name="My Links Page Tests › should have create new link button (when authenticated)" classname="user-pages/my-links-page.test.js" time="0.176">
+<testcase name="My Links Page Tests › should have create new link button (when authenticated)" classname="user-pages/my-links-page.test.js" time="0.21">
 </testcase>
-<testcase name="My Links Page Tests › should have search and filter controls (when authenticated)" classname="user-pages/my-links-page.test.js" time="0.191">
+<testcase name="My Links Page Tests › should have search and filter controls (when authenticated)" classname="user-pages/my-links-page.test.js" time="0.269">
 </testcase>
-<testcase name="My Links Page Tests › should show loading state initially (when authenticated)" classname="user-pages/my-links-page.test.js" time="0.211">
+<testcase name="My Links Page Tests › should show loading state initially (when authenticated)" classname="user-pages/my-links-page.test.js" time="0.235">
 </testcase>
-<testcase name="My Links Page Tests › should have modal dialogs for edit and delete" classname="user-pages/my-links-page.test.js" time="0.212">
+<testcase name="My Links Page Tests › should have modal dialogs for edit and delete" classname="user-pages/my-links-page.test.js" time="0.28">
 </testcase>
-<testcase name="My Links Page Tests › should handle API errors gracefully" classname="user-pages/my-links-page.test.js" time="0.218">
+<testcase name="My Links Page Tests › should handle API errors gracefully" classname="user-pages/my-links-page.test.js" time="0.285">
 </testcase>
-<testcase name="My Links Page Tests › should allow language switching" classname="user-pages/my-links-page.test.js" time="0.837">
-</testcase>
-</testsuite>
-<testsuite name="user-pages/profile-page.test.js" timestamp="2025-11-04T09:52:13.063Z" hostname="chromium" tests="10" failures="0" skipped="0" time="4.476" errors="0">
-<testcase name="Profile Page Tests › should load profile page with header and footer components" classname="user-pages/profile-page.test.js" time="0.934">
-</testcase>
-<testcase name="Profile Page Tests › should show profile card with user information" classname="user-pages/profile-page.test.js" time="0.216">
-</testcase>
-<testcase name="Profile Page Tests › should have profile settings form" classname="user-pages/profile-page.test.js" time="0.216">
-</testcase>
-<testcase name="Profile Page Tests › should have account management actions" classname="user-pages/profile-page.test.js" time="0.24">
-</testcase>
-<testcase name="Profile Page Tests › should have working navigation links in header" classname="user-pages/profile-page.test.js" time="1.11">
-</testcase>
-<testcase name="Profile Page Tests › should allow language switching" classname="user-pages/profile-page.test.js" time="0.953">
-</testcase>
-<testcase name="Profile Page Tests › should handle API errors gracefully" classname="user-pages/profile-page.test.js" time="0.218">
-</testcase>
-<testcase name="Profile Page Tests › should have proper form validation" classname="user-pages/profile-page.test.js" time="0.208">
-</testcase>
-<testcase name="Profile Page Tests › should have responsive design elements" classname="user-pages/profile-page.test.js" time="0.211">
-</testcase>
-<testcase name="Profile Page Tests › should load Supabase client" classname="user-pages/profile-page.test.js" time="0.17">
+<testcase name="My Links Page Tests › should allow language switching" classname="user-pages/my-links-page.test.js" time="0.992">
 </testcase>
 </testsuite>
-<testsuite name="user-pages/unauthenticated-access.test.js" timestamp="2025-11-04T09:52:13.063Z" hostname="chromium" tests="8" failures="0" skipped="0" time="4.431" errors="0">
-<testcase name="Unauthenticated Access Tests › should load homepage without authentication" classname="user-pages/unauthenticated-access.test.js" time="0.211">
+<testsuite name="user-pages/profile-page.test.js" timestamp="2025-11-04T13:35:51.355Z" hostname="chromium" tests="10" failures="0" skipped="0" time="4.78" errors="0">
+<testcase name="Profile Page Tests › should load profile page with header and footer components" classname="user-pages/profile-page.test.js" time="0.946">
 </testcase>
-<testcase name="Unauthenticated Access Tests › should show login/register buttons in header when not authenticated" classname="user-pages/unauthenticated-access.test.js" time="0.857">
+<testcase name="Profile Page Tests › should show profile card with user information" classname="user-pages/profile-page.test.js" time="0.221">
 </testcase>
-<testcase name="Unauthenticated Access Tests › should redirect to login when accessing my-links without authentication" classname="user-pages/unauthenticated-access.test.js" time="0.346">
+<testcase name="Profile Page Tests › should have profile settings form" classname="user-pages/profile-page.test.js" time="0.234">
 </testcase>
-<testcase name="Unauthenticated Access Tests › should redirect to login when accessing profile without authentication" classname="user-pages/unauthenticated-access.test.js" time="0.224">
+<testcase name="Profile Page Tests › should have account management actions" classname="user-pages/profile-page.test.js" time="0.241">
 </testcase>
-<testcase name="Unauthenticated Access Tests › should load header and footer components" classname="user-pages/unauthenticated-access.test.js" time="0.799">
+<testcase name="Profile Page Tests › should have working navigation links in header" classname="user-pages/profile-page.test.js" time="0.978">
 </testcase>
-<testcase name="Unauthenticated Access Tests › should allow language switching in header" classname="user-pages/unauthenticated-access.test.js" time="0.828">
+<testcase name="Profile Page Tests › should allow language switching" classname="user-pages/profile-page.test.js" time="0.946">
 </testcase>
-<testcase name="Unauthenticated Access Tests › should have working navigation links" classname="user-pages/unauthenticated-access.test.js" time="0.9">
+<testcase name="Profile Page Tests › should handle API errors gracefully" classname="user-pages/profile-page.test.js" time="0.234">
 </testcase>
-<testcase name="Unauthenticated Access Tests › should handle API errors gracefully on homepage" classname="user-pages/unauthenticated-access.test.js" time="0.266">
+<testcase name="Profile Page Tests › should have proper form validation" classname="user-pages/profile-page.test.js" time="0.237">
+</testcase>
+<testcase name="Profile Page Tests › should have responsive design elements" classname="user-pages/profile-page.test.js" time="0.392">
+</testcase>
+<testcase name="Profile Page Tests › should load Supabase client" classname="user-pages/profile-page.test.js" time="0.351">
+</testcase>
+</testsuite>
+<testsuite name="user-pages/unauthenticated-access.test.js" timestamp="2025-11-04T13:35:51.355Z" hostname="chromium" tests="8" failures="0" skipped="0" time="5.386" errors="0">
+<testcase name="Unauthenticated Access Tests › should load homepage without authentication" classname="user-pages/unauthenticated-access.test.js" time="0.25">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should show login/register buttons in header when not authenticated" classname="user-pages/unauthenticated-access.test.js" time="1.187">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should redirect to login when accessing my-links without authentication" classname="user-pages/unauthenticated-access.test.js" time="0.231">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should redirect to login when accessing profile without authentication" classname="user-pages/unauthenticated-access.test.js" time="0.205">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should load header and footer components" classname="user-pages/unauthenticated-access.test.js" time="1.126">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should allow language switching in header" classname="user-pages/unauthenticated-access.test.js" time="1.052">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should have working navigation links" classname="user-pages/unauthenticated-access.test.js" time="1.1">
+</testcase>
+<testcase name="Unauthenticated Access Tests › should handle API errors gracefully on homepage" classname="user-pages/unauthenticated-access.test.js" time="0.235">
 </testcase>
 </testsuite>
 </testsuites>
