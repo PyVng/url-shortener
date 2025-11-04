@@ -28,6 +28,7 @@ app.add_middleware(
 # Database will be initialized lazily on first request
 _db_initialized = False
 
+
 def ensure_db_initialized():
     """Ensure database is initialized before handling requests."""
     global _db_initialized
@@ -40,14 +41,16 @@ def ensure_db_initialized():
             # Don't crash the app, just log the error
             # The app can still serve the HTML page
 
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
-    """Serve the main HTML page"""
+    """Serve the main HTML page."""
     return FileResponse("index.html", media_type="text/html")
+
 
 @app.post("/api/shorten", response_model=UrlResponse, status_code=201)
 async def shorten_url(url_data: UrlCreate, request: Request):
-    """Create a short URL"""
+    """Create a short URL."""
     ensure_db_initialized()
     db = next(get_db())
 
@@ -74,9 +77,10 @@ async def shorten_url(url_data: UrlCreate, request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @app.get("/api/info/{short_code}")
 async def get_url_info(short_code: str):
-    """Get information about a short URL"""
+    """Get information about a short URL."""
     ensure_db_initialized()
     db = next(get_db())
 
@@ -99,9 +103,10 @@ async def get_url_info(short_code: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/{short_code}")
 async def redirect_to_url(short_code: str):
-    """Redirect to the original URL"""
+    """Redirect to the original URL."""
     ensure_db_initialized()
     db = next(get_db())
 
@@ -116,14 +121,16 @@ async def redirect_to_url(short_code: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/api/version")
 async def get_version():
-    """Get application version and build info"""
+    """Get application version and build info."""
     return {
         "success": True,
         "version": "1.0.0",
         "name": "url-shortener",
-        "environment": os.getenv("RENDER_ENV", os.getenv("ENVIRONMENT", "local")),
+        "environment": os.getenv("RENDER_ENV",
+                                 os.getenv("ENVIRONMENT", "local")),
         "platform": "render"
     }
 

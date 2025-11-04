@@ -5,10 +5,12 @@ from datetime import datetime
 
 class UrlCreate(BaseModel):
     """Schema for creating a new short URL."""
+
     original_url: HttpUrl
 
     class Config:
         """Pydantic configuration."""
+
         schema_extra = {
             "example": {
                 "original_url": "https://example.com/very/long/url"
@@ -18,6 +20,7 @@ class UrlCreate(BaseModel):
 
 class UrlResponse(BaseModel):
     """Schema for URL response."""
+
     id: int
     short_code: str
     original_url: str
@@ -26,6 +29,7 @@ class UrlResponse(BaseModel):
 
     class Config:
         """Pydantic configuration."""
+
         orm_mode = True
         schema_extra = {
             "example": {
@@ -40,6 +44,7 @@ class UrlResponse(BaseModel):
 
 class UrlInfo(BaseModel):
     """Schema for URL information."""
+
     short_code: str
     original_url: str
     click_count: int
@@ -47,4 +52,5 @@ class UrlInfo(BaseModel):
 
     class Config:
         """Pydantic configuration."""
+
         orm_mode = True

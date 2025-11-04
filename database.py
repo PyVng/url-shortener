@@ -42,6 +42,7 @@ else:
 
     DATABASE_URL = urlunparse(parsed)
 
+
 # Create engine lazily
 _engine = None
 
@@ -66,18 +67,20 @@ def get_engine():
             )
     return _engine
 
+
 # Create SessionLocal class - bind will be set when session is created
 SessionLocal = sessionmaker(autocommit=False, autoflush=False)
 
 
 def init_db():
-    """Initialize database and create tables"""
+    """Initialize database and create tables."""
     from models import Base
     Base.metadata.create_all(bind=get_engine())
     print("Database initialized successfully")
 
+
 def get_db() -> Session:
-    """Get database session"""
+    """Get database session."""
     db = SessionLocal(bind=get_engine())
     try:
         yield db
@@ -86,5 +89,5 @@ def get_db() -> Session:
 
 
 def get_db_session() -> Session:
-    """Get database session (for synchronous operations)"""
+    """Get database session (for synchronous operations)."""
     return SessionLocal(bind=get_engine())
