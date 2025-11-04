@@ -1,10 +1,13 @@
-// Simplified database interface for Supabase only
+// Simplified database interface with Vercel Postgres support for production
 const SupabaseRestAdapter = require('./adapters/supabase_rest');
+const JsonFileAdapter = require('./adapters/json_file');
+const VercelKvAdapter = require('./adapters/vercel_kv');
+const VercelPostgresAdapter = require('./adapters/vercel_postgres');
 
-// Create and initialize Supabase adapter directly
+// Create and initialize adapter based on environment
 const config = {
-  name: 'supabase_rest',
-  type: 'supabase_rest',
+  name: process.env.ACTIVE_DATABASE || 'vercel_postgres',
+  type: process.env.ACTIVE_DATABASE || 'vercel_postgres',
   url: process.env.SUPABASE_URL || 'https://test.supabase.co',
   anonKey: process.env.SUPABASE_ANON_KEY || 'test-anon-key',
   serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key',
@@ -12,12 +15,28 @@ const config = {
 
 let adapter = null;
 
+function getAdapterClass() {
+  switch (config.type) {
+    case 'supabase_rest':
+      return SupabaseRestAdapter;
+    case 'json_file':
+      return JsonFileAdapter;
+    case 'vercel_kv':
+      return VercelKvAdapter;
+    case 'vercel_postgres':
+      return VercelPostgresAdapter;
+    default:
+      return VercelPostgresAdapter; // Default to Vercel Postgres for production
+  }
+}
+
 async function initializeAdapter() {
   if (!adapter) {
-    adapter = new SupabaseRestAdapter(config);
+    const AdapterClass = getAdapterClass();
+    adapter = new AdapterClass(config);
     await adapter.connect();
     await adapter.initialize();
-    console.log('Supabase adapter initialized successfully');
+    console.log(`${config.name} adapter initialized successfully`);
   }
   return adapter;
 }
@@ -57,8 +76,9 @@ const databaseOperations = {
   // Get database statistics
   getStats: async () => {
     return {
-      type: 'supabase_rest',
-      name: 'Supabase REST API',
+      type: config.type,
+      name: config.name,
+      activeDatabase: process.env.ACTIVE_DATABASE || 'vercel_postgres'
     };
   },
 

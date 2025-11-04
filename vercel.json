@@ -17,7 +17,7 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "ACTIVE_DATABASE": "supabase_rest",
+    "ACTIVE_DATABASE": "vercel_postgres",
     "PGSSLMODE": "require"
   }
 }

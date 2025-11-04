@@ -1,6 +1,7 @@
 const express = require('express');
 const UrlController = require('../controllers/urlController');
 const AuthController = require('../controllers/authController');
+const SimpleAuth = require('../controllers/simpleAuth');
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ router.use(express.json());
 // API маршруты для URL shortener
 
 // POST /api/shorten - создание короткого URL (опциональная аутентификация)
-router.post('/shorten', AuthController.optionalAuth, UrlController.shortenUrl);
+router.post('/shorten', SimpleAuth.optionalAuth, UrlController.shortenUrl);
 
 // GET /api/info/:shortCode - получение информации о коротком URL (для отладки)
 router.get('/info/:shortCode', UrlController.getUrlInfo);
@@ -174,6 +175,87 @@ router.get('/debug/user-links', AuthController.requireAuth, async (req, res) => 
     });
   }
 });
+
+// Simple JWT authentication routes (for Vercel deployment)
+// POST /api/auth/register - регистрация пользователя
+router.post('/auth/register', async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+    const result = await SimpleAuth.register(email, password, name);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// POST /api/auth/login - вход пользователя
+router.post('/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const result = await SimpleAuth.login(email, password);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// POST /api/auth/logout - выход пользователя
+router.post('/auth/logout', async (req, res) => {
+  try {
+    const result = await SimpleAuth.logout();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// GET /api/auth/me - получение текущего пользователя
+router.get('/auth/me', SimpleAuth.requireAuth, async (req, res) => {
+  try {
+    const user = await SimpleAuth.getCurrentUser(req.headers.authorization?.substring(7));
+    res.json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Supabase authentication routes (fallback)
+// POST /api/auth/register - регистрация пользователя
+router.post('/auth/supabase-register', AuthController.register);
+
+// POST /api/auth/login - вход пользователя
+router.post('/auth/supabase-login', AuthController.login);
+
+// POST /api/auth/logout - выход пользователя
+router.post('/auth/supabase-logout', AuthController.logout);
+
+// GET /api/auth/me - получение текущего пользователя
+router.get('/auth/supabase-me', AuthController.getCurrentUser);
+
+// PUT /api/auth/profile - обновление профиля пользователя
+router.put('/auth/profile', AuthController.requireAuth, AuthController.updateProfile);
+
+// POST /api/auth/refresh - обновление токена
+router.post('/auth/refresh', AuthController.refreshToken);
+
+// OAuth аутентификация
+// GET /api/auth/providers - получение доступных OAuth провайдеров
+router.get('/auth/providers', AuthController.getOAuthProviders);
 
 // POST /api/auth/oauth/:provider - инициация OAuth входа
 router.post('/auth/oauth/:provider', AuthController.oauthLogin);
