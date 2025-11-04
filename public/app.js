@@ -323,6 +323,22 @@ class AuthManager {
                 return;
             }
 
+            // Check if auth object is available
+            if (!window.supabase.auth) {
+                console.error('❌ Supabase auth object not available');
+                console.log('❌ Supabase client properties:', Object.getOwnPropertyNames(window.supabase));
+                this.showMessage('Система аутентификации не полностью загружена. Обновите страницу.', 'error');
+                return;
+            }
+
+            // Check if signInWithPassword method exists
+            if (typeof window.supabase.auth.signInWithPassword !== 'function') {
+                console.error('❌ signInWithPassword method not available');
+                console.log('❌ Available auth methods:', Object.getOwnPropertyNames(window.supabase.auth).filter(name => typeof window.supabase.auth[name] === 'function'));
+                this.showMessage('Метод аутентификации недоступен. Обновите страницу.', 'error');
+                return;
+            }
+
             const { data, error } = await window.supabase.auth.signInWithPassword({
                 email: email,
                 password: password

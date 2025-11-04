@@ -19,7 +19,7 @@
     // Load Supabase script if not already loaded
     console.log('Components: Loading Supabase script');
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
     script.onload = function() {
         console.log('Components: Supabase script loaded, initializing client');
         initSupabaseClient();
@@ -48,8 +48,14 @@
                 }
             });
 
+            // Verify the client was created properly
+            if (!window.supabase || !window.supabase.auth) {
+                throw new Error('Supabase client or auth object not available after initialization');
+            }
+
             console.log('Components: Supabase client initialized');
             console.log('Components: Supabase client auth object:', window.supabase.auth ? 'exists' : 'missing');
+            console.log('Components: Supabase auth methods available:', Object.getOwnPropertyNames(window.supabase.auth).filter(name => typeof window.supabase.auth[name] === 'function'));
             window.dispatchEvent(new Event('supabaseReady'));
         } catch (error) {
             console.error('Components: Failed to initialize Supabase client:', error);
