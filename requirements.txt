@@ -3,5 +3,5 @@ uvicorn[standard]==0.21.1
 sqlalchemy==1.4.46
 psycopg2-binary==2.9.9
 python-dotenv==1.0.0
-pydantic==1.10.13
-# Force rebuild marker
+pydantic==1.8.2
+# Force rebuild marker v2
