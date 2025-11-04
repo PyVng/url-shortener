@@ -18,36 +18,86 @@ router.get('/info/:shortCode', UrlController.getUrlInfo);
 
 // Пользовательские ссылки (требуют аутентификации)
 // GET /api/links - получение списка ссылок пользователя
-router.get('/links', AuthController.requireAuth, UrlController.getUserLinks);
+router.get('/links', SimpleAuth.requireAuth(), UrlController.getUserLinks);
 
 // PUT /api/links/:id - обновление ссылки пользователя
-router.put('/links/:id', AuthController.requireAuth, UrlController.updateUserLink);
+router.put('/links/:id', SimpleAuth.requireAuth(), UrlController.updateUserLink);
 
 // DELETE /api/links/:id - удаление ссылки пользователя
-router.delete('/links/:id', AuthController.requireAuth, UrlController.deleteUserLink);
+router.delete('/links/:id', SimpleAuth.requireAuth(), UrlController.deleteUserLink);
 
-// Аутентификация маршруты
+// Аутентификация маршруты (упрощенная JWT аутентификация)
 // POST /api/auth/register - регистрация пользователя
-router.post('/auth/register', AuthController.register);
+router.post('/auth/register', async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+    const result = await SimpleAuth.register(email, password, name);
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: result.user.id,
+          email: result.user.email,
+          name: result.user.name
+        },
+        token: result.token
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 
 // POST /api/auth/login - вход пользователя
-router.post('/auth/login', AuthController.login);
+router.post('/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const result = await SimpleAuth.login(email, password);
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: result.user.id,
+          email: result.user.email,
+          name: result.user.name
+        },
+        token: result.token
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 
 // POST /api/auth/logout - выход пользователя
-router.post('/auth/logout', AuthController.logout);
+router.post('/auth/logout', async (req, res) => {
+  try {
+    const result = await SimpleAuth.logout();
+    res.json({
+      success: true,
+      message: 'Выход выполнен успешно'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 
 // GET /api/auth/me - получение текущего пользователя
-router.get('/auth/me', AuthController.getCurrentUser);
-
-// PUT /api/auth/profile - обновление профиля пользователя
-router.put('/auth/profile', AuthController.requireAuth, AuthController.updateProfile);
-
-// POST /api/auth/refresh - обновление токена
-router.post('/auth/refresh', AuthController.refreshToken);
-
-// OAuth аутентификация
-// GET /api/auth/providers - получение доступных OAuth провайдеров
-router.get('/auth/providers', AuthController.getOAuthProviders);
+router.get('/auth/me', SimpleAuth.requireAuth(), async (req, res) => {
+  res.json({
+    success: true,
+    data: req.user
+  });
+});
 
 // GET /api/auth/status - проверка статуса аутентификации (для отладки)
 router.get('/auth/status', (req, res) => {
@@ -145,7 +195,7 @@ router.get('/env-check', (req, res) => {
 });
 
 // GET /api/debug/user-links - отладка получения ссылок пользователя
-router.get('/debug/user-links', AuthController.requireAuth, async (req, res) => {
+router.get('/debug/user-links', SimpleAuth.requireAuth(), async (req, res) => {
   try {
     console.log('🔍 Debug user links requested');
     console.log('🔍 User from auth:', req.user);
@@ -175,93 +225,6 @@ router.get('/debug/user-links', AuthController.requireAuth, async (req, res) => 
     });
   }
 });
-
-// Simple JWT authentication routes (for Vercel deployment)
-// POST /api/auth/register - регистрация пользователя
-router.post('/auth/register', async (req, res) => {
-  try {
-    const { email, password, name } = req.body;
-    const result = await SimpleAuth.register(email, password, name);
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// POST /api/auth/login - вход пользователя
-router.post('/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const result = await SimpleAuth.login(email, password);
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// POST /api/auth/logout - выход пользователя
-router.post('/auth/logout', async (req, res) => {
-  try {
-    const result = await SimpleAuth.logout();
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// GET /api/auth/me - получение текущего пользователя
-router.get('/auth/me', SimpleAuth.requireAuth, async (req, res) => {
-  try {
-    const user = await SimpleAuth.getCurrentUser(req.headers.authorization?.substring(7));
-    res.json({
-      success: true,
-      data: user
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Supabase authentication routes (fallback)
-// POST /api/auth/register - регистрация пользователя
-router.post('/auth/supabase-register', AuthController.register);
-
-// POST /api/auth/login - вход пользователя
-router.post('/auth/supabase-login', AuthController.login);
-
-// POST /api/auth/logout - выход пользователя
-router.post('/auth/supabase-logout', AuthController.logout);
-
-// GET /api/auth/me - получение текущего пользователя
-router.get('/auth/supabase-me', AuthController.getCurrentUser);
-
-// PUT /api/auth/profile - обновление профиля пользователя
-router.put('/auth/profile', AuthController.requireAuth, AuthController.updateProfile);
-
-// POST /api/auth/refresh - обновление токена
-router.post('/auth/refresh', AuthController.refreshToken);
-
-// OAuth аутентификация
-// GET /api/auth/providers - получение доступных OAuth провайдеров
-router.get('/auth/providers', AuthController.getOAuthProviders);
-
-// POST /api/auth/oauth/:provider - инициация OAuth входа
-router.post('/auth/oauth/:provider', AuthController.oauthLogin);
-
-// GET /api/auth/callback - callback для OAuth (для server-side обработки)
-router.get('/auth/callback', AuthController.oauthCallback);
 
 // Обработка перенаправлений - этот маршрут должен быть в главном server.js
 // GET /:shortCode - перенаправление на оригинальный URL
