@@ -127,13 +127,29 @@ async def get_version():
         "environment": os.getenv("VERCEL_ENV", "local")
     }
 
-# Vercel handler - create handler instance once
-from mangum import Mangum
-mangum_handler = Mangum(app)
-
+# Simple Vercel handler for testing
 def handler(request, context):
-    """Vercel serverless function handler"""
-    return mangum_handler(request, context)
+    """Minimal Vercel serverless function handler for testing"""
+    try:
+        # Try to serve the HTML page
+        with open("index.html", "r", encoding="utf-8") as f:
+            html_content = f.read()
+
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'text/html',
+                'Cache-Control': 'public, max-age=300'
+            },
+            'body': html_content
+        }
+    except Exception as e:
+        # Fallback error response
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'text/plain'},
+            'body': f'Error: {str(e)}'
+        }
 
 # Local development server
 if __name__ == "__main__":
