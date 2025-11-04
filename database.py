@@ -46,7 +46,7 @@ else:
 _engine = None
 
 def get_engine():
-    """Get database engine, creating it if necessary"""
+    """Get database engine, creating it if necessary."""
     global _engine
     if _engine is None:
         if DATABASE_URL.startswith("sqlite"):

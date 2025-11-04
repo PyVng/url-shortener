@@ -29,7 +29,7 @@ app.add_middleware(
 _db_initialized = False
 
 def ensure_db_initialized():
-    """Ensure database is initialized before handling requests"""
+    """Ensure database is initialized before handling requests."""
     global _db_initialized
     if not _db_initialized:
         try:
