@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener - FastAPI Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2rem;
+        }
+
+        .url-form {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result, .error {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .result h3 {
+            color: #28a745;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .error h3 {
+            color: #dc3545;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .url-display {
+            margin-bottom: 20px;
+        }
+
+        .url-display div {
+            margin-bottom: 10px;
+        }
+
+        .url-display strong {
+            color: #333;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .short-url-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .short-url-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            background: #f8f9fa;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .actions {
+            margin-top: 20px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .url-form {
+                padding: 20px;
+            }
+
+            .short-url-container {
+                flex-direction: column;
+            }
+
+            .short-url-container input {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 URL Shortener</h1>
+            <p>FastAPI Edition - Сократите длинные ссылки в короткие и удобные</p>
+        </div>
+
+        <form id="urlForm" class="url-form">
+            <div class="input-group">
+                <label for="originalUrl">Введите длинный URL:</label>
+                <input
+                    type="url"
+                    id="originalUrl"
+                    name="originalUrl"
+                    placeholder="https://example.com/very/long/url/that/needs/to/be/shortened"
+                    required
+                >
+            </div>
+
+            <button type="submit" id="shortenBtn" class="submit-btn">
+                <span id="btnText">Сократить URL</span>
+                <span id="btnLoading" class="loading" style="display: none;"></span>
+            </button>
+        </form>
+
+        <div id="result" class="result">
+            <h3>✅ URL успешно сокращен!</h3>
+            <div class="url-display">
+                <div>
+                    <strong>Оригинальный URL:</strong>
+                    <span id="originalUrlDisplay"></span>
+                </div>
+                <div>
+                    <strong>Короткий URL:</strong>
+                    <div class="short-url-container">
+                        <input type="text" id="shortUrlInput" readonly>
+                        <button id="copyBtn" class="btn btn-secondary">Копировать</button>
+                        <button id="goToBtn" class="btn btn-outline">Перейти</button>
+                    </div>
+                </div>
+            </div>
+            <div class="actions">
+                <button id="createNewBtn" class="btn btn-outline">Создать новый</button>
+            </div>
+        </div>
+
+        <div id="error" class="error">
+            <h3>❌ Ошибка</h3>
+            <p id="errorMessage"></p>
+            <button id="tryAgainBtn" class="btn btn-outline">Попробовать снова</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2025 URL Shortener - FastAPI Edition. Built with <a href="https://fastapi.tiangolo.com/" target="_blank">FastAPI</a> and deployed on <a href="https://vercel.com" target="_blank">Vercel</a></p>
+    </footer>
+
+    <script>
+        class UrlShortener {
+            constructor() {
+                this.form = document.getElementById('urlForm');
+                this.originalUrlInput = document.getElementById('originalUrl');
+                this.shortenBtn = document.getElementById('shortenBtn');
+                this.btnText = document.getElementById('btnText');
+                this.btnLoading = document.getElementById('btnLoading');
+                this.resultDiv = document.getElementById('result');
+                this.errorDiv = document.getElementById('error');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.originalUrlDisplay = document.getElementById('originalUrlDisplay');
+                this.shortUrlInput = document.getElementById('shortUrlInput');
+                this.copyBtn = document.getElementById('copyBtn');
+                this.goToBtn = document.getElementById('goToBtn');
+                this.createNewBtn = document.getElementById('createNewBtn');
+                this.tryAgainBtn = document.getElementById('tryAgainBtn');
+
+                this.init();
+            }
+
+            init() {
+                if (!this.form || !this.originalUrlInput || !this.shortenBtn) {
+                    console.warn('UrlShortener: required elements not found');
+                    return;
+                }
+
+                this.form.addEventListener('submit', this.handleSubmit.bind(this));
+
+                if (this.copyBtn) {
+                    this.copyBtn.addEventListener('click', this.copyToClipboard.bind(this));
+                }
+                if (this.goToBtn) {
+                    this.goToBtn.addEventListener('click', this.goToUrl.bind(this));
+                }
+                if (this.createNewBtn) {
+                    this.createNewBtn.addEventListener('click', this.resetForm.bind(this));
+                }
+                if (this.tryAgainBtn) {
+                    this.tryAgainBtn.addEventListener('click', this.resetForm.bind(this));
+                }
+
+                // Real-time URL validation
+                this.originalUrlInput.addEventListener('input', this.validateUrl.bind(this));
+            }
+
+            validateUrl() {
+                const url = this.originalUrlInput.value.trim();
+                if (url && !this.isValidUrl(url)) {
+                    this.originalUrlInput.setCustomValidity('Введите корректный URL (начинающийся с http:// или https://)');
+                } else {
+                    this.originalUrlInput.setCustomValidity('');
+                }
+            }
+
+            isValidUrl(url) {
+                try {
+                    const urlObj = new URL(url);
+                    return ['http:', 'https:'].includes(urlObj.protocol);
+                } catch {
+                    return false;
+                }
+            }
+
+            async handleSubmit(event) {
+                event.preventDefault();
+
+                const originalUrl = this.originalUrlInput.value.trim();
+
+                if (!originalUrl) {
+                    this.showError('Введите URL для сокращения');
+                    return;
+                }
+
+                if (!this.isValidUrl(originalUrl)) {
+                    this.showError('Введите корректный URL (начинающийся с http:// или https://)');
+                    return;
+                }
+
+                this.setLoading(true);
+                this.hideMessages();
+
+                try {
+                    const response = await fetch('/api/shorten', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ original_url: originalUrl }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        this.showResult(data);
+                    } else {
+                        this.showError(data.detail || 'Произошла ошибка при сокращении URL');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.showError('Не удалось подключиться к серверу. Проверьте подключение к интернету.');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            showResult(data) {
+                this.originalUrlDisplay.textContent = data.original_url;
+                this.shortUrlInput.value = data.short_url;
+
+                this.resultDiv.style.display = 'block';
+                this.errorDiv.style.display = 'none';
+
+                // Scroll to result
+                this.resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorDiv.style.display = 'block';
+                this.resultDiv.style.display = 'none';
+
+                // Scroll to error
+                this.errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            hideMessages() {
+                this.resultDiv.style.display = 'none';
+                this.errorDiv.style.display = 'none';
+            }
+
+            async copyToClipboard() {
+                try {
+                    await navigator.clipboard.writeText(this.shortUrlInput.value);
+
+                    // Visual feedback
+                    const originalText = this.copyBtn.textContent;
+                    this.copyBtn.textContent = '✅ Скопировано!';
+                    this.copyBtn.style.background = '#28a745';
+
+                    setTimeout(() => {
+                        this.copyBtn.textContent = originalText;
+                        this.copyBtn.style.background = '';
+                    }, 2000);
+
+                } catch (error) {
+                    console.error('Copy error:', error);
+                    // Fallback for browsers without Clipboard API support
+                    this.shortUrlInput.select();
+                    document.execCommand('copy');
+
+                    const originalText = this.copyBtn.textContent;
+                    this.copyBtn.textContent = '✅ Скопировано!';
+                    this.copyBtn.style.background = '#28a745';
+
+                    setTimeout(() => {
+                        this.copyBtn.textContent = originalText;
+                        this.copyBtn.style.background = '';
+                    }, 2000);
+                }
+            }
+
+            goToUrl() {
+                const shortUrl = this.shortUrlInput.value;
+                if (shortUrl) {
+                    window.open(shortUrl, '_blank');
+                }
+            }
+
+            resetForm() {
+                this.form.reset();
+                this.hideMessages();
+                this.originalUrlInput.focus();
+            }
+
+            setLoading(loading) {
+                if (this.shortenBtn) {
+                    this.shortenBtn.disabled = loading;
+                }
+
+                if (this.btnText && this.btnLoading) {
+                    if (loading) {
+                        this.btnText.style.display = 'none';
+                        this.btnLoading.style.display = 'inline-block';
+                    } else {
+                        this.btnText.style.display = 'inline';
+                        this.btnLoading.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new UrlShortener();
+        });
+    </script>
+</body>
+</html>

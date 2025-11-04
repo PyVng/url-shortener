@@ -2,7 +2,7 @@
 URL Shortener API for Vercel - API routes only
 """
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
@@ -29,6 +29,12 @@ app.add_middleware(
 
 # Initialize database on startup
 init_db()
+
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    """Serve the main HTML page"""
+    with open("index.html", "r", encoding="utf-8") as f:
+        return f.read()
 
 @app.post("/api/shorten", response_model=UrlResponse, status_code=201)
 async def shorten_url(url_data: UrlCreate, request: Request):
