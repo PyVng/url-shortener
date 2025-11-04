@@ -127,12 +127,13 @@ async def get_version():
         "environment": os.getenv("VERCEL_ENV", "local")
     }
 
-# Vercel handler
+# Vercel handler - create handler instance once
+from mangum import Mangum
+mangum_handler = Mangum(app)
+
 def handler(request, context):
     """Vercel serverless function handler"""
-    from mangum import Mangum
-    handler = Mangum(app)
-    return handler(request, context)
+    return mangum_handler(request, context)
 
 # Local development server
 if __name__ == "__main__":

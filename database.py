@@ -44,36 +44,43 @@ else:
 
     DATABASE_URL = urlunparse(parsed)
 
-# Create engine
-if DATABASE_URL.startswith("sqlite"):
-    # SQLite specific configuration
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-        echo=False
-    )
-else:
-    # PostgreSQL configuration
-    engine = create_engine(
-        DATABASE_URL,
-        pool_pre_ping=True,
-        echo=False
-    )
+# Create engine lazily
+_engine = None
 
-# Create SessionLocal class
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+def get_engine():
+    """Get database engine, creating it if necessary"""
+    global _engine
+    if _engine is None:
+        if DATABASE_URL.startswith("sqlite"):
+            # SQLite specific configuration
+            _engine = create_engine(
+                DATABASE_URL,
+                connect_args={"check_same_thread": False},
+                poolclass=StaticPool,
+                echo=False
+            )
+        else:
+            # PostgreSQL configuration
+            _engine = create_engine(
+                DATABASE_URL,
+                pool_pre_ping=True,
+                echo=False
+            )
+    return _engine
+
+# Create SessionLocal class - bind will be set when session is created
+SessionLocal = sessionmaker(autocommit=False, autoflush=False)
 
 
 def init_db():
     """Initialize database and create tables"""
     from models import Base
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=get_engine())
     print("Database initialized successfully")
 
 def get_db() -> Session:
     """Get database session"""
-    db = SessionLocal()
+    db = SessionLocal(bind=get_engine())
     try:
         yield db
     finally:
@@ -82,4 +89,4 @@ def get_db() -> Session:
 
 def get_db_session() -> Session:
     """Get database session (for synchronous operations)"""
-    return SessionLocal()
+    return SessionLocal(bind=get_engine())
