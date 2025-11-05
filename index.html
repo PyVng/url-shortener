@@ -521,14 +521,27 @@
             }
 
             async checkAuthStatus() {
+                const token = this.getAuthToken();
+                if (!token) {
+                    return;
+                }
+
                 try {
-                    const response = await fetch('/api/auth/me');
+                    const response = await fetch('/api/auth/me', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
                     if (response.ok) {
                         const user = await response.json();
                         this.setCurrentUser(user);
+                    } else {
+                        // Token is invalid, remove it
+                        this.logout();
                     }
                 } catch (error) {
-                    // User not authenticated
+                    // Network error, keep token for now
+                    console.warn('Auth check failed:', error);
                 }
             }
 
