@@ -13,45 +13,39 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: #f2f2f7;
             min-height: 100vh;
             color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 48px 20px;
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            padding: 32px;
-            margin-bottom: 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             text-align: center;
+            margin-bottom: 48px;
         }
 
         .header h1 {
-            font-size: 2.5rem;
+            font-size: 2.25rem;
             font-weight: 700;
             margin-bottom: 12px;
-            background: linear-gradient(135deg, #1d1d1f 0%, #424245 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.02em;
+            color: #1d1d1f;
+            letter-spacing: -0.025em;
+            line-height: 1.1;
         }
 
         .header p {
-            font-size: 1.2rem;
+            font-size: 1.125rem;
             color: #86868b;
             font-weight: 400;
             margin: 0;
+            line-height: 1.4;
         }
 
         .links-grid {
