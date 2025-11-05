@@ -292,7 +292,7 @@ def test_database():
     try:
         db = next(get_db())
         # Try a simple query
-        result = db.execute(text("SELECT 1 as test")).fetchone()
+        result = db.execute(text("SELECT 1")).fetchone()
         return jsonify({"success": True, "message": "Database connected", "test": result[0]})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
