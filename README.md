@@ -18,7 +18,7 @@
 - **Backend**: Flask, SQLAlchemy, Pydantic
 - **Database**: PostgreSQL (продакшен) / SQLite (разработка)
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript
-- **Deployment**: Render/Vercel
+- **Deployment**: Render
 - **Testing**: Playwright (E2E)
 
 ## 📦 Installation
@@ -79,19 +79,6 @@ npm run test:headed
    DATABASE_URL=postgresql://...
    ENVIRONMENT=production
    RENDER_ENV=production
-   ```
-
-### Vercel Deployment
-
-1. **Connect to Vercel**
-   ```bash
-   vercel login
-   vercel link
-   ```
-
-2. **Deploy**
-   ```bash
-   vercel --prod
    ```
 
 ### Environment Variables
