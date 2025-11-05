@@ -57,7 +57,7 @@ def get_current_user():
 
     if user_id:
         db = next(get_db())
-        return User.query.get(user_id)
+        return db.query(User).get(user_id)
     return None
 
 
