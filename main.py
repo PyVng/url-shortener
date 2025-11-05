@@ -270,7 +270,8 @@ def get_version():
         "version": "1.0.0",
         "name": "url-shortener",
         "environment": os.getenv("RENDER_ENV", os.getenv("ENVIRONMENT", "local")),
-        "platform": "render"
+        "platform": "render",
+        "database_url": os.getenv("DATABASE_URL", "NOT_SET")[:50] + "..." if os.getenv("DATABASE_URL") else "NOT_SET"
     })
 
 
