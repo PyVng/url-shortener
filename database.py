@@ -59,10 +59,13 @@ def get_engine():
                 echo=False
             )
         else:
-            # PostgreSQL configuration
+            # PostgreSQL configuration with connection pooling
             _engine = create_engine(
                 DATABASE_URL,
                 pool_pre_ping=True,
+                pool_size=5,
+                max_overflow=10,
+                pool_timeout=30,
                 echo=False
             )
     return _engine

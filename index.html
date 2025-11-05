@@ -683,11 +683,20 @@
                 this.hideMessages();
 
                 try {
+                    // Prepare headers
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+
+                    // Add authorization header if user is logged in
+                    const token = this.authManager.getAuthToken();
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
+
                     const response = await fetch('/api/shorten', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: headers,
                         body: JSON.stringify({ original_url: originalUrl }),
                     });
 
