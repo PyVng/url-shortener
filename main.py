@@ -4,6 +4,7 @@ from flask_cors import CORS
 import os
 import jwt
 from datetime import datetime, timedelta
+from sqlalchemy import text
 
 # Import our modules
 from database import init_db, get_db
@@ -291,7 +292,7 @@ def test_database():
     try:
         db = next(get_db())
         # Try a simple query
-        result = db.execute("SELECT 1 as test").fetchone()
+        result = db.execute(text("SELECT 1 as test")).fetchone()
         return jsonify({"success": True, "message": "Database connected", "test": result[0]})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
