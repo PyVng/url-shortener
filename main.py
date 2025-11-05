@@ -72,7 +72,7 @@ def shorten_url():
             "short_code": response.short_code,
             "original_url": response.original_url,
             "short_url": response.short_url,
-            "created_at": response.created_at.isoformat()
+            "created_at": response.created_at.strftime("%Y-%m-%dT%H:%M:%S")
         }), 201
 
     except ValueError as e:
@@ -98,7 +98,7 @@ def get_url_info(short_code):
                 "short_code": url.short_code,
                 "original_url": url.original_url,
                 "click_count": url.click_count,
-                "created_at": url.created_at.isoformat()
+                "created_at": url.created_at.strftime("%Y-%m-%dT%H:%M:%S")
             }
         })
 

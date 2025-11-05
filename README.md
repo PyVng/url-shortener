@@ -1,23 +1,24 @@
-# URL Shortener - FastAPI Edition
+# URL Shortener - Flask Edition
 
-A modern URL shortener service built with FastAPI, SQLAlchemy, and Vercel Postgres.
+Современный сервис сокращения URL, построенный на Flask, SQLAlchemy и PostgreSQL. MVP версия с простым функционалом создания и редиректа коротких ссылок.
 
-## 🚀 Features
+## 🚀 Возможности
 
-- **FastAPI Backend**: High-performance async API with automatic OpenAPI/Swagger docs
-- **SQLAlchemy ORM**: Robust database operations with PostgreSQL support
-- **Vercel Deployment**: Optimized for serverless deployment on Vercel
-- **URL Validation**: Built-in URL format validation
-- **Click Tracking**: Track URL click counts
-- **Responsive UI**: Clean, modern web interface
+- **Flask Backend**: Легковесный REST API с поддержкой CORS
+- **SQLAlchemy ORM**: Надежные операции с базой данных
+- **PostgreSQL/SQLite**: Поддержка PostgreSQL (продакшен) и SQLite (разработка)
+- **Валидация URL**: Проверка формата и длины URL
+- **Отслеживание кликов**: Подсчет переходов по коротким ссылкам
+- **Отзывчивый интерфейс**: Чистый современный веб-интерфейс
+- **Простая маршрутизация**: Базовый редирект без продвинутых правил
 
-## 🛠️ Tech Stack
+## 🛠️ Технологии
 
-- **Backend**: FastAPI, Uvicorn, SQLAlchemy, Pydantic
-- **Database**: Vercel Postgres (production) / SQLite (development)
-- **Frontend**: HTML, CSS, JavaScript
-- **Deployment**: Vercel Functions
-- **Testing**: Pytest, Playwright
+- **Backend**: Flask, SQLAlchemy, Pydantic
+- **Database**: PostgreSQL (продакшен) / SQLite (разработка)
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Deployment**: Render/Vercel
+- **Testing**: Playwright (E2E)
 
 ## 📦 Installation
 
@@ -42,7 +43,7 @@ A modern URL shortener service built with FastAPI, SQLAlchemy, and Vercel Postgr
 
 5. **Run locally**
    ```bash
-   python3 main.py
+   python main.py
    ```
 
    Visit `http://localhost:8000`
@@ -66,6 +67,19 @@ npm run test:headed
 
 ## 🚀 Deployment
 
+### Render Deployment
+
+1. **Connect to Render**
+   - Создайте аккаунт на [Render](https://render.com)
+   - Подключите GitHub репозиторий
+
+2. **Environment Variables for Render**
+   ```
+   DATABASE_URL=postgresql://...
+   ENVIRONMENT=production
+   RENDER_ENV=production
+   ```
+
 ### Vercel Deployment
 
 1. **Connect to Vercel**
@@ -79,46 +93,31 @@ npm run test:headed
    vercel --prod
    ```
 
-### Environment Variables for Vercel
+### Environment Variables
 
-Set these in your Vercel dashboard:
+Общие переменные окружения:
 
-- `DATABASE_URL`: PostgreSQL connection string
-- `POSTGRES_URL`: Alternative PostgreSQL URL
-- `ENVIRONMENT`: Set to `production`
+- `DATABASE_URL`: PostgreSQL connection string (для продакшена)
+- `POSTGRES_URL`: Альтернативный PostgreSQL URL
+- `ENVIRONMENT`: `production` для продакшена
+- `RENDER_ENV`: `production` для Render
+
+## 📚 Документация
+
+- **[Архитектура](ARCHITECTURE.md)** - подробное описание архитектуры MVP
+- **[API Documentation](API.md)** - полная техническая документация API
 
 ## 📡 API Endpoints
 
-### Create Short URL
-```http
-POST /api/shorten
-Content-Type: application/json
+Основные эндпоинты API:
 
-{
-  "original_url": "https://example.com/very/long/url"
-}
-```
+- `POST /api/shorten` - создание короткого URL
+- `GET /api/info/{short_code}` - получение информации о URL
+- `GET /{short_code}` - редирект на оригинальный URL
+- `GET /api/version` - информация о версии
+- `GET /` - главная страница
 
-Response:
-```json
-{
-  "id": 1,
-  "short_code": "abc123",
-  "original_url": "https://example.com/very/long/url",
-  "short_url": "https://your-domain.com/abc123",
-  "created_at": "2023-01-01T00:00:00Z"
-}
-```
-
-### Get URL Info
-```http
-GET /api/info/{short_code}
-```
-
-### Redirect to Original URL
-```http
-GET /{short_code}
-```
+Подробная документация API доступна в [API.md](API.md)
 
 ## 🗄️ Database Schema
 
@@ -138,18 +137,22 @@ CREATE TABLE urls (
 
 ### Project Structure
 ```
-├── main.py              # FastAPI application (main entry point)
+├── main.py              # Flask application (main entry point)
 ├── database.py          # Database connection and session management
 ├── models.py            # SQLAlchemy models
 ├── schemas.py           # Pydantic schemas
 ├── index.html           # Frontend HTML
+├── ARCHITECTURE.md      # Архитектура MVP
+├── API.md              # Документация API
 ├── local.db             # Local SQLite database (created automatically)
 ├── requirements.txt     # Python dependencies
-├── vercel.json          # Vercel configuration
 ├── package.json         # Node.js dependencies for testing
 ├── playwright.config.js # Playwright configuration
 ├── tests/               # E2E tests
 │   └── url-shortener.spec.js
+├── data/                # Data directory
+├── playwright-report/   # Test reports
+├── test-results/        # Test results
 └── .env                 # Environment variables
 ```
 
@@ -163,17 +166,17 @@ CREATE TABLE urls (
 
 ## 📈 Performance
 
-- **FastAPI**: High-performance async framework
-- **SQLAlchemy**: Efficient ORM with connection pooling
-- **Vercel Postgres**: Managed PostgreSQL with automatic scaling
-- **CDN**: Static assets served via Vercel's CDN
+- **Flask**: Легковесный и эффективный фреймворк
+- **SQLAlchemy**: Эффективный ORM с connection pooling
+- **PostgreSQL/Render**: Управляемая PostgreSQL с автоматическим масштабированием
+- **Ленивая инициализация**: База данных инициализируется при первом запросе
 
 ## 🔒 Security
 
-- Input validation with Pydantic
-- SQL injection prevention with SQLAlchemy
-- CORS protection
-- Rate limiting ready
+- Валидация входных данных с Pydantic
+- Защита от SQL-инъекций через SQLAlchemy ORM
+- CORS защита
+- Проверка URL формата и длины
 
 ## 🤝 Contributing
 
