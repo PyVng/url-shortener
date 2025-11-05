@@ -20,12 +20,85 @@
             color: #1d1d1f;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            margin: 0;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .navbar-brand:hover {
+            color: #007aff;
+        }
+
+        .navbar-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-link {
+            color: #86868b;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: #1d1d1f;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-link.primary {
+            background: #007aff;
+            color: white;
+        }
+
+        .nav-link.primary:hover {
+            background: #0056cc;
+            color: white;
+        }
+
+        .nav-link.secondary {
+            background: rgba(0, 122, 255, 0.1);
+            color: #007aff;
+        }
+
+        .nav-link.secondary:hover {
+            background: rgba(0, 122, 255, 0.2);
         }
 
         .container {
             max-width: 980px;
             margin: 0 auto;
-            padding: 48px 20px;
+            padding: 108px 20px 48px;
             flex: 1;
         }
 
@@ -358,9 +431,74 @@
             text-decoration: underline;
         }
 
+        /* Auth Modal Styles */
+        .auth-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .auth-modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .auth-modal-header {
+            padding: 24px 24px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .auth-modal-header h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin: 0;
+        }
+
+        .auth-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #86868b;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .auth-modal-close:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #1d1d1f;
+        }
+
+        .auth-modal-body {
+            padding: 24px;
+        }
+
         @media (max-width: 600px) {
             .container {
-                padding: 10px;
+                padding: 88px 16px 32px;
+            }
+
+            .navbar {
+                padding: 0 16px;
             }
 
             .header h1 {
@@ -368,7 +506,7 @@
             }
 
             .url-form {
-                padding: 20px;
+                padding: 24px;
             }
 
             .short-url-container {
@@ -378,61 +516,79 @@
             .short-url-container input {
                 margin-bottom: 10px;
             }
+
+            .auth-modal-content {
+                margin: 16px;
+                width: calc(100% - 32px);
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">🔗 URL Shortener</a>
+        <div class="navbar-nav">
+            <!-- User Info in Navbar -->
+            <div id="navbarUserInfo" style="display: none;">
+                <span id="navbarUserName"></span>
+                <a href="/my-links" class="nav-link secondary">Мои ссылки</a>
+                <button id="navbarLogoutBtn" class="nav-link">Выйти</button>
+            </div>
+
+            <!-- Auth Links -->
+            <div id="navbarAuthLinks">
+                <button id="loginBtn" class="nav-link">Войти</button>
+                <button id="registerBtn" class="nav-link primary">Регистрация</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="auth-modal" style="display: none;">
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h2 id="authModalTitle">Войти</h2>
+                <button id="authModalClose" class="auth-modal-close">&times;</button>
+            </div>
+            <div class="auth-modal-body">
+                <!-- Login Form -->
+                <form id="modalLoginForm" class="auth-form active">
+                    <div class="input-group">
+                        <label for="modalLoginUsername">Имя пользователя или Email:</label>
+                        <input type="text" id="modalLoginUsername" name="username_or_email" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="modalLoginPassword">Пароль:</label>
+                        <input type="password" id="modalLoginPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Войти</button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="modalRegisterForm" class="auth-form">
+                    <div class="input-group">
+                        <label for="modalRegisterUsername">Имя пользователя:</label>
+                        <input type="text" id="modalRegisterUsername" name="username" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="modalRegisterEmail">Email:</label>
+                        <input type="email" id="modalRegisterEmail" name="email" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="modalRegisterPassword">Пароль:</label>
+                        <input type="password" id="modalRegisterPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Зарегистрироваться</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
-            <h1>🔗 URL Shortener</h1>
-            <p>Flask Edition - Сократите длинные ссылки в короткие и удобные</p>
-        </div>
-
-        <!-- User Info Section -->
-        <div id="userInfo" class="user-info" style="display: none;">
-            <p>Привет, <span id="userName"></span>! (<span id="userEmail"></span>)</p>
-            <div class="user-actions">
-                <a href="/my-links" class="user-btn">Мои ссылки</a>
-                <button id="logoutBtn" class="user-btn logout-btn">Выйти</button>
-            </div>
-        </div>
-
-        <!-- Auth Section -->
-        <div id="authSection" class="auth-section">
-            <div class="auth-tabs">
-                <button id="loginTab" class="auth-tab active">Войти</button>
-                <button id="registerTab" class="auth-tab">Регистрация</button>
-            </div>
-
-            <!-- Login Form -->
-            <form id="loginForm" class="auth-form active">
-                <div class="input-group">
-                    <label for="loginUsername">Имя пользователя или Email:</label>
-                    <input type="text" id="loginUsername" name="username_or_email" required>
-                </div>
-                <div class="input-group">
-                    <label for="loginPassword">Пароль:</label>
-                    <input type="password" id="loginPassword" name="password" required>
-                </div>
-                <button type="submit" class="submit-btn">Войти</button>
-            </form>
-
-            <!-- Register Form -->
-            <form id="registerForm" class="auth-form">
-                <div class="input-group">
-                    <label for="registerUsername">Имя пользователя:</label>
-                    <input type="text" id="registerUsername" name="username" required>
-                </div>
-                <div class="input-group">
-                    <label for="registerEmail">Email:</label>
-                    <input type="email" id="registerEmail" name="email" required>
-                </div>
-                <div class="input-group">
-                    <label for="registerPassword">Пароль:</label>
-                    <input type="password" id="registerPassword" name="password" required>
-                </div>
-                <button type="submit" class="submit-btn">Зарегистрироваться</button>
-            </form>
+            <h1>Сократите длинные ссылки в короткие и удобные</h1>
+            <p>Быстрый и надежный сервис сокращения URL с аналитикой и управлением ссылками</p>
         </div>
 
         <form id="urlForm" class="url-form">
@@ -488,59 +644,87 @@
     <script>
         class AuthManager {
             constructor() {
-                this.userInfo = document.getElementById('userInfo');
-                this.authSection = document.getElementById('authSection');
-                this.userName = document.getElementById('userName');
-                this.userEmail = document.getElementById('userEmail');
-                this.logoutBtn = document.getElementById('logoutBtn');
+                this.navbarUserInfo = document.getElementById('navbarUserInfo');
+                this.navbarAuthLinks = document.getElementById('navbarAuthLinks');
+                this.navbarUserName = document.getElementById('navbarUserName');
+                this.navbarLogoutBtn = document.getElementById('navbarLogoutBtn');
 
-                this.loginTab = document.getElementById('loginTab');
-                this.registerTab = document.getElementById('registerTab');
-                this.loginForm = document.getElementById('loginForm');
-                this.registerForm = document.getElementById('registerForm');
+                this.authModal = document.getElementById('authModal');
+                this.authModalTitle = document.getElementById('authModalTitle');
+                this.authModalClose = document.getElementById('authModalClose');
+
+                this.loginBtn = document.getElementById('loginBtn');
+                this.registerBtn = document.getElementById('registerBtn');
+
+                this.modalLoginForm = document.getElementById('modalLoginForm');
+                this.modalRegisterForm = document.getElementById('modalRegisterForm');
 
                 this.currentUser = null;
                 this.init();
             }
 
             init() {
-                // Tab switching
-                if (this.loginTab) {
-                    this.loginTab.addEventListener('click', () => this.switchTab('login'));
+                // Navbar button clicks
+                if (this.loginBtn) {
+                    this.loginBtn.addEventListener('click', () => this.openModal('login'));
                 }
-                if (this.registerTab) {
-                    this.registerTab.addEventListener('click', () => this.switchTab('register'));
+                if (this.registerBtn) {
+                    this.registerBtn.addEventListener('click', () => this.openModal('register'));
+                }
+
+                // Modal controls
+                if (this.authModalClose) {
+                    this.authModalClose.addEventListener('click', () => this.closeModal());
+                }
+                if (this.authModal) {
+                    this.authModal.addEventListener('click', (e) => {
+                        if (e.target === this.authModal) {
+                            this.closeModal();
+                        }
+                    });
                 }
 
                 // Form submissions
-                if (this.loginForm) {
-                    this.loginForm.addEventListener('submit', this.handleLogin.bind(this));
+                if (this.modalLoginForm) {
+                    this.modalLoginForm.addEventListener('submit', this.handleLogin.bind(this));
                 }
-                if (this.registerForm) {
-                    this.registerForm.addEventListener('submit', this.handleRegister.bind(this));
+                if (this.modalRegisterForm) {
+                    this.modalRegisterForm.addEventListener('submit', this.handleRegister.bind(this));
                 }
 
                 // Logout
-                if (this.logoutBtn) {
-                    this.logoutBtn.addEventListener('click', this.logout.bind(this));
+                if (this.navbarLogoutBtn) {
+                    this.navbarLogoutBtn.addEventListener('click', this.logout.bind(this));
                 }
 
                 // Check if user is already logged in
                 this.checkAuthStatus();
             }
 
-            switchTab(tab) {
-                // Update tab buttons
-                document.querySelectorAll('.auth-tab').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+            openModal(type) {
+                if (!this.authModal) return;
 
-                if (tab === 'login') {
-                    this.loginTab.classList.add('active');
-                    this.loginForm.classList.add('active');
+                this.authModalTitle.textContent = type === 'login' ? 'Войти' : 'Регистрация';
+
+                // Show appropriate form
+                document.querySelectorAll('#authModal .auth-form').forEach(form => {
+                    form.classList.remove('active');
+                });
+
+                if (type === 'login') {
+                    this.modalLoginForm.classList.add('active');
                 } else {
-                    this.registerTab.classList.add('active');
-                    this.registerForm.classList.add('active');
+                    this.modalRegisterForm.classList.add('active');
                 }
+
+                this.authModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+
+            closeModal() {
+                if (!this.authModal) return;
+                this.authModal.style.display = 'none';
+                document.body.style.overflow = '';
             }
 
             async handleLogin(event) {
@@ -559,6 +743,7 @@
 
                     if (response.ok) {
                         this.setCurrentUser(result.user, result.access_token);
+                        this.closeModal();
                         this.showSuccess('Успешный вход!');
                     } else {
                         this.showError(result.error || 'Ошибка входа');
@@ -584,6 +769,7 @@
 
                     if (response.ok) {
                         this.setCurrentUser(result.user, result.access_token);
+                        this.closeModal();
                         this.showSuccess('Регистрация успешна!');
                     } else {
                         this.showError(result.error || 'Ошибка регистрации');
@@ -596,6 +782,7 @@
             async checkAuthStatus() {
                 const token = this.getAuthToken();
                 if (!token) {
+                    this.showAuthLinks();
                     return;
                 }
 
@@ -615,6 +802,7 @@
                 } catch (error) {
                     // Network error, keep token for now
                     console.warn('Auth check failed:', error);
+                    this.showAuthLinks();
                 }
             }
 
@@ -624,19 +812,22 @@
                     localStorage.setItem('auth_token', token);
                 }
 
-                // Update UI
-                this.userName.textContent = user.username;
-                this.userEmail.textContent = user.email;
-                this.userInfo.style.display = 'block';
-                this.authSection.style.display = 'none';
+                // Update navbar
+                this.navbarUserName.textContent = user.username;
+                this.navbarUserInfo.style.display = 'flex';
+                this.navbarAuthLinks.style.display = 'none';
             }
 
             logout() {
                 this.currentUser = null;
                 localStorage.removeItem('auth_token');
-                this.userInfo.style.display = 'none';
-                this.authSection.style.display = 'block';
+                this.showAuthLinks();
                 this.showSuccess('Вы вышли из системы');
+            }
+
+            showAuthLinks() {
+                this.navbarUserInfo.style.display = 'none';
+                this.navbarAuthLinks.style.display = 'flex';
             }
 
             getAuthToken() {
