@@ -156,5 +156,6 @@ class TestUrlModel:
         assert data["short_code"] == url_obj.short_code
         assert data["original_url"] == original_url
         assert data["short_url"] == url_obj.short_url
+        assert data["user_id"] is None
         assert data["click_count"] == 0
         assert data["created_at"] is not None

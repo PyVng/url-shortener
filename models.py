@@ -18,7 +18,6 @@ class Url(Base):
     short_code = Column(String(20), unique=True, index=True, nullable=False)
     original_url = Column(Text, nullable=False)
     user_id = Column(String(100), index=True, nullable=True)
-    title = Column(String(255), nullable=True)
     click_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=func.now())
 
@@ -93,7 +92,6 @@ class Url(Base):
             "original_url": self.original_url,
             "short_url": getattr(self, 'short_url', ''),
             "user_id": self.user_id,
-            "title": self.title,
             "click_count": self.click_count,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.strftime("%Y-%m-%dT%H:%M:%S") if self.created_at else None
         }
