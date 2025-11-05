@@ -275,6 +275,16 @@ def get_version():
     })
 
 
+@app.route("/api/init-db")
+def init_database():
+    """Initialize database tables (for debugging)."""
+    try:
+        init_db()
+        return jsonify({"success": True, "message": "Database initialized"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # Local development server
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
