@@ -173,6 +173,12 @@ def read_root():
     return send_file("index.html", mimetype="text/html")
 
 
+@app.route("/my-links")
+def my_links_page():
+    """Serve the my links HTML page."""
+    return send_file("my-links.html", mimetype="text/html")
+
+
 @app.route("/api/shorten", methods=["POST"])
 def shorten_url():
     """Create a short URL."""
@@ -294,6 +300,45 @@ def test_database():
         # Try a simple query
         result = db.execute(text("SELECT 1")).fetchone()
         return jsonify({"success": True, "message": "Database connected", "test": result[0]})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/my-links")
+def get_my_links():
+    """Get current user's links."""
+    ensure_db_initialized()
+
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Не авторизован"}), 401
+
+    db = next(get_db())
+
+    try:
+        # Get user's URLs ordered by creation date (newest first)
+        urls = db.query(Url).filter(Url.user_id == user.id).order_by(Url.created_at.desc()).all()
+
+        # Get base URL for constructing short URLs
+        protocol = request.headers.get('x-forwarded-proto', request.scheme)
+        host = request.headers.get('x-forwarded-host',
+                                   request.headers.get('host', request.host))
+        base_url = f"{protocol}://{host}"
+
+        links = []
+        for url in urls:
+            url.short_url = f"{base_url}/{url.short_code}"
+            links.append({
+                "id": url.id,
+                "short_code": url.short_code,
+                "original_url": url.original_url,
+                "short_url": url.short_url,
+                "click_count": url.click_count,
+                "created_at": url.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+            })
+
+        return jsonify({"success": True, "links": links}), 200
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

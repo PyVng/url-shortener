@@ -102,7 +102,13 @@
             margin-bottom: 10px;
         }
 
-        .logout-btn {
+        .user-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .user-btn {
             background: rgba(255,255,255,0.2);
             color: white;
             border: 1px solid rgba(255,255,255,0.3);
@@ -110,10 +116,21 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        .user-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.8);
+            border: 1px solid rgba(239, 68, 68, 0.5);
         }
 
         .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
+            background: rgba(239, 68, 68, 0.9);
         }
 
         .url-form {
@@ -321,7 +338,10 @@
         <!-- User Info Section -->
         <div id="userInfo" class="user-info" style="display: none;">
             <p>Привет, <span id="userName"></span>! (<span id="userEmail"></span>)</p>
-            <button id="logoutBtn" class="logout-btn">Выйти</button>
+            <div class="user-actions">
+                <a href="/my-links" class="user-btn">Мои ссылки</a>
+                <button id="logoutBtn" class="user-btn logout-btn">Выйти</button>
+            </div>
         </div>
 
         <!-- Auth Section -->

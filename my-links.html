@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои ссылки - URL Shortener</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+        }
+
+        .links-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .link-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .link-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .link-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .short-url {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2d3748;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #3182ce;
+        }
+
+        .copy-btn.copied {
+            background: #48bb78;
+        }
+
+        .original-url {
+            color: #718096;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: white;
+        }
+
+        .empty-state h2 {
+            margin-bottom: 10px;
+        }
+
+        .create-link-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background 0.2s ease;
+        }
+
+        .create-link-btn:hover {
+            background: #3182ce;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .link-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Мои ссылки</h1>
+            <p>Управляйте своими короткими ссылками</p>
+        </div>
+
+        <div id="content">
+            <div class="loading">Загрузка...</div>
+        </div>
+    </div>
+
+    <script>
+        // Проверяем авторизацию
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        async function loadUserLinks() {
+            try {
+                const response = await fetch('/api/my-links', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    localStorage.removeItem('access_token');
+                    window.location.href = '/';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayLinks(data.links);
+                } else {
+                    showError(data.error || 'Ошибка загрузки ссылок');
+                }
+            } catch (error) {
+                showError('Ошибка сети');
+            }
+        }
+
+        function displayLinks(links) {
+            const content = document.getElementById('content');
+
+            if (links.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <h2>У вас пока нет ссылок</h2>
+                        <p>Создайте свою первую короткую ссылку</p>
+                        <a href="/" class="create-link-btn">Создать ссылку</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const linksHtml = links.map(link => `
+                <div class="link-card">
+                    <div class="link-header">
+                        <div class="short-url">${link.short_url}</div>
+                        <button class="copy-btn" onclick="copyToClipboard('${link.short_url}')">
+                            Копировать
+                        </button>
+                    </div>
+                    <div class="original-url">${link.original_url}</div>
+                    <div class="stats">
+                        <div class="stat">
+                            <span>👆</span>
+                            <span>${link.click_count} кликов</span>
+                        </div>
+                        <div class="stat">
+                            <span>📅</span>
+                            <span>${new Date(link.created_at).toLocaleDateString('ru-RU')}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            content.innerHTML = `<div class="links-grid">${linksHtml}</div>`;
+        }
+
+        function showError(message) {
+            const content = document.getElementById('content');
+            content.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const btn = event.target;
+                btn.textContent = 'Скопировано!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Копировать';
+                    btn.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                // Fallback для старых браузеров
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+
+                const btn = event.target;
+                btn.textContent = 'Скопировано!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Копировать';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }
+        }
+
+        // Загружаем ссылки при загрузке страницы
+        loadUserLinks();
+    </script>
+</body>
+</html>
