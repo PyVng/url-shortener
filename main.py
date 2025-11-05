@@ -285,6 +285,18 @@ def init_database():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/api/test-db")
+def test_database():
+    """Test database connection."""
+    try:
+        db = next(get_db())
+        # Try a simple query
+        result = db.execute("SELECT 1 as test").fetchone()
+        return jsonify({"success": True, "message": "Database connected", "test": result[0]})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # Local development server
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
