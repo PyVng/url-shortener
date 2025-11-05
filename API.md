@@ -14,9 +14,108 @@ https://your-domain.com
 
 В текущей версии MVP аутентификация не требуется. Все эндпоинты доступны публично.
 
+## Аутентификация
+
+API поддерживает аутентификацию пользователей через JWT токены. Для доступа к защищенным ресурсам необходимо передавать токен в заголовке `Authorization: Bearer <token>`.
+
 ## Эндпоинты
 
-### 1. Создание короткого URL
+### 1. Регистрация пользователя
+
+**POST** `/api/auth/register`
+
+Регистрация нового пользователя.
+
+#### Запрос
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "securepassword123"
+}
+```
+
+#### Ответ
+
+**Успешный ответ (201 Created):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "created_at": "2025-01-01T12:00:00"
+  }
+}
+```
+
+### 2. Аутентификация пользователя
+
+**POST** `/api/auth/login`
+
+Вход в систему.
+
+#### Запрос
+
+**Body:**
+```json
+{
+  "username_or_email": "john_doe",
+  "password": "securepassword123"
+}
+```
+
+#### Ответ
+
+**Успешный ответ (200 OK):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "created_at": "2025-01-01T12:00:00"
+  }
+}
+```
+
+### 3. Информация о текущем пользователе
+
+**GET** `/api/auth/me`
+
+Получение информации о текущем аутентифицированном пользователе.
+
+#### Запрос
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+#### Ответ
+
+**Успешный ответ (200 OK):**
+```json
+{
+  "id": 1,
+  "username": "john_doe",
+  "email": "john@example.com",
+  "created_at": "2025-01-01T12:00:00"
+}
+```
+
+### 4. Создание короткого URL
 
 **POST** `/api/shorten`
 

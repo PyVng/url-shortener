@@ -1,12 +1,15 @@
 """URL Shortener API built with Flask for Render."""
-from flask import Flask, request, jsonify, redirect, send_file
+from flask import Flask, request, jsonify, redirect, send_file, g
 from flask_cors import CORS
 import os
+import jwt
+from datetime import datetime, timedelta
 
 # Import our modules
 from database import init_db, get_db
-from models import Url
-from schemas import UrlCreate, UrlResponse
+from models import Url, User
+from schemas import (UrlCreate, UrlResponse, UserCreate, UserLogin,
+                     UserResponse, TokenResponse)
 
 # Create Flask app
 app = Flask(__name__)
@@ -14,8 +17,48 @@ app = Flask(__name__)
 # Enable CORS
 CORS(app)
 
+# JWT Secret Key
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_HOURS = 24
+
 # Database will be initialized lazily on first request
 _db_initialized = False
+
+
+def create_access_token(user_id: int) -> str:
+    """Create JWT access token"""
+    expire = datetime.utcnow() + timedelta(hours=JWT_EXPIRATION_HOURS)
+    to_encode = {"sub": str(user_id), "exp": expire}
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return encoded_jwt
+
+
+def verify_token(token: str):
+    """Verify JWT token and return user_id"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        user_id = int(payload.get("sub"))
+        return user_id
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.JWTError:
+        return None
+
+
+def get_current_user():
+    """Get current user from JWT token"""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return None
+
+    token = auth_header.split(' ')[1]
+    user_id = verify_token(token)
+
+    if user_id:
+        db = next(get_db())
+        return User.query.get(user_id)
+    return None
 
 
 def ensure_db_initialized():
@@ -29,6 +72,98 @@ def ensure_db_initialized():
             print(f"Database initialization failed: {e}")
             # Don't crash the app, just log the error
             # The app can still serve the HTML page
+
+
+@app.route("/api/auth/register", methods=["POST"])
+def register_user():
+    """Register a new user."""
+    ensure_db_initialized()
+    db = next(get_db())
+
+    try:
+        data = request.get_json()
+        user_data = UserCreate(**data)
+
+        user = User.create_user(db, user_data.username, user_data.email, user_data.password)
+
+        # Create access token
+        access_token = create_access_token(user.id)
+
+        user_response = UserResponse.from_orm(user)
+        token_response = TokenResponse(
+            access_token=access_token,
+            user=user_response
+        )
+
+        return jsonify({
+            "access_token": token_response.access_token,
+            "token_type": token_response.token_type,
+            "user": {
+                "id": user_response.id,
+                "username": user_response.username,
+                "email": user_response.email,
+                "created_at": user_response.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+            }
+        }), 201
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def login_user():
+    """Authenticate user and return token."""
+    ensure_db_initialized()
+    db = next(get_db())
+
+    try:
+        data = request.get_json()
+        login_data = UserLogin(**data)
+
+        user = User.authenticate(db, login_data.username_or_email, login_data.password)
+
+        if not user:
+            return jsonify({"error": "Неверное имя пользователя/email или пароль"}), 401
+
+        # Create access token
+        access_token = create_access_token(user.id)
+
+        user_response = UserResponse.from_orm(user)
+
+        return jsonify({
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user_response.id,
+                "username": user_response.username,
+                "email": user_response.email,
+                "created_at": user_response.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+            }
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/auth/me")
+def get_current_user_info():
+    """Get current user information."""
+    ensure_db_initialized()
+
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Не авторизован"}), 401
+
+    user_response = UserResponse.from_orm(user)
+
+    return jsonify({
+        "id": user_response.id,
+        "username": user_response.username,
+        "email": user_response.email,
+        "created_at": user_response.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+    }), 200
 
 
 @app.route("/")
@@ -56,8 +191,12 @@ def shorten_url():
                                    request.headers.get('host', request.host))
         base_url = f"{protocol}://{host}"
 
+        # Get current user if authenticated
+        current_user = get_current_user()
+        user_id = str(current_user.id) if current_user else None
+
         # Create short URL
-        short_url = Url.create_short_url(db, url_data.original_url, base_url)
+        short_url = Url.create_short_url(db, url_data.original_url, base_url, user_id)
 
         response = UrlResponse(
             id=short_url.id,
