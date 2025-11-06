@@ -1,21 +1,29 @@
 """URL Shortener API built with Flask for Render."""
-from flask import Flask, request, jsonify, redirect, send_file, g, render_template
+
+import os
+import random
+from datetime import datetime, timedelta
+
+import jwt
+from flask import Flask, g, jsonify, redirect, render_template, request, send_file
 from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect, generate_csrf
-import os
-import jwt
-from datetime import datetime, timedelta
 from sqlalchemy import text
 
-# Import our modules
-from database import init_db, get_db
-from models import Url, User, Rule, Visit
-from schemas import (UrlCreate, UrlResponse, UserCreate, UserLogin,
-                     UserResponse, TokenResponse)
 from cache import cache
+
+# Import our modules
+from database import get_db, init_db
+from models import Rule, Url, User, Visit
+from schemas import (
+    TokenResponse,
+    UrlCreate,
+    UrlResponse,
+    UserCreate,
+    UserLogin,
+    UserResponse,
+)
 from tasks import log_visit
-from datetime import datetime
-import random
 
 # Create Flask app
 app = Flask(__name__)
@@ -24,17 +32,21 @@ app = Flask(__name__)
 CORS(app)
 
 # Enable CSRF protection (disabled for API routes)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['WTF_CSRF_ENABLED'] = False
+app.config["SECRET_KEY"] = os.getenv(
+    "SECRET_KEY", "dev-secret-key-change-in-production"
+)
+app.config["WTF_CSRF_ENABLED"] = False
 csrf = CSRFProtect(app)
 
+
 # Add custom Jinja2 filters
-@app.template_filter('strftime')
+@app.template_filter("strftime")
 def strftime_filter(date, format_string):
     """Format datetime object with strftime"""
     if date:
         return date.strftime(format_string)
-    return ''
+    return ""
+
 
 # JWT Secret Key
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
@@ -67,11 +79,11 @@ def verify_token(token: str):
 
 def get_current_user():
     """Get current user from JWT token"""
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
         return None
 
-    token = auth_header.split(' ')[1]
+    token = auth_header.split(" ")[1]
     user_id = verify_token(token)
 
     if user_id:
@@ -96,20 +108,23 @@ def ensure_db_initialized():
 def get_client_info():
     """Extract client information from request."""
     # Get IP address
-    ip_address = (request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or
-                  request.headers.get('X-Real-IP', '') or
-                  request.remote_addr or '127.0.0.1')
+    ip_address = (
+        request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+        or request.headers.get("X-Real-IP", "")
+        or request.remote_addr
+        or "127.0.0.1"
+    )
 
     # Get User-Agent
-    user_agent_str = request.headers.get('User-Agent', '')
+    user_agent_str = request.headers.get("User-Agent", "")
 
     # Get referrer
-    referrer = request.headers.get('Referer', '')
+    referrer = request.headers.get("Referer", "")
 
     return {
-        'ip_address': ip_address,
-        'user_agent': user_agent_str,
-        'referrer': referrer
+        "ip_address": ip_address,
+        "user_agent": user_agent_str,
+        "referrer": referrer,
     }
 
 
@@ -117,29 +132,33 @@ def get_device_type(user_agent_str: str) -> str:
     """Determine device type from User-Agent."""
     try:
         import user_agents
+
         ua = user_agents.parse(user_agent_str)
         if ua.is_mobile:
-            return 'mobile'
+            return "mobile"
         elif ua.is_tablet:
-            return 'tablet'
+            return "tablet"
         else:
-            return 'desktop'
+            return "desktop"
     except Exception:
-        return 'desktop'
+        return "desktop"
 
 
 def get_country_code(ip_address: str) -> str:
     """Get country code from IP address."""
     try:
         import geoip2.database
-        geo_db_path = os.getenv("GEOIP_DB_PATH", "/usr/share/GeoIP/GeoLite2-Country.mmdb")
+
+        geo_db_path = os.getenv(
+            "GEOIP_DB_PATH", "/usr/share/GeoIP/GeoLite2-Country.mmdb"
+        )
         if os.path.exists(geo_db_path):
             with geoip2.database.Reader(geo_db_path) as reader:
                 response = reader.country(ip_address)
                 return response.country.iso_code
     except Exception:
         pass
-    return 'XX'  # Unknown
+    return "XX"  # Unknown
 
 
 def get_current_time_slot() -> str:
@@ -147,11 +166,11 @@ def get_current_time_slot() -> str:
     now = datetime.now()
     hour = now.hour
     if 9 <= hour < 18:
-        return '09:00-18:00'  # Business hours
+        return "09:00-18:00"  # Business hours
     elif 18 <= hour < 22:
-        return '18:00-22:00'  # Evening
+        return "18:00-22:00"  # Evening
     else:
-        return '22:00-09:00'  # Night
+        return "22:00-09:00"  # Night
 
 
 def apply_routing_rules(db, url_id: int, client_info: dict) -> str:
@@ -161,10 +180,12 @@ def apply_routing_rules(db, url_id: int, client_info: dict) -> str:
     """
     try:
         # Get active rules for this URL, ordered by priority
-        rules = db.query(Rule).filter(
-            Rule.url_id == url_id,
-            Rule.is_active == 1
-        ).order_by(Rule.priority.desc()).all()
+        rules = (
+            db.query(Rule)
+            .filter(Rule.url_id == url_id, Rule.is_active == 1)
+            .order_by(Rule.priority.desc())
+            .all()
+        )
 
         if not rules:
             # No rules, return original URL
@@ -172,24 +193,24 @@ def apply_routing_rules(db, url_id: int, client_info: dict) -> str:
             return url.original_url if url else None
 
         # Analyze client
-        country_code = get_country_code(client_info['ip_address'])
-        device_type = get_device_type(client_info['user_agent'])
+        country_code = get_country_code(client_info["ip_address"])
+        device_type = get_device_type(client_info["user_agent"])
         time_slot = get_current_time_slot()
-        referrer = client_info['referrer']
+        referrer = client_info["referrer"]
 
         # Apply rules in priority order
         for rule in rules:
             rule_matches = False
 
-            if rule.rule_type == 'country':
+            if rule.rule_type == "country":
                 rule_matches = rule.condition_value.upper() == country_code
-            elif rule.rule_type == 'device':
+            elif rule.rule_type == "device":
                 rule_matches = rule.condition_value.lower() == device_type
-            elif rule.rule_type == 'time':
+            elif rule.rule_type == "time":
                 rule_matches = rule.condition_value == time_slot
-            elif rule.rule_type == 'referrer':
+            elif rule.rule_type == "referrer":
                 rule_matches = rule.condition_value.lower() in referrer.lower()
-            elif rule.rule_type == 'weight':
+            elif rule.rule_type == "weight":
                 # A/B testing - random selection based on weight
                 if random.random() < rule.weight:
                     rule_matches = True
@@ -218,27 +239,33 @@ def register_user():
         data = request.get_json()
         user_data = UserCreate(**data)
 
-        user = User.create_user(db, user_data.username, user_data.email, user_data.password)
+        user = User.create_user(
+            db, user_data.username, user_data.email, user_data.password
+        )
 
         # Create access token
         access_token = create_access_token(user.id)
 
         user_response = UserResponse.from_orm(user)
-        token_response = TokenResponse(
-            access_token=access_token,
-            user=user_response
-        )
+        token_response = TokenResponse(access_token=access_token, user=user_response)
 
-        return jsonify({
-            "access_token": token_response.access_token,
-            "token_type": token_response.token_type,
-            "user": {
-                "id": user_response.id,
-                "username": user_response.username,
-                "email": user_response.email,
-                "created_at": user_response.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-            }
-        }), 201
+        return (
+            jsonify(
+                {
+                    "access_token": token_response.access_token,
+                    "token_type": token_response.token_type,
+                    "user": {
+                        "id": user_response.id,
+                        "username": user_response.username,
+                        "email": user_response.email,
+                        "created_at": user_response.created_at.strftime(
+                            "%Y-%m-%dT%H:%M:%S"
+                        ),
+                    },
+                }
+            ),
+            201,
+        )
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -266,16 +293,23 @@ def login_user():
 
         user_response = UserResponse.from_orm(user)
 
-        return jsonify({
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": {
-                "id": user_response.id,
-                "username": user_response.username,
-                "email": user_response.email,
-                "created_at": user_response.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-            }
-        }), 200
+        return (
+            jsonify(
+                {
+                    "access_token": access_token,
+                    "token_type": "bearer",
+                    "user": {
+                        "id": user_response.id,
+                        "username": user_response.username,
+                        "email": user_response.email,
+                        "created_at": user_response.created_at.strftime(
+                            "%Y-%m-%dT%H:%M:%S"
+                        ),
+                    },
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -292,12 +326,17 @@ def get_current_user_info():
 
     user_response = UserResponse.from_orm(user)
 
-    return jsonify({
-        "id": user_response.id,
-        "username": user_response.username,
-        "email": user_response.email,
-        "created_at": user_response.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-    }), 200
+    return (
+        jsonify(
+            {
+                "id": user_response.id,
+                "username": user_response.username,
+                "email": user_response.email,
+                "created_at": user_response.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+            }
+        ),
+        200,
+    )
 
 
 @app.route("/")
@@ -365,16 +404,20 @@ def shorten_url():
         data = request.get_json()
         if not data or "original_url" not in data:
             # Return HTML fragment for HTMX
-            if request.headers.get('HX-Request'):
-                return render_template("error_card.html", error_message="URL обязателен"), 400
+            if request.headers.get("HX-Request"):
+                return (
+                    render_template("error_card.html", error_message="URL обязателен"),
+                    400,
+                )
             return jsonify({"error": "original_url is required"}), 400
 
         url_data = UrlCreate(original_url=data["original_url"])
 
         # Get base URL from request
-        protocol = request.headers.get('x-forwarded-proto', request.scheme)
-        host = request.headers.get('x-forwarded-host',
-                                   request.headers.get('host', request.host))
+        protocol = request.headers.get("x-forwarded-proto", request.scheme)
+        host = request.headers.get(
+            "x-forwarded-host", request.headers.get("host", request.host)
+        )
         base_url = f"{protocol}://{host}"
 
         # Get current user if authenticated
@@ -389,32 +432,45 @@ def shorten_url():
             short_code=short_url.short_code,
             original_url=short_url.original_url,
             short_url=short_url.short_url,
-            created_at=short_url.created_at
+            created_at=short_url.created_at,
         )
 
         # Return HTML fragment for HTMX
-        if request.headers.get('HX-Request'):
-            return render_template("result_card.html",
-                                 original_url=response.original_url,
-                                 short_url=response.short_url)
+        if request.headers.get("HX-Request"):
+            return render_template(
+                "result_card.html",
+                original_url=response.original_url,
+                short_url=response.short_url,
+            )
 
-        return jsonify({
-            "id": response.id,
-            "short_code": response.short_code,
-            "original_url": response.original_url,
-            "short_url": response.short_url,
-            "created_at": response.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-        }), 201
+        return (
+            jsonify(
+                {
+                    "id": response.id,
+                    "short_code": response.short_code,
+                    "original_url": response.original_url,
+                    "short_url": response.short_url,
+                    "created_at": response.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+                }
+            ),
+            201,
+        )
 
     except ValueError as e:
         # Return HTML fragment for HTMX
-        if request.headers.get('HX-Request'):
+        if request.headers.get("HX-Request"):
             return render_template("error_card.html", error_message=str(e)), 400
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         # Return HTML fragment for HTMX
-        if request.headers.get('HX-Request'):
-            return render_template("error_card.html", error_message="Произошла ошибка при сокращении URL"), 400
+        if request.headers.get("HX-Request"):
+            return (
+                render_template(
+                    "error_card.html",
+                    error_message="Произошла ошибка при сокращении URL",
+                ),
+                400,
+            )
         return jsonify({"error": str(e)}), 400
 
 
@@ -429,15 +485,17 @@ def get_url_info(short_code):
         if not url:
             return jsonify({"error": "Короткий URL не найден"}), 404
 
-        return jsonify({
-            "success": True,
-            "data": {
-                "short_code": url.short_code,
-                "original_url": url.original_url,
-                "click_count": url.click_count,
-                "created_at": url.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+        return jsonify(
+            {
+                "success": True,
+                "data": {
+                    "short_code": url.short_code,
+                    "original_url": url.original_url,
+                    "click_count": url.click_count,
+                    "created_at": url.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+                },
             }
-        })
+        )
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -457,8 +515,8 @@ def redirect_to_url(short_code):
 
         if cached_data:
             # Use cached data
-            url_id = cached_data.get('id')
-            target_url = cached_data.get('original_url')
+            url_id = cached_data.get("id")
+            target_url = cached_data.get("original_url")
         else:
             # Get from database
             url = Url.get_by_short_code(db, short_code)
@@ -469,12 +527,15 @@ def redirect_to_url(short_code):
             target_url = url.original_url
 
             # Cache the URL data
-            cache.set_url_data(short_code, {
-                'id': url.id,
-                'original_url': url.original_url,
-                'user_id': url.user_id,
-                'click_count': url.click_count
-            })
+            cache.set_url_data(
+                short_code,
+                {
+                    "id": url.id,
+                    "original_url": url.original_url,
+                    "user_id": url.user_id,
+                    "click_count": url.click_count,
+                },
+            )
 
         # Get client information for routing rules and analytics
         client_info = get_client_info()
@@ -505,14 +566,20 @@ def redirect_to_url(short_code):
 @app.route("/api/version")
 def get_version():
     """Get application version and build info."""
-    return jsonify({
-        "success": True,
-        "version": "1.0.0",
-        "name": "url-shortener",
-        "environment": os.getenv("RENDER_ENV", os.getenv("ENVIRONMENT", "local")),
-        "platform": "render",
-        "database_url": os.getenv("DATABASE_URL", "NOT_SET")[:50] + "..." if os.getenv("DATABASE_URL") else "NOT_SET"
-    })
+    return jsonify(
+        {
+            "success": True,
+            "version": "1.0.0",
+            "name": "url-shortener",
+            "environment": os.getenv("RENDER_ENV", os.getenv("ENVIRONMENT", "local")),
+            "platform": "render",
+            "database_url": (
+                os.getenv("DATABASE_URL", "NOT_SET")[:50] + "..."
+                if os.getenv("DATABASE_URL")
+                else "NOT_SET"
+            ),
+        }
+    )
 
 
 @app.route("/api/init-db")
@@ -532,7 +599,9 @@ def test_database():
         db = next(get_db())
         # Try a simple query
         result = db.execute(text("SELECT 1")).fetchone()
-        return jsonify({"success": True, "message": "Database connected", "test": result[0]})
+        return jsonify(
+            {"success": True, "message": "Database connected", "test": result[0]}
+        )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -550,26 +619,34 @@ def get_my_links():
 
     try:
         # Get user's URLs ordered by creation date (newest first)
-        urls = db.query(Url).filter(Url.user_id == user.id).order_by(Url.created_at.desc()).all()
+        urls = (
+            db.query(Url)
+            .filter(Url.user_id == user.id)
+            .order_by(Url.created_at.desc())
+            .all()
+        )
 
         # Get base URL for constructing short URLs
-        protocol = request.headers.get('x-forwarded-proto', request.scheme)
-        host = request.headers.get('x-forwarded-host',
-                                   request.headers.get('host', request.host))
+        protocol = request.headers.get("x-forwarded-proto", request.scheme)
+        host = request.headers.get(
+            "x-forwarded-host", request.headers.get("host", request.host)
+        )
         base_url = f"{protocol}://{host}"
 
         # Always return JSON for API consistency
         links = []
         for url in urls:
             url.short_url = f"{base_url}/{url.short_code}"
-            links.append({
-                "id": url.id,
-                "short_code": url.short_code,
-                "original_url": url.original_url,
-                "short_url": url.short_url,
-                "click_count": url.click_count,
-                "created_at": url.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-            })
+            links.append(
+                {
+                    "id": url.id,
+                    "short_code": url.short_code,
+                    "original_url": url.original_url,
+                    "short_url": url.short_url,
+                    "click_count": url.click_count,
+                    "created_at": url.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+                }
+            )
 
         return jsonify({"success": True, "links": links}), 200
 
@@ -584,48 +661,68 @@ def get_my_links_html():
 
     user = get_current_user()
     if not user:
-        return render_template("empty_state.html",
-                             title="Требуется авторизация",
-                             message="Пожалуйста, войдите в систему для просмотра ваших ссылок",
-                             action_url="/auth/login",
-                             action_text="Войти"), 401
+        return (
+            render_template(
+                "empty_state.html",
+                title="Требуется авторизация",
+                message="Пожалуйста, войдите в систему для просмотра ваших ссылок",
+                action_url="/auth/login",
+                action_text="Войти",
+            ),
+            401,
+        )
 
     db = next(get_db())
 
     try:
         # Get user's URLs ordered by creation date (newest first)
-        urls = db.query(Url).filter(Url.user_id == user.id).order_by(Url.created_at.desc()).all()
+        urls = (
+            db.query(Url)
+            .filter(Url.user_id == user.id)
+            .order_by(Url.created_at.desc())
+            .all()
+        )
 
         # Get base URL for constructing short URLs
-        protocol = request.headers.get('x-forwarded-proto', request.scheme)
-        host = request.headers.get('x-forwarded-host',
-                                   request.headers.get('host', request.host))
+        protocol = request.headers.get("x-forwarded-proto", request.scheme)
+        host = request.headers.get(
+            "x-forwarded-host", request.headers.get("host", request.host)
+        )
         base_url = f"{protocol}://{host}"
 
         if not urls:
-            return render_template("empty_state.html",
-                                 title="У вас пока нет ссылок",
-                                 message="Создайте свою первую короткую ссылку",
-                                 action_url="/",
-                                 action_text="Создать ссылку")
+            return render_template(
+                "empty_state.html",
+                title="У вас пока нет ссылок",
+                message="Создайте свою первую короткую ссылку",
+                action_url="/",
+                action_text="Создать ссылку",
+            )
 
         # Render link cards
         links_html = ""
         for url in urls:
             url.short_url = f"{base_url}/{url.short_code}"
-            links_html += render_template("link_card.html",
-                                        id=url.id,
-                                        short_url=url.short_url,
-                                        original_url=url.original_url,
-                                        click_count=url.click_count,
-                                        created_at=url.created_at)
+            links_html += render_template(
+                "link_card.html",
+                id=url.id,
+                short_url=url.short_url,
+                original_url=url.original_url,
+                click_count=url.click_count,
+                created_at=url.created_at,
+            )
 
         return links_html
 
     except Exception as e:
-        return render_template("empty_state.html",
-                             title="Ошибка",
-                             message="Не удалось загрузить ссылки"), 500
+        return (
+            render_template(
+                "empty_state.html",
+                title="Ошибка",
+                message="Не удалось загрузить ссылки",
+            ),
+            500,
+        )
 
 
 @app.route("/api/rules", methods=["POST"])
@@ -645,25 +742,36 @@ def create_rule():
             return jsonify({"error": "Данные не предоставлены"}), 400
 
         # Validate required fields
-        required_fields = ['url_id', 'rule_type', 'condition_value', 'target_url']
+        required_fields = ["url_id", "rule_type", "condition_value", "target_url"]
         for field in required_fields:
             if field not in data:
                 return jsonify({"error": f"Поле '{field}' обязательно"}), 400
 
         # Check if URL belongs to user
-        url = db.query(Url).filter(Url.id == data['url_id'], Url.user_id == user.id).first()
+        url = (
+            db.query(Url)
+            .filter(Url.id == data["url_id"], Url.user_id == user.id)
+            .first()
+        )
         if not url:
             return jsonify({"error": "Ссылка не найдена или не принадлежит вам"}), 404
 
         # Validate rule type
-        valid_rule_types = ['country', 'device', 'time', 'referrer', 'weight']
-        if data['rule_type'] not in valid_rule_types:
-            return jsonify({"error": f"Неверный тип правила. Допустимые: {', '.join(valid_rule_types)}"}), 400
+        valid_rule_types = ["country", "device", "time", "referrer", "weight"]
+        if data["rule_type"] not in valid_rule_types:
+            return (
+                jsonify(
+                    {
+                        "error": f"Неверный тип правила. Допустимые: {', '.join(valid_rule_types)}"
+                    }
+                ),
+                400,
+            )
 
         # Validate condition value based on rule type
-        if data['rule_type'] == 'weight':
+        if data["rule_type"] == "weight":
             try:
-                weight = float(data['condition_value'])
+                weight = float(data["condition_value"])
                 if not 0 <= weight <= 1:
                     return jsonify({"error": "Вес должен быть между 0 и 1"}), 400
             except ValueError:
@@ -671,31 +779,36 @@ def create_rule():
 
         # Create rule
         rule = Rule(
-            url_id=data['url_id'],
-            rule_type=data['rule_type'],
-            condition_value=data['condition_value'],
-            target_url=data['target_url'],
-            priority=data.get('priority', 0),
-            is_active=1
+            url_id=data["url_id"],
+            rule_type=data["rule_type"],
+            condition_value=data["condition_value"],
+            target_url=data["target_url"],
+            priority=data.get("priority", 0),
+            is_active=1,
         )
 
         db.add(rule)
         db.commit()
 
-        return jsonify({
-            "success": True,
-            "message": "Правило создано успешно",
-            "rule": {
-                "id": rule.id,
-                "url_id": rule.url_id,
-                "rule_type": rule.rule_type,
-                "condition_value": rule.condition_value,
-                "target_url": rule.target_url,
-                "priority": rule.priority,
-                "is_active": rule.is_active,
-                "created_at": rule.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-            }
-        }), 201
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Правило создано успешно",
+                    "rule": {
+                        "id": rule.id,
+                        "url_id": rule.url_id,
+                        "rule_type": rule.rule_type,
+                        "condition_value": rule.condition_value,
+                        "target_url": rule.target_url,
+                        "priority": rule.priority,
+                        "is_active": rule.is_active,
+                        "created_at": rule.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+                    },
+                }
+            ),
+            201,
+        )
 
     except Exception as e:
         db.rollback()
@@ -720,20 +833,27 @@ def get_rules(url_id):
             return jsonify({"error": "Ссылка не найдена или не принадлежит вам"}), 404
 
         # Get rules for this URL
-        rules = db.query(Rule).filter(Rule.url_id == url_id).order_by(Rule.priority.desc()).all()
+        rules = (
+            db.query(Rule)
+            .filter(Rule.url_id == url_id)
+            .order_by(Rule.priority.desc())
+            .all()
+        )
 
         rules_data = []
         for rule in rules:
-            rules_data.append({
-                "id": rule.id,
-                "url_id": rule.url_id,
-                "rule_type": rule.rule_type,
-                "condition_value": rule.condition_value,
-                "target_url": rule.target_url,
-                "priority": rule.priority,
-                "is_active": rule.is_active,
-                "created_at": rule.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-            })
+            rules_data.append(
+                {
+                    "id": rule.id,
+                    "url_id": rule.url_id,
+                    "rule_type": rule.rule_type,
+                    "condition_value": rule.condition_value,
+                    "target_url": rule.target_url,
+                    "priority": rule.priority,
+                    "is_active": rule.is_active,
+                    "created_at": rule.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
+                }
+            )
 
         return jsonify({"success": True, "rules": rules_data}), 200
 
@@ -754,10 +874,12 @@ def delete_rule(rule_id):
 
     try:
         # Find rule and check ownership through URL
-        rule = db.query(Rule).join(Url).filter(
-            Rule.id == rule_id,
-            Url.user_id == user.id
-        ).first()
+        rule = (
+            db.query(Rule)
+            .join(Url)
+            .filter(Rule.id == rule_id, Url.user_id == user.id)
+            .first()
+        )
 
         if not rule:
             return jsonify({"error": "Правило не найдено или не принадлежит вам"}), 404
@@ -796,7 +918,12 @@ def delete_url(url_id):
         db.delete(url)
         db.commit()
 
-        return jsonify({"success": True, "message": "Ссылка и все связанные правила удалены"}), 200
+        return (
+            jsonify(
+                {"success": True, "message": "Ссылка и все связанные правила удалены"}
+            ),
+            200,
+        )
 
     except Exception as e:
         db.rollback()
@@ -816,12 +943,21 @@ def get_analytics(short_code):
 
     try:
         # Find URL and check ownership
-        url = db.query(Url).filter(Url.short_code == short_code, Url.user_id == user.id).first()
+        url = (
+            db.query(Url)
+            .filter(Url.short_code == short_code, Url.user_id == user.id)
+            .first()
+        )
         if not url:
             return jsonify({"error": "Ссылка не найдена или не принадлежит вам"}), 404
 
         # Get visit statistics
-        visits = db.query(Visit).filter(Visit.url_id == url.id).order_by(Visit.created_at.desc()).all()
+        visits = (
+            db.query(Visit)
+            .filter(Visit.url_id == url.id)
+            .order_by(Visit.created_at.desc())
+            .all()
+        )
 
         # Process data for charts
         analytics_data = {
@@ -830,58 +966,69 @@ def get_analytics(short_code):
                 "short_code": url.short_code,
                 "original_url": url.original_url,
                 "click_count": url.click_count,
-                "created_at": url.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                "created_at": url.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
             },
             "clicks_over_time": {},
             "devices": {},
             "countries": {},
             "referrers": {},
-            "visits": []
+            "visits": [],
         }
 
         # Process visits data
         for visit in visits:
             # Clicks over time (daily)
             date_key = visit.created_at.strftime("%Y-%m-%d")
-            analytics_data["clicks_over_time"][date_key] = analytics_data["clicks_over_time"].get(date_key, 0) + 1
+            analytics_data["clicks_over_time"][date_key] = (
+                analytics_data["clicks_over_time"].get(date_key, 0) + 1
+            )
 
             # Devices
             device = visit.device_type or "unknown"
-            analytics_data["devices"][device] = analytics_data["devices"].get(device, 0) + 1
+            analytics_data["devices"][device] = (
+                analytics_data["devices"].get(device, 0) + 1
+            )
 
             # Countries
             country = visit.country_code or "XX"
-            analytics_data["countries"][country] = analytics_data["countries"].get(country, 0) + 1
+            analytics_data["countries"][country] = (
+                analytics_data["countries"].get(country, 0) + 1
+            )
 
             # Referrers
             referrer = "direct"
             if visit.referrer:
                 try:
                     from urllib.parse import urlparse
+
                     parsed = urlparse(visit.referrer)
                     referrer = parsed.netloc or "direct"
                     if not referrer or referrer == "":
                         referrer = "direct"
                 except:
                     referrer = "direct"
-            analytics_data["referrers"][referrer] = analytics_data["referrers"].get(referrer, 0) + 1
+            analytics_data["referrers"][referrer] = (
+                analytics_data["referrers"].get(referrer, 0) + 1
+            )
 
             # Visit details for table
-            analytics_data["visits"].append({
-                "date": visit.created_at.strftime("%Y-%m-%d"),
-                "time": visit.created_at.strftime("%H:%M:%S"),
-                "ip": visit.ip_address or "unknown",
-                "country": visit.country_code or "XX",
-                "device": visit.device_type or "unknown",
-                "browser": visit.browser or "unknown",
-                "referrer": referrer,
-                "target_url": visit.final_url or url.original_url
-            })
+            analytics_data["visits"].append(
+                {
+                    "date": visit.created_at.strftime("%Y-%m-%d"),
+                    "time": visit.created_at.strftime("%H:%M:%S"),
+                    "ip": visit.ip_address or "unknown",
+                    "country": visit.country_code or "XX",
+                    "device": visit.device_type or "unknown",
+                    "browser": visit.browser or "unknown",
+                    "referrer": referrer,
+                    "target_url": visit.final_url or url.original_url,
+                }
+            )
 
         # Convert to chart format
         analytics_data["clicks_over_time"] = {
             "labels": list(analytics_data["clicks_over_time"].keys()),
-            "data": list(analytics_data["clicks_over_time"].values())
+            "data": list(analytics_data["clicks_over_time"].values()),
         }
 
         return jsonify({"success": True, "analytics": analytics_data}), 200

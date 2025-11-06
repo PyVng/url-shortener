@@ -1,20 +1,23 @@
 """
 SQLAlchemy models for URL Shortener
 """
-from sqlalchemy import Column, Integer, String, Text, DateTime, func, ForeignKey, Float
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
-import string
-import random
-import os
+
 import hashlib
+import os
+import random
 import secrets
+import string
+
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, sessionmaker
 
 Base = declarative_base()
 
 
 class User(Base):
     """User model"""
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -44,15 +47,15 @@ class User(Base):
     @classmethod
     def create_user(cls, db_session, username: str, email: str, password: str):
         """Create a new user"""
-        if db_session.query(cls).filter(
-            (cls.username == username) | (cls.email == email)
-        ).first():
+        if (
+            db_session.query(cls)
+            .filter((cls.username == username) | (cls.email == email))
+            .first()
+        ):
             raise ValueError("Пользователь с таким именем или email уже существует")
 
         user = cls(
-            username=username,
-            email=email,
-            password_hash=cls.hash_password(password)
+            username=username, email=email, password_hash=cls.hash_password(password)
         )
 
         db_session.add(user)
@@ -64,9 +67,13 @@ class User(Base):
     @classmethod
     def authenticate(cls, db_session, username_or_email: str, password: str):
         """Authenticate user"""
-        user = db_session.query(cls).filter(
-            (cls.username == username_or_email) | (cls.email == username_or_email)
-        ).first()
+        user = (
+            db_session.query(cls)
+            .filter(
+                (cls.username == username_or_email) | (cls.email == username_or_email)
+            )
+            .first()
+        )
 
         if user and cls.verify_password(password, user.password_hash):
             return user
@@ -78,12 +85,17 @@ class User(Base):
             "id": self.id,
             "username": self.username,
             "email": self.email,
-            "created_at": self.created_at.strftime("%Y-%m-%dT%H:%M:%S") if self.created_at else None
+            "created_at": (
+                self.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                if self.created_at
+                else None
+            ),
         }
 
 
 class Url(Base):
     """URL model"""
+
     __tablename__ = "urls"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -97,16 +109,18 @@ class Url(Base):
     def generate_short_code(length: int = 6) -> str:
         """Generate a random short code"""
         chars = string.ascii_letters + string.digits
-        return ''.join(random.choice(chars) for _ in range(length))
+        return "".join(random.choice(chars) for _ in range(length))
 
     @classmethod
-    def create_short_url(cls, db_session, original_url: str, base_url: str, user_id=None):
+    def create_short_url(
+        cls, db_session, original_url: str, base_url: str, user_id=None
+    ):
         """Create a new short URL"""
         # Convert HttpUrl to string if needed
         url_str = str(original_url)
 
         # Validate URL format
-        if not url_str.startswith(('http://', 'https://')):
+        if not url_str.startswith(("http://", "https://")):
             raise ValueError("URL должен начинаться с http:// или https://")
 
         if len(url_str) > 2000:
@@ -116,18 +130,16 @@ class Url(Base):
         max_attempts = 10
         for _ in range(max_attempts):
             short_code = cls.generate_short_code()
-            existing = db_session.query(cls).filter(cls.short_code == short_code).first()
+            existing = (
+                db_session.query(cls).filter(cls.short_code == short_code).first()
+            )
             if not existing:
                 break
         else:
             raise ValueError("Не удалось сгенерировать уникальный короткий код")
 
         # Create new URL
-        url_obj = cls(
-            short_code=short_code,
-            original_url=url_str,
-            user_id=user_id
-        )
+        url_obj = cls(short_code=short_code, original_url=url_str, user_id=user_id)
 
         db_session.add(url_obj)
         db_session.commit()
@@ -162,20 +174,27 @@ class Url(Base):
             "id": str(self.id),
             "short_code": self.short_code,
             "original_url": self.original_url,
-            "short_url": getattr(self, 'short_url', ''),
+            "short_url": getattr(self, "short_url", ""),
             "user_id": self.user_id,
             "click_count": self.click_count,
-            "created_at": self.created_at.strftime("%Y-%m-%dT%H:%M:%S") if self.created_at else None
+            "created_at": (
+                self.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                if self.created_at
+                else None
+            ),
         }
 
 
 class Rule(Base):
     """Rule model for conditional redirects"""
+
     __tablename__ = "rules"
 
     id = Column(Integer, primary_key=True, index=True)
     url_id = Column(Integer, ForeignKey("urls.id"), index=True, nullable=False)
-    rule_type = Column(String(50), nullable=False)  # 'country', 'device', 'referrer', 'time', 'weight'
+    rule_type = Column(
+        String(50), nullable=False
+    )  # 'country', 'device', 'referrer', 'time', 'weight'
     condition_value = Column(String(100))  # 'US', 'mobile', 'google.com', '09:00-18:00'
     target_url = Column(Text, nullable=False)
     weight = Column(Float, default=0.0)  # For A/B testing (0.0-1.0)
@@ -197,12 +216,17 @@ class Rule(Base):
             "weight": self.weight,
             "priority": self.priority,
             "is_active": bool(self.is_active),
-            "created_at": self.created_at.strftime("%Y-%m-%dT%H:%M:%S") if self.created_at else None
+            "created_at": (
+                self.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                if self.created_at
+                else None
+            ),
         }
 
 
 class Visit(Base):
     """Visit model for click analytics"""
+
     __tablename__ = "visits"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -233,5 +257,9 @@ class Visit(Base):
             "browser": self.browser,
             "os": self.os_name,
             "final_url": self.final_url,
-            "created_at": self.created_at.strftime("%Y-%m-%dT%H:%M:%S") if self.created_at else None
+            "created_at": (
+                self.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                if self.created_at
+                else None
+            ),
         }

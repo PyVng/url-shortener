@@ -3,6 +3,7 @@
 Script to create database tables for URL Shortener
 """
 import os
+
 from database import init_db
 
 if __name__ == "__main__":

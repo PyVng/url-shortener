@@ -1,10 +1,12 @@
 """
 Redis cache management for URL Shortener
 """
-import redis
+
 import json
 import os
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
+import redis
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -13,6 +15,7 @@ load_dotenv()
 # Redis configuration
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 CACHE_TTL = int(os.getenv("CACHE_TTL", "3600"))  # 1 hour default
+
 
 class Cache:
     """Redis cache wrapper"""
@@ -33,14 +36,13 @@ class Cache:
             key = f"url:{short_code}"
             data = self.redis_client.get(key)  # type: ignore
             if data:
-                return json.loads(data.decode('utf-8'))  # type: ignore
+                return json.loads(data.decode("utf-8"))  # type: ignore
             return None
         except Exception as e:
             print(f"Cache get error: {e}")
             return None
 
-    def set_url_data(self, short_code: str, data: Dict[str, Any],
-                     ttl: int = CACHE_TTL):
+    def set_url_data(self, short_code: str, data: Dict[str, Any], ttl: int = CACHE_TTL):
         """Set URL data in cache"""
         if not self.redis_client:
             return
@@ -96,7 +98,7 @@ class Cache:
 
         try:
             value = self.redis_client.get(key)
-            return int(value.decode('utf-8')) if value else 0
+            return int(value.decode("utf-8")) if value else 0
         except Exception as e:
             print(f"Counter get error: {e}")
             return 0

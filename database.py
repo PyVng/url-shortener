@@ -1,9 +1,11 @@
 """Database connection and session management for URL Shortener."""
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
+
 import os
+
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 # Load environment variables
 load_dotenv()
@@ -14,8 +16,9 @@ DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
 # Always use SQLite for local development (unless explicitly set to Postgres)
 # Check for Vercel environment or explicit ENVIRONMENT setting
 vercel_env = os.getenv("VERCEL_ENV")
-is_production = ((vercel_env == "production") or
-                 (os.getenv("ENVIRONMENT") == "production"))
+is_production = (vercel_env == "production") or (
+    os.getenv("ENVIRONMENT") == "production"
+)
 
 if not DATABASE_URL or not is_production:
     DATABASE_URL = "sqlite:///./local.db"
@@ -25,26 +28,27 @@ else:
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
     # Clean up Supabase-specific parameters that psycopg2 doesn't understand
-    from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+    from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
     parsed = urlparse(DATABASE_URL)
     query_params = parse_qs(parsed.query)
 
     # Remove Supabase-specific parameters
-    supabase_params = ['supa', 'pgbouncer']
-    cleaned_params = {k: v for k, v in query_params.items()
-                      if k not in supabase_params}
+    supabase_params = ["supa", "pgbouncer"]
+    cleaned_params = {k: v for k, v in query_params.items() if k not in supabase_params}
 
     # Reconstruct URL without invalid parameters
     if cleaned_params:
         parsed = parsed._replace(query=urlencode(cleaned_params, doseq=True))
     else:
-        parsed = parsed._replace(query='')
+        parsed = parsed._replace(query="")
 
     DATABASE_URL = urlunparse(parsed)
 
 
 # Create engine lazily
 _engine = None
+
 
 def get_engine():
     """Get database engine, creating it if necessary."""
@@ -56,7 +60,7 @@ def get_engine():
                 DATABASE_URL,
                 connect_args={"check_same_thread": False},
                 poolclass=StaticPool,
-                echo=False
+                echo=False,
             )
         else:
             # PostgreSQL configuration with connection pooling
@@ -66,7 +70,7 @@ def get_engine():
                 pool_size=5,
                 max_overflow=10,
                 pool_timeout=30,
-                echo=False
+                echo=False,
             )
     return _engine
 
@@ -78,6 +82,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False)
 def init_db():
     """Initialize database and create tables."""
     from models import Base
+
     Base.metadata.create_all(bind=get_engine())
     print("Database initialized successfully")
 

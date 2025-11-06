@@ -1,10 +1,11 @@
 """
 Unit tests for URL Shortener Pydantic schemas
 """
+
 import pytest
 from pydantic import ValidationError
 
-from schemas import UrlCreate, UrlResponse, UrlInfo
+from schemas import UrlCreate, UrlInfo, UrlResponse
 
 
 class TestUrlCreate:
@@ -58,7 +59,7 @@ class TestUrlResponse:
             "short_code": "abc123",
             "original_url": "https://example.com/test",
             "short_url": "http://localhost:8000/abc123",
-            "created_at": datetime(2023, 1, 1, 12, 0, 0)
+            "created_at": datetime(2023, 1, 1, 12, 0, 0),
         }
 
         url_response = UrlResponse(**data)
@@ -75,7 +76,7 @@ class TestUrlResponse:
             "id": 1,
             "short_code": "abc123",
             "original_url": "https://example.com/test",
-            "short_url": "http://localhost:8000/abc123"
+            "short_url": "http://localhost:8000/abc123",
             # missing created_at
         }
 
@@ -94,7 +95,7 @@ class TestUrlInfo:
             "short_code": "abc123",
             "original_url": "https://example.com/test",
             "click_count": 42,
-            "created_at": datetime(2023, 1, 1, 12, 0, 0)
+            "created_at": datetime(2023, 1, 1, 12, 0, 0),
         }
 
         url_info = UrlInfo(**data)
@@ -112,7 +113,7 @@ class TestUrlInfo:
             "short_code": "abc123",
             "original_url": "https://example.com/test",
             "click_count": 0,
-            "created_at": datetime(2023, 1, 1, 12, 0, 0)
+            "created_at": datetime(2023, 1, 1, 12, 0, 0),
         }
 
         url_info = UrlInfo(**data)
@@ -123,7 +124,7 @@ class TestUrlInfo:
         data = {
             "short_code": "abc123",
             "original_url": "https://example.com/test",
-            "click_count": 42
+            "click_count": 42,
             # missing created_at
         }
 

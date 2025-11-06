@@ -1,8 +1,10 @@
 """
 Celery configuration for URL Shortener
 """
-from celery import Celery
+
 import os
+
+from celery import Celery
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -13,10 +15,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # Create Celery app
 celery_app = Celery(
-    "url_shortener",
-    broker=REDIS_URL,
-    backend=REDIS_URL,
-    include=["tasks"]
+    "url_shortener", broker=REDIS_URL, backend=REDIS_URL, include=["tasks"]
 )
 
 # Celery configuration

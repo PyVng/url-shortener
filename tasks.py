@@ -1,13 +1,16 @@
 """
 Celery tasks for URL Shortener
 """
-from celery_app import celery_app
-from database import get_db_session
-from models import Visit, Url
-import geoip2.database
-import user_agents
+
 import os
 from datetime import datetime, timedelta
+
+import geoip2.database
+import user_agents
+
+from celery_app import celery_app
+from database import get_db_session
+from models import Url, Visit
 
 
 @celery_app.task(bind=True)
@@ -27,7 +30,9 @@ def log_visit(self, url_id: int, request_data: dict, final_url: str):
         country_code = None
         try:
             # Use GeoLite2-Country.mmdb if available
-            geo_db_path = os.getenv("GEOIP_DB_PATH", "/usr/share/GeoIP/GeoLite2-Country.mmdb")
+            geo_db_path = os.getenv(
+                "GEOIP_DB_PATH", "/usr/share/GeoIP/GeoLite2-Country.mmdb"
+            )
             if os.path.exists(geo_db_path):
                 with geoip2.database.Reader(geo_db_path) as reader:
                     response = reader.country(ip_address)
@@ -43,7 +48,9 @@ def log_visit(self, url_id: int, request_data: dict, final_url: str):
 
         try:
             ua = user_agents.parse(user_agent_str)
-            device_type = "mobile" if ua.is_mobile else ("tablet" if ua.is_tablet else "desktop")
+            device_type = (
+                "mobile" if ua.is_mobile else ("tablet" if ua.is_tablet else "desktop")
+            )
             browser = ua.browser.family
             os_name = ua.os.family
         except Exception as e:
@@ -59,7 +66,7 @@ def log_visit(self, url_id: int, request_data: dict, final_url: str):
             device_type=device_type,
             browser=browser,
             os_name=os_name,
-            final_url=final_url
+            final_url=final_url,
         )
 
         db.add(visit)
@@ -101,9 +108,7 @@ def cleanup_old_visits(days: int = 90):
         db = get_db_session()
         cutoff_date = datetime.utcnow() - timedelta(days=days)
 
-        deleted_count = db.query(Visit).filter(
-            Visit.created_at < cutoff_date
-        ).delete()
+        deleted_count = db.query(Visit).filter(Visit.created_at < cutoff_date).delete()
 
         db.commit()
         return {"status": "success", "deleted": deleted_count}
