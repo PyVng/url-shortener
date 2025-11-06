@@ -28,7 +28,7 @@ async function loadLinks() {
     }
 
     try {
-        const response = await fetch('/api/my-links', {
+        const response = await fetch('/api/my-links-html', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
