@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль - URL Shortener{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto pt-20 pb-12 px-4">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-text-primary mb-2">Мой профиль</h1>
+        <p class="text-lg text-text-muted">Информация о вашем аккаунте</p>
+    </div>
+
+    <div id="profile-container" class="glass p-8 rounded-xl shadow-md">
+        <div class="text-center py-8">
+            <div class="loading"></div>
+            <p class="text-text-muted mt-4">Загрузка...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load profile on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        window.location.href = '/auth/login';
+        return;
+    }
+
+    fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(response => {
+        if (response.status === 401) {
+            localStorage.removeItem('auth_token');
+            window.location.href = '/auth/login';
+            return;
+        }
+        return response.json();
+    })
+    .then(data => {
+        const container = document.getElementById('profile-container');
+
+        container.innerHTML = `
+            <div class="space-y-6">
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl text-white font-bold">${data.username.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-text-primary">${data.username}</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <div class="text-sm font-medium text-text-muted mb-1">Имя пользователя:</div>
+                        <div class="text-text-primary bg-gray-50 p-3 rounded-md">${data.username}</div>
+                    </div>
+
+                    <div>
+                        <div class="text-sm font-medium text-text-muted mb-1">Email:</div>
+                        <div class="text-text-primary bg-gray-50 p-3 rounded-md">${data.email}</div>
+                    </div>
+
+                    <div>
+                        <div class="text-sm font-medium text-text-muted mb-1">Дата регистрации:</div>
+                        <div class="text-text-primary bg-gray-50 p-3 rounded-md">
+                            ${new Date(data.created_at).toLocaleDateString('ru-RU')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-gray-200 space-y-3">
+                    <a href="/my-links" class="block w-full bg-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-hover transition-colors text-center shadow-sm">
+                        Мои ссылки
+                    </a>
+                    <button onclick="logout()" class="w-full bg-gray-200 text-text-primary py-3 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                        Выйти из аккаунта
+                    </button>
+                </div>
+            </div>
+        `;
+    })
+    .catch(error => {
+        console.error('Failed to load profile:', error);
+        document.getElementById('profile-container').innerHTML = `
+            <div class="text-center py-8">
+                <div class="text-4xl mb-4">⚠️</div>
+                <h2 class="text-xl font-bold text-error mb-2">Ошибка</h2>
+                <p class="text-text-muted mb-4">Не удалось загрузить профиль</p>
+                <button onclick="location.reload()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors">
+                    Попробовать снова
+                </button>
+            </div>
+        `;
+    });
+});
+
+function logout() {
+    localStorage.removeItem('auth_token');
+    window.location.href = '/';
+}
+</script>
+{% endblock %}

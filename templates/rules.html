@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}Управление правилами маршрутизации - URL Shortener{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-text-primary mb-2">Управление правилами маршрутизации</h1>
+        <p class="text-text-muted">Создавайте умные правила для автоматического перенаправления пользователей</p>
+    </div>
+
+    <!-- Create Rule Form -->
+    <div class="glass rounded-xl p-6 mb-8">
+        <h2 class="text-xl font-semibold text-text-primary mb-4">Создать новое правило</h2>
+
+        <form id="createRuleForm" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- URL Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">Ссылка</label>
+                    <select id="urlSelect" name="url_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="">Выберите ссылку...</option>
+                    </select>
+                </div>
+
+                <!-- Rule Type -->
+                <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">Тип правила</label>
+                    <select id="ruleTypeSelect" name="rule_type" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="">Выберите тип...</option>
+                        <option value="country">🌍 Геолокация</option>
+                        <option value="device">📱 Устройство</option>
+                        <option value="time">⏰ Время суток</option>
+                        <option value="referrer">🔍 Источник</option>
+                        <option value="weight">⚖️ A/B тестирование</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Dynamic Condition Field -->
+            <div id="conditionField" class="hidden">
+                <label id="conditionLabel" class="block text-sm font-medium text-text-primary mb-2"></label>
+                <input id="conditionInput" name="condition_value" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                <p id="conditionHelp" class="text-xs text-text-muted mt-1"></p>
+            </div>
+
+            <!-- Target URL -->
+            <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">Целевой URL</label>
+                <input name="target_url" type="url" required placeholder="https://example.com/target-page" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+
+            <!-- Priority -->
+            <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">Приоритет (выше = проверяется раньше)</label>
+                <input name="priority" type="number" value="0" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end">
+                <button type="submit" class="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary-hover transition-colors font-medium">
+                    Создать правило
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Rules List -->
+    <div class="glass rounded-xl p-6">
+        <h2 class="text-xl font-semibold text-text-primary mb-4">Активные правила</h2>
+
+        <div id="rulesList" class="space-y-4">
+            <!-- Rules will be loaded here -->
+            <div class="text-center text-text-muted py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                Загрузка правил...
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Rule type configurations
+const ruleConfigs = {
+    country: {
+        label: "Код страны (ISO 3166-1 alpha-2)",
+        placeholder: "RU, US, FR, DE...",
+        help: "Примеры: RU (Россия), US (США), FR (Франция)"
+    },
+    device: {
+        label: "Тип устройства",
+        placeholder: "mobile, tablet, desktop",
+        help: "Доступные значения: mobile, tablet, desktop"
+    },
+    time: {
+        label: "Временной интервал",
+        placeholder: "09:00-18:00",
+        help: "Формат: ЧЧ:ММ-ЧЧ:ММ (09:00-18:00, 18:00-22:00, 22:00-09:00)"
+    },
+    referrer: {
+        label: "Источник трафика",
+        placeholder: "google.com, facebook.com",
+        help: "Домен источника (google.com, facebook.com, twitter.com)"
+    },
+    weight: {
+        label: "Вес для A/B тестирования (0.0-1.0)",
+        placeholder: "0.5",
+        help: "Вероятность применения правила (0.5 = 50% трафика)"
+    }
+};
+
+class RulesManager {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        this.loadUrls();
+        this.loadRules();
+        this.setupFormHandlers();
+        this.setupRuleTypeHandler();
+    }
+
+    async loadUrls() {
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                document.getElementById('urlSelect').innerHTML = '<option value="">Требуется авторизация</option>';
+                return;
+            }
+
+            const response = await fetch('/api/my-links', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const select = document.getElementById('urlSelect');
+
+                if (data.links && data.links.length > 0) {
+                    select.innerHTML = '<option value="">Выберите ссылку...</option>';
+                    data.links.forEach(link => {
+                        const option = document.createElement('option');
+                        option.value = link.id;
+                        option.textContent = `${link.short_code} → ${link.original_url.substring(0, 50)}${link.original_url.length > 50 ? '...' : ''}`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">У вас нет ссылок</option>';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading URLs:', error);
+        }
+    }
+
+    async loadRules() {
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                document.getElementById('rulesList').innerHTML = '<p class="text-center text-text-muted py-8">Требуется авторизация</p>';
+                return;
+            }
+
+            // Get all user's URLs first to load rules for each
+            const linksResponse = await fetch('/api/my-links', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!linksResponse.ok) {
+                document.getElementById('rulesList').innerHTML = '<p class="text-center text-red-600 py-8">Ошибка загрузки ссылок</p>';
+                return;
+            }
+
+            const linksData = await linksResponse.json();
+            if (!linksData.links || linksData.links.length === 0) {
+                document.getElementById('rulesList').innerHTML = `
+                    <div class="text-center text-text-muted py-8">
+                        <p>У вас нет ссылок для создания правил</p>
+                        <a href="/" class="text-primary hover:text-primary-hover underline mt-2 inline-block">Создать ссылку</a>
+                    </div>
+                `;
+                return;
+            }
+
+            // Load rules for each URL
+            let allRules = [];
+            for (const link of linksData.links) {
+                try {
+                    const rulesResponse = await fetch(`/api/rules/${link.id}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (rulesResponse.ok) {
+                        const rulesData = await rulesResponse.json();
+                        if (rulesData.rules) {
+                            allRules = allRules.concat(rulesData.rules.map(rule => ({ ...rule, url_short_code: link.short_code })));
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Failed to load rules for URL ${link.id}:`, error);
+                }
+            }
+
+            this.renderRulesList(allRules);
+        } catch (error) {
+            console.error('Error loading rules:', error);
+            document.getElementById('rulesList').innerHTML = '<p class="text-center text-red-600 py-8">Ошибка загрузки правил</p>';
+        }
+    }
+
+    renderRulesList(rules) {
+        const container = document.getElementById('rulesList');
+
+        if (!rules || rules.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-text-muted py-8">
+                    <p>У вас пока нет правил маршрутизации</p>
+                    <p class="text-sm mt-2">Создайте первое правило выше</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Sort rules by priority (highest first)
+        rules.sort((a, b) => b.priority - a.priority);
+
+        const rulesHtml = rules.map(rule => `
+            <div class="glass rounded-lg p-4 border border-gray-200">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-lg font-mono bg-gray-100 px-2 py-1 rounded text-sm">${rule.url_short_code}</span>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                rule.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }">
+                                ${rule.is_active ? 'Активно' : 'Неактивно'}
+                            </span>
+                            <span class="text-sm text-text-muted">Приоритет: ${rule.priority}</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <div class="text-sm font-medium text-text-muted mb-1">Тип правила</div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm">${this.getRuleTypeLabel(rule.rule_type)}</span>
+                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">${rule.rule_type}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-text-muted mb-1">Условие</div>
+                                <div class="text-sm font-mono bg-gray-50 px-2 py-1 rounded">${rule.condition_value}</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <div class="text-sm font-medium text-text-muted mb-1">Целевой URL</div>
+                            <div class="text-sm font-mono bg-green-50 text-green-800 px-2 py-1 rounded break-all">${rule.target_url}</div>
+                        </div>
+
+                        <div class="mt-3 text-xs text-text-muted">
+                            Создано: ${new Date(rule.created_at).toLocaleString('ru-RU')}
+                        </div>
+                    </div>
+
+                    <div class="ml-4">
+                        <button onclick="rulesManager.deleteRule(${rule.id})"
+                                class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50 transition-colors"
+                                title="Удалить правило">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        container.innerHTML = rulesHtml;
+    }
+
+    getRuleTypeLabel(ruleType) {
+        const labels = {
+            country: '🌍 Геолокация',
+            device: '📱 Устройство',
+            time: '⏰ Время суток',
+            referrer: '🔍 Источник',
+            weight: '⚖️ A/B тестирование'
+        };
+        return labels[ruleType] || ruleType;
+    }
+
+    async deleteRule(ruleId) {
+        if (!confirm('Вы уверены, что хотите удалить это правило?')) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(`/api/rules/${ruleId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                alert('Правило удалено успешно!');
+                this.loadRules(); // Reload rules list
+            } else {
+                const error = await response.json();
+                alert(`Ошибка: ${error.error || 'Неизвестная ошибка'}`);
+            }
+        } catch (error) {
+            console.error('Error deleting rule:', error);
+            alert('Произошла ошибка при удалении правила');
+        }
+    }
+
+    setupFormHandlers() {
+        const form = document.getElementById('createRuleForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.createRule(new FormData(form));
+        });
+    }
+
+    setupRuleTypeHandler() {
+        const ruleTypeSelect = document.getElementById('ruleTypeSelect');
+        ruleTypeSelect.addEventListener('change', (e) => {
+            this.updateConditionField(e.target.value);
+        });
+    }
+
+    updateConditionField(ruleType) {
+        const conditionField = document.getElementById('conditionField');
+        const conditionLabel = document.getElementById('conditionLabel');
+        const conditionInput = document.getElementById('conditionInput');
+        const conditionHelp = document.getElementById('conditionHelp');
+
+        if (ruleType && ruleConfigs[ruleType]) {
+            const config = ruleConfigs[ruleType];
+            conditionLabel.textContent = config.label;
+            conditionInput.placeholder = config.placeholder;
+            conditionInput.value = '';
+            conditionHelp.textContent = config.help;
+            conditionField.classList.remove('hidden');
+
+            // Set input type based on rule type
+            if (ruleType === 'weight') {
+                conditionInput.type = 'number';
+                conditionInput.min = '0';
+                conditionInput.max = '1';
+                conditionInput.step = '0.1';
+            } else {
+                conditionInput.type = 'text';
+                conditionInput.removeAttribute('min');
+                conditionInput.removeAttribute('max');
+                conditionInput.removeAttribute('step');
+            }
+        } else {
+            conditionField.classList.add('hidden');
+        }
+    }
+
+    async createRule(formData) {
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                alert('Требуется авторизация');
+                return;
+            }
+
+            const ruleData = {
+                url_id: parseInt(formData.get('url_id')),
+                rule_type: formData.get('rule_type'),
+                condition_value: formData.get('condition_value'),
+                target_url: formData.get('target_url'),
+                priority: parseInt(formData.get('priority')) || 0
+            };
+
+            const response = await fetch('/api/rules', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(ruleData)
+            });
+
+            if (response.ok) {
+                alert('Правило создано успешно!');
+                document.getElementById('createRuleForm').reset();
+                document.getElementById('conditionField').classList.add('hidden');
+                this.loadRules(); // Reload rules list
+            } else {
+                const error = await response.json();
+                alert(`Ошибка: ${error.error || 'Неизвестная ошибка'}`);
+            }
+        } catch (error) {
+            console.error('Error creating rule:', error);
+            alert('Произошла ошибка при создании правила');
+        }
+    }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.rulesManager = new RulesManager();
+});
+</script>
+{% endblock %}

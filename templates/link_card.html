@@ -1,0 +1,70 @@
+<!-- Link Card Component -->
+<div class="glass p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+    <div class="flex justify-between items-start mb-4">
+        <div class="mono text-text-primary font-medium text-sm bg-gray-100 px-3 py-1 rounded-md break-all flex-1 mr-3">
+            {{ short_url }}
+        </div>
+        <button
+            onclick="copyToClipboard('{{ short_url }}')"
+            class="bg-primary text-white px-3 py-1 rounded-md hover:bg-primary-hover transition-colors text-sm font-medium flex-shrink-0"
+            id="copyBtn-{{ id }}"
+        >
+            Копировать
+        </button>
+    </div>
+
+    <div class="text-text-muted text-sm mb-4 break-all">
+        {{ original_url }}
+    </div>
+
+    <div class="flex justify-between items-center text-xs text-text-muted">
+        <div class="flex items-center gap-1">
+            <span>👆</span>
+            <span>{{ click_count }} кликов</span>
+        </div>
+        <div class="flex items-center gap-1">
+            <span>📅</span>
+            <span>{{ created_at|strftime('%d.%m.%Y') }}</span>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Find the button that was clicked
+        const btn = event.target.closest('button');
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Скопировано!';
+        btn.classList.add('bg-success');
+        btn.classList.remove('bg-primary', 'hover:bg-primary-hover');
+
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('bg-success');
+            btn.classList.add('bg-primary', 'hover:bg-primary-hover');
+        }, 2000);
+    }).catch(err => {
+        console.error('Copy failed:', err);
+        // Fallback
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        const btn = event.target.closest('button');
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Скопировано!';
+        btn.classList.add('bg-success');
+        btn.classList.remove('bg-primary', 'hover:bg-primary-hover');
+
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('bg-success');
+            btn.classList.add('bg-primary', 'hover:bg-primary-hover');
+        }, 2000);
+    });
+}
+</script>

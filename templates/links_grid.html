@@ -1,0 +1,47 @@
+<!-- Links Grid Container -->
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-text-primary mb-2">Мои ссылки</h1>
+        <p class="text-lg text-text-muted">Управляйте своими короткими ссылками</p>
+    </div>
+
+    <div id="links-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Links will be loaded here via HTMX -->
+        <div class="col-span-full text-center py-12">
+            <div class="loading"></div>
+            <p class="text-text-muted mt-4">Загрузка...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load links on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        window.location.href = '/';
+        return;
+    }
+
+    // Load links via HTMX
+    htmx.ajax('GET', '/api/my-links', {
+        target: '#links-container',
+        swap: 'innerHTML',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    }).catch(error => {
+        console.error('Failed to load links:', error);
+        document.getElementById('links-container').innerHTML = `
+            <div class="col-span-full">
+                <div class="text-center py-12">
+                    <p class="text-error mb-4">Ошибка загрузки ссылок</p>
+                    <button onclick="location.reload()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors">
+                        Попробовать снова
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+});
+</script>

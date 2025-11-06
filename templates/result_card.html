@@ -1,0 +1,99 @@
+<!-- Success Result Card -->
+<div class="glass p-6 rounded-xl shadow-md max-w-2xl mx-auto">
+    <div class="text-center mb-6">
+        <div class="text-2xl mb-2">✅</div>
+        <h3 class="text-xl font-bold text-success mb-2">URL успешно сокращен!</h3>
+    </div>
+
+    <div class="space-y-4 mb-6">
+        <div>
+            <div class="text-sm font-medium text-text-muted mb-1">Оригинальный URL:</div>
+            <div class="text-text-primary break-all bg-gray-50 p-3 rounded-md">{{ original_url }}</div>
+        </div>
+
+        <div>
+            <div class="text-sm font-medium text-text-muted mb-1">Короткий URL:</div>
+            <div class="flex gap-3 items-center">
+                <input
+                    type="text"
+                    value="{{ short_url }}"
+                    readonly
+                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md mono text-sm bg-gray-50"
+                    id="shortUrlInput"
+                >
+                <button
+                    onclick="copyToClipboard('{{ short_url }}')"
+                    class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors text-sm font-medium"
+                    id="copyBtn"
+                >
+                    Копировать
+                </button>
+                <button
+                    onclick="goToUrl('{{ short_url }}')"
+                    class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors text-sm font-medium"
+                    id="goToBtn"
+                >
+                    Перейти
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex gap-3">
+        <button
+            onclick="resetForm()"
+            class="flex-1 bg-gray-200 text-text-primary py-2 px-4 rounded-md hover:bg-gray-300 transition-colors font-medium"
+        >
+            Создать новый
+        </button>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Скопировано!';
+        btn.classList.add('bg-success');
+        btn.classList.remove('bg-primary', 'hover:bg-primary-hover');
+
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('bg-success');
+            btn.classList.add('bg-primary', 'hover:bg-primary-hover');
+        }, 2000);
+    }).catch(err => {
+        console.error('Copy failed:', err);
+        // Fallback
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        const btn = document.getElementById('copyBtn');
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Скопировано!';
+        btn.classList.add('bg-success');
+        btn.classList.remove('bg-primary', 'hover:bg-primary-hover');
+
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('bg-success');
+            btn.classList.add('bg-primary', 'hover:bg-primary-hover');
+        }, 2000);
+    });
+}
+
+function goToUrl(url) {
+    window.open(url, '_blank');
+}
+
+function resetForm() {
+    document.getElementById('urlForm').reset();
+    document.getElementById('result-container').innerHTML = '';
+    document.getElementById('originalUrl').focus();
+}
+</script>

@@ -201,15 +201,22 @@ Content-Type: application/json
 }
 ```
 
-### 3. Редирект на оригинальный URL
+### 3. Редирект на оригинальный URL (с умной маршрутизацией)
 
 **GET** `/{short_code}`
 
-Перенаправляет пользователя на оригинальный URL и увеличивает счетчик кликов.
+Перенаправляет пользователя на оригинальный URL или альтернативный URL на основе правил маршрутизации. Логирует посещение для аналитики.
 
 #### Параметры пути
 
 - `short_code` (string, required): Короткий код URL (6 символов)
+
+#### Особенности
+
+- **Умная маршрутизация**: Применяет правила по гео, устройству, времени, рефереру
+- **A/B тестирование**: Поддерживает распределение трафика по весам
+- **Аналитика**: Асинхронное логирование IP, User-Agent, геолокации
+- **Кэширование**: Использует Redis для быстрого доступа
 
 #### Ответ
 
@@ -246,7 +253,101 @@ Location: https://example.com/very/long/url
 }
 ```
 
-### 5. Главная страница
+### 5. Детальная аналитика кликов
+
+**GET** `/api/analytics/{short_code}`
+
+Возвращает детальную аналитику по кликам для короткого URL.
+
+#### Запрос
+
+**Headers:**
+```
+Authorization: Bearer <access_token> (для приватных URL)
+```
+
+#### Параметры пути
+
+- `short_code` (string, required): Короткий код URL
+
+#### Ответ
+
+**Успешный ответ (200 OK):**
+```json
+{
+  "success": true,
+  "analytics": {
+    "total_clicks": 150,
+    "unique_visitors": 89,
+    "countries": {
+      "US": 45,
+      "FR": 23,
+      "DE": 12
+    },
+    "devices": {
+      "mobile": 67,
+      "desktop": 78,
+      "tablet": 5
+    },
+    "browsers": {
+      "Chrome": 89,
+      "Safari": 34,
+      "Firefox": 27
+    },
+    "referrers": {
+      "google.com": 45,
+      "facebook.com": 23,
+      "direct": 82
+    },
+    "hourly_stats": [
+      {"hour": "09", "clicks": 12},
+      {"hour": "10", "clicks": 18}
+    ]
+  }
+}
+```
+
+### 6. Управление правилами маршрутизации
+
+**POST** `/api/rules`
+
+Создает правило маршрутизации для URL.
+
+#### Запрос
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "url_id": 1,
+  "rule_type": "country",
+  "condition_value": "FR",
+  "target_url": "https://example.com/french-version",
+  "priority": 10
+}
+```
+
+#### Ответ
+
+**Успешный ответ (201 Created):**
+```json
+{
+  "id": 1,
+  "url_id": 1,
+  "rule_type": "country",
+  "condition_value": "FR",
+  "target_url": "https://example.com/french-version",
+  "priority": 10,
+  "is_active": true
+}
+```
+
+### 7. Главная страница
 
 **GET** `/`
 
@@ -291,6 +392,46 @@ Content-Type: text/html
 }
 ```
 
+### RuleCreate
+```json
+{
+  "url_id": "integer",
+  "rule_type": "string (country|device|time|referrer|weight)",
+  "condition_value": "string",
+  "target_url": "string",
+  "priority": "integer (default: 0)",
+  "weight": "float (default: 0.0, for A/B testing)"
+}
+```
+
+### RuleResponse
+```json
+{
+  "id": "integer",
+  "url_id": "integer",
+  "rule_type": "string",
+  "condition_value": "string",
+  "target_url": "string",
+  "priority": "integer",
+  "weight": "float",
+  "is_active": "boolean",
+  "created_at": "datetime"
+}
+```
+
+### AnalyticsResponse
+```json
+{
+  "total_clicks": "integer",
+  "unique_visitors": "integer",
+  "countries": "object (country_code -> count)",
+  "devices": "object (device_type -> count)",
+  "browsers": "object (browser -> count)",
+  "referrers": "object (referrer -> count)",
+  "hourly_stats": "array of objects"
+}
+```
+
 ## Ограничения
 
 - Максимальная длина оригинального URL: 2000 символов
@@ -331,15 +472,53 @@ curl -X POST https://your-domain.com/api/shorten \
 curl https://your-domain.com/api/info/abc123
 ```
 
-### Редирект
+### Редирект с умной маршрутизацией
 
 ```bash
+# Базовый редирект
 curl -I https://your-domain.com/abc123
+
+# Редирект из Франции (гео-таргетинг)
+curl -H "X-Forwarded-For: 90.90.90.90" -I https://your-domain.com/abc123
+
+# Редирект с мобильного устройства
+curl -H "User-Agent: Mozilla/5.0 (iPhone..." -I https://your-domain.com/abc123
+
+# Редирект из Google (реферер)
+curl -H "Referer: https://google.com" -I https://your-domain.com/abc123
+```
+
+### Создание правила маршрутизации
+
+```bash
+curl -X POST https://your-domain.com/api/rules \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url_id": 1,
+    "rule_type": "country",
+    "condition_value": "FR",
+    "target_url": "https://example.com/french",
+    "priority": 10
+  }'
+```
+
+### Получение аналитики
+
+```bash
+curl https://your-domain.com/api/analytics/abc123 \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ## Замечания по реализации
 
+- **Кэширование**: Redis используется для кэширования URL данных (TTL 1 час)
+- **Асинхронная аналитика**: Celery логирует посещения в фоне для производительности
+- **Умная маршрутизация**: Правила применяются по приоритету (выше = раньше)
+- **A/B тестирование**: Весовые правила распределяют трафик случайным образом
+- **Геолокация**: GeoIP2 определяет страну по IP (требует базы данных)
+- **Анализ устройств**: user-agents парсит User-Agent строки
 - База данных инициализируется лениво при первом запросе
 - Короткие коды генерируются случайным образом с проверкой уникальности
-- Счетчик кликов увеличивается синхронно при каждом редиректе
+- Счетчик кликов увеличивается асинхронно через Celery
 - Поддержка как SQLite (разработка), так и PostgreSQL (продакшен)

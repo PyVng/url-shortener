@@ -1,0 +1,90 @@
+<!-- URL Shortening Form -->
+<div class="max-w-2xl mx-auto pt-20 pb-12 px-4">
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-text-primary mb-4 leading-tight">
+            Сократите длинные ссылки в короткие и удобные
+        </h1>
+        <p class="text-xl text-text-muted max-w-2xl mx-auto leading-relaxed">
+            Быстрый и надежный сервис сокращения URL с аналитикой и управлением ссылками
+        </p>
+    </div>
+
+    <form
+        id="urlForm"
+        class="glass p-8 rounded-xl shadow-md"
+        hx-post="/api/shorten"
+        hx-target="#result-container"
+        hx-swap="innerHTML"
+        hx-indicator="#loading-indicator"
+    >
+        <div class="mb-6">
+            <label for="originalUrl" class="block text-text-primary font-medium mb-3 text-lg">
+                Введите длинный URL:
+            </label>
+            <input
+                type="url"
+                id="originalUrl"
+                name="original_url"
+                placeholder="https://example.com/very/long/url/that/needs/to/be/shortened"
+                required
+                class="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                hx-on:input="validateUrl(this)"
+            >
+            <div id="url-error" class="text-error text-sm mt-2 hidden">
+                Введите корректный URL (начинающийся с http:// или https://)
+            </div>
+        </div>
+
+        <button
+            type="submit"
+            id="shortenBtn"
+            class="w-full bg-primary text-white py-3 px-6 rounded-lg font-semibold text-lg hover:bg-primary-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+        >
+            <span id="btnText">Сократить URL</span>
+            <div id="loading-indicator" class="loading"></div>
+        </button>
+    </form>
+
+    <!-- Result container -->
+    <div id="result-container" class="mt-8"></div>
+</div>
+
+<script>
+function validateUrl(input) {
+    const url = input.value.trim();
+    const errorDiv = document.getElementById('url-error');
+
+    if (url && !isValidUrl(url)) {
+        input.setCustomValidity('Введите корректный URL (начинающийся с http:// или https://)');
+        errorDiv.classList.remove('hidden');
+    } else {
+        input.setCustomValidity('');
+        errorDiv.classList.add('hidden');
+    }
+}
+
+function isValidUrl(url) {
+    try {
+        const urlObj = new URL(url);
+        return ['http:', 'https:'].includes(urlObj.protocol);
+    } catch {
+        return false;
+    }
+}
+
+// Handle HTMX events
+document.addEventListener('DOMContentLoaded', function() {
+    // Listen for HTMX after request
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.target.id === 'result-container') {
+            // Scroll to result on success
+            if (evt.detail.xhr.status >= 200 && evt.detail.xhr.status < 300) {
+                document.getElementById('result-container').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }
+        }
+    });
+});
+</script>

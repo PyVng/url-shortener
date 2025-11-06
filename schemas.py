@@ -1,11 +1,29 @@
 """Pydantic schemas for URL Shortener API."""
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
 from datetime import datetime
 
 class UrlCreate(BaseModel):
     """Schema for creating a new short URL."""
 
     original_url: str
+
+    @field_validator('original_url')
+    @classmethod
+    def validate_url(cls, v):
+        """Validate that URL has http or https protocol and is not too long."""
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError('URL is required')
+
+        try:
+            url_obj = HttpUrl(v)
+            if url_obj.scheme not in ['http', 'https']:
+                raise ValueError('URL must use http or https protocol')
+            if len(str(url_obj)) > 2000:
+                raise ValueError('URL is too long (max 2000 characters)')
+        except Exception:
+            raise ValueError('Invalid URL format')
+
+        return v
 
     model_config = ConfigDict(
         json_schema_extra={

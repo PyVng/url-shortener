@@ -1,0 +1,241 @@
+<!-- Auth Modal -->
+<div id="authModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div class="glass rounded-xl w-full max-w-md mx-4 shadow-xl overflow-hidden">
+        <div class="flex justify-between items-center p-6 border-b border-gray-200">
+            <h2 id="authModalTitle" class="text-xl font-bold text-text-primary">Войти</h2>
+            <button id="authModalClose" class="text-text-muted hover:text-text-primary text-2xl leading-none w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 transition-colors">
+                &times;
+            </button>
+        </div>
+
+        <div class="p-6">
+            <!-- Login Form -->
+            <form id="modalLoginForm" class="auth-form space-y-4">
+                <div>
+                    <label for="modalLoginUsername" class="block text-sm font-medium text-text-primary mb-2">
+                        Имя пользователя или Email:
+                    </label>
+                    <input
+                        type="text"
+                        id="modalLoginUsername"
+                        name="username_or_email"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                </div>
+                <div>
+                    <label for="modalLoginPassword" class="block text-sm font-medium text-text-primary mb-2">
+                        Пароль:
+                    </label>
+                    <input
+                        type="password"
+                        id="modalLoginPassword"
+                        name="password"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                </div>
+                <button
+                    type="submit"
+                    class="w-full bg-primary text-white py-2 px-4 rounded-md font-medium hover:bg-primary-hover transition-colors shadow-sm"
+                >
+                    Войти
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="modalRegisterForm" class="auth-form hidden space-y-4">
+                <div>
+                    <label for="modalRegisterUsername" class="block text-sm font-medium text-text-primary mb-2">
+                        Имя пользователя:
+                    </label>
+                    <input
+                        type="text"
+                        id="modalRegisterUsername"
+                        name="username"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                </div>
+                <div>
+                    <label for="modalRegisterEmail" class="block text-sm font-medium text-text-primary mb-2">
+                        Email:
+                    </label>
+                    <input
+                        type="email"
+                        id="modalRegisterEmail"
+                        name="email"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                </div>
+                <div>
+                    <label for="modalRegisterPassword" class="block text-sm font-medium text-text-primary mb-2">
+                        Пароль:
+                    </label>
+                    <input
+                        type="password"
+                        id="modalRegisterPassword"
+                        name="password"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                </div>
+                <button
+                    type="submit"
+                    class="w-full bg-primary text-white py-2 px-4 rounded-md font-medium hover:bg-primary-hover transition-colors shadow-sm"
+                >
+                    Зарегистрироваться
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+class AuthModalManager {
+    constructor() {
+        this.modal = document.getElementById('authModal');
+        this.modalTitle = document.getElementById('authModalTitle');
+        this.modalClose = document.getElementById('authModalClose');
+
+        this.loginForm = document.getElementById('modalLoginForm');
+        this.registerForm = document.getElementById('modalRegisterForm');
+
+        this.init();
+    }
+
+    init() {
+        // Modal controls
+        if (this.modalClose) {
+            this.modalClose.addEventListener('click', () => this.closeModal());
+        }
+        if (this.modal) {
+            this.modal.addEventListener('click', (e) => {
+                if (e.target === this.modal) {
+                    this.closeModal();
+                }
+            });
+        }
+
+        // Form submissions
+        if (this.loginForm) {
+            this.loginForm.addEventListener('submit', this.handleLogin.bind(this));
+        }
+        if (this.registerForm) {
+            this.registerForm.addEventListener('submit', this.handleRegister.bind(this));
+        }
+
+        // Listen for open modal events
+        window.addEventListener('openAuthModal', (e) => {
+            this.openModal(e.detail.type);
+        });
+
+        // ESC key to close
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !this.modal.classList.contains('hidden')) {
+                this.closeModal();
+            }
+        });
+    }
+
+    openModal(type) {
+        if (!this.modal) return;
+
+        this.modalTitle.textContent = type === 'login' ? 'Войти' : 'Регистрация';
+
+        // Show appropriate form
+        this.loginForm.classList.toggle('hidden', type !== 'login');
+        this.registerForm.classList.toggle('hidden', type === 'login');
+
+        this.modal.classList.remove('hidden');
+        this.modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+
+        // Focus first input
+        const firstInput = type === 'login'
+            ? document.getElementById('modalLoginUsername')
+            : document.getElementById('modalRegisterUsername');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 100);
+        }
+    }
+
+    closeModal() {
+        if (!this.modal) return;
+        this.modal.classList.add('hidden');
+        this.modal.classList.remove('flex');
+        document.body.style.overflow = '';
+    }
+
+    async handleLogin(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const data = Object.fromEntries(formData);
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem('auth_token', result.access_token);
+                this.closeModal();
+                // Dispatch event to update navbar
+                window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: result.user }));
+                this.showSuccess('Успешный вход!');
+            } else {
+                this.showError(result.error || 'Ошибка входа');
+            }
+        } catch (error) {
+            this.showError('Ошибка подключения');
+        }
+    }
+
+    async handleRegister(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const data = Object.fromEntries(formData);
+
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem('auth_token', result.access_token);
+                this.closeModal();
+                // Dispatch event to update navbar
+                window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: result.user }));
+                this.showSuccess('Регистрация успешна!');
+            } else {
+                this.showError(result.error || 'Ошибка регистрации');
+            }
+        } catch (error) {
+            this.showError('Ошибка подключения');
+        }
+    }
+
+    showSuccess(message) {
+        // Simple success message
+        alert(message);
+    }
+
+    showError(message) {
+        alert('Ошибка: ' + message);
+    }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new AuthModalManager();
+});
+</script>

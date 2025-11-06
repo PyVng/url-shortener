@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}URL Shortener{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#f2f2f7',
+                        card: 'rgba(255, 255, 255, 0.8)',
+                        'text-primary': '#1d1d1f',
+                        'text-muted': '#86868b',
+                        primary: '#007aff',
+                        'primary-hover': '#0056cc',
+                        success: '#28a745',
+                        error: '#dc3545'
+                    },
+                    borderRadius: {
+                        sm: '6px',
+                        md: '8px',
+                        lg: '12px',
+                        xl: '16px'
+                    },
+                    spacing: {
+                        xs: '4px',
+                        sm: '8px',
+                        md: '12px',
+                        lg: '16px',
+                        xl: '24px',
+                        '2xl': '32px'
+                    },
+                    boxShadow: {
+                        sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                        md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/ws.js"></script>
+
+    <!-- Custom styles -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #f2f2f7;
+            min-height: 100vh;
+            color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .mono {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+        }
+
+        /* HTMX loading states */
+        .htmx-request {
+            opacity: 0.8;
+        }
+
+        .htmx-request .loading {
+            display: inline-block;
+        }
+
+        .loading {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007aff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    {% block head %}{% endblock %}
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Navigation -->
+    {% include 'navbar.html' %}
+
+    <!-- Main Content -->
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-text-muted py-8 px-4 border-t border-gray-200">
+        <p>© 2025 URL Shortener - Flask Edition. Built with
+            <a href="https://flask.palletsprojects.com/" target="_blank" class="text-primary hover:text-primary-hover transition-colors">Flask</a>,
+            <a href="https://jinja.palletsprojects.com/" target="_blank" class="text-primary hover:text-primary-hover transition-colors">Jinja2</a> and
+            <a href="https://htmx.org/" target="_blank" class="text-primary hover:text-primary-hover transition-colors">HTMX</a>.
+            Deployed on <a href="https://render.com" target="_blank" class="text-primary hover:text-primary-hover transition-colors">Render</a>
+        </p>
+    </footer>
+
+    <!-- Auth Modal -->
+    {% include 'auth_modal.html' %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

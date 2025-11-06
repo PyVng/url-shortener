@@ -1,7 +1,7 @@
 """
 SQLAlchemy models for URL Shortener
 """
-from sqlalchemy import Column, Integer, String, Text, DateTime, func, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, func, ForeignKey, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import string
@@ -165,5 +165,73 @@ class Url(Base):
             "short_url": getattr(self, 'short_url', ''),
             "user_id": self.user_id,
             "click_count": self.click_count,
+            "created_at": self.created_at.strftime("%Y-%m-%dT%H:%M:%S") if self.created_at else None
+        }
+
+
+class Rule(Base):
+    """Rule model for conditional redirects"""
+    __tablename__ = "rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    url_id = Column(Integer, ForeignKey("urls.id"), index=True, nullable=False)
+    rule_type = Column(String(50), nullable=False)  # 'country', 'device', 'referrer', 'time', 'weight'
+    condition_value = Column(String(100))  # 'US', 'mobile', 'google.com', '09:00-18:00'
+    target_url = Column(Text, nullable=False)
+    weight = Column(Float, default=0.0)  # For A/B testing (0.0-1.0)
+    priority = Column(Integer, default=0)  # Rule priority (higher = checked first)
+    is_active = Column(Integer, default=1)  # 1 = active, 0 = inactive
+    created_at = Column(DateTime, default=func.now())
+
+    # Relationship with URL
+    url = relationship("Url", backref="rules")
+
+    def to_dict(self):
+        """Convert to dictionary"""
+        return {
+            "id": self.id,
+            "url_id": self.url_id,
+            "rule_type": self.rule_type,
+            "condition_value": self.condition_value,
+            "target_url": self.target_url,
+            "weight": self.weight,
+            "priority": self.priority,
+            "is_active": bool(self.is_active),
+            "created_at": self.created_at.strftime("%Y-%m-%dT%H:%M:%S") if self.created_at else None
+        }
+
+
+class Visit(Base):
+    """Visit model for click analytics"""
+    __tablename__ = "visits"
+
+    id = Column(Integer, primary_key=True, index=True)
+    url_id = Column(Integer, ForeignKey("urls.id"), index=True, nullable=False)
+    ip_address = Column(String(45))  # IPv4/IPv6 support
+    user_agent = Column(Text)
+    referrer = Column(Text)
+    country_code = Column(String(2))  # ISO 3166-1 alpha-2
+    device_type = Column(String(20))  # 'mobile', 'tablet', 'desktop'
+    browser = Column(String(50))
+    os_name = Column(String(50))  # Renamed to avoid conflict with 'os' import
+    final_url = Column(Text)  # URL where user was redirected
+    created_at = Column(DateTime, default=func.now())
+
+    # Relationship with URL
+    url = relationship("Url", backref="visits")
+
+    def to_dict(self):
+        """Convert to dictionary"""
+        return {
+            "id": self.id,
+            "url_id": self.url_id,
+            "ip_address": self.ip_address,
+            "user_agent": self.user_agent,
+            "referrer": self.referrer,
+            "country_code": self.country_code,
+            "device_type": self.device_type,
+            "browser": self.browser,
+            "os": self.os_name,
+            "final_url": self.final_url,
             "created_at": self.created_at.strftime("%Y-%m-%dT%H:%M:%S") if self.created_at else None
         }
