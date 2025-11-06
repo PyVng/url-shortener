@@ -28,6 +28,14 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-pro
 app.config['WTF_CSRF_ENABLED'] = False
 csrf = CSRFProtect(app)
 
+# Add custom Jinja2 filters
+@app.template_filter('strftime')
+def strftime_filter(date, format_string):
+    """Format datetime object with strftime"""
+    if date:
+        return date.strftime(format_string)
+    return ''
+
 # JWT Secret Key
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
 JWT_ALGORITHM = "HS256"
@@ -371,7 +379,7 @@ def shorten_url():
 
         # Get current user if authenticated
         current_user = get_current_user()
-        user_id = str(current_user.id) if current_user else None
+        user_id = current_user.id if current_user else None
 
         # Create short URL
         short_url = Url.create_short_url(db, url_data.original_url, base_url, user_id)
@@ -741,6 +749,37 @@ def delete_rule(rule_id):
         db.commit()
 
         return jsonify({"success": True, "message": "Правило удалено"}), 200
+
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/urls/<int:url_id>", methods=["DELETE"])
+def delete_url(url_id):
+    """Delete a URL and all its associated rules."""
+    ensure_db_initialized()
+
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Не авторизован"}), 401
+
+    db = next(get_db())
+
+    try:
+        # Find URL and check ownership
+        url = db.query(Url).filter(Url.id == url_id, Url.user_id == user.id).first()
+        if not url:
+            return jsonify({"error": "Ссылка не найдена или не принадлежит вам"}), 404
+
+        # Delete all rules associated with this URL
+        db.query(Rule).filter(Rule.url_id == url_id).delete()
+
+        # Delete the URL
+        db.delete(url)
+        db.commit()
+
+        return jsonify({"success": True, "message": "Ссылка и все связанные правила удалены"}), 200
 
     except Exception as e:
         db.rollback()

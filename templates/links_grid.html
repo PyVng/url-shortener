@@ -17,31 +17,47 @@
 <script>
 // Load links on page load
 document.addEventListener('DOMContentLoaded', function() {
+    loadLinks();
+});
+
+async function loadLinks() {
     const token = localStorage.getItem('auth_token');
     if (!token) {
         window.location.href = '/';
         return;
     }
 
-    // Load links via HTMX
-    htmx.ajax('GET', '/api/my-links', {
-        target: '#links-container',
-        swap: 'innerHTML',
-        headers: {
-            'Authorization': `Bearer ${token}`
+    try {
+        const response = await fetch('/api/my-links', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'HX-Request': 'true'  // Indicate this is an HTMX request
+            }
+        });
+
+        if (response.ok) {
+            const html = await response.text();
+            document.getElementById('links-container').innerHTML = html;
+        } else if (response.status === 401) {
+            // Token expired or invalid
+            localStorage.removeItem('auth_token');
+            window.location.href = '/';
+        } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-    }).catch(error => {
+    } catch (error) {
         console.error('Failed to load links:', error);
         document.getElementById('links-container').innerHTML = `
             <div class="col-span-full">
                 <div class="text-center py-12">
                     <p class="text-error mb-4">Ошибка загрузки ссылок</p>
-                    <button onclick="location.reload()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors">
+                    <button onclick="loadLinks()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors">
                         Попробовать снова
                     </button>
                 </div>
             </div>
         `;
-    });
-});
+    }
+}
 </script>

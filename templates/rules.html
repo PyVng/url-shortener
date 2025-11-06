@@ -405,6 +405,17 @@ class RulesManager {
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.rulesManager = new RulesManager();
+
+    // Check if URL has url_id parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlId = urlParams.get('url_id');
+    if (urlId) {
+        // Pre-select the URL in the dropdown
+        const urlSelect = document.getElementById('urlSelect');
+        if (urlSelect) {
+            urlSelect.value = urlId;
+        }
+    }
 });
 </script>
 {% endblock %}

@@ -1,31 +1,66 @@
 <!-- Link Card Component -->
 <div class="glass p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-    <div class="flex justify-between items-start mb-4">
-        <div class="mono text-text-primary font-medium text-sm bg-gray-100 px-3 py-1 rounded-md break-all flex-1 mr-3">
+    <!-- Header with URLs -->
+    <div class="mb-4">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-text-muted">Короткая ссылка:</span>
+            <div class="flex gap-2">
+                <button
+                    onclick="copyToClipboard('{{ short_url }}')"
+                    class="text-primary hover:text-primary-hover text-sm underline"
+                    id="copyBtn-{{ id }}"
+                >
+                    Копировать
+                </button>
+                <a href="{{ short_url }}" target="_blank" class="text-primary hover:text-primary-hover text-sm underline">
+                    Открыть
+                </a>
+            </div>
+        </div>
+        <div class="mono text-text-primary font-medium text-sm bg-blue-50 border border-blue-200 px-3 py-2 rounded-md break-all">
             {{ short_url }}
         </div>
-        <button
-            onclick="copyToClipboard('{{ short_url }}')"
-            class="bg-primary text-white px-3 py-1 rounded-md hover:bg-primary-hover transition-colors text-sm font-medium flex-shrink-0"
-            id="copyBtn-{{ id }}"
-        >
-            Копировать
+    </div>
+
+    <!-- Original URL -->
+    <div class="mb-4">
+        <div class="text-sm font-medium text-text-muted mb-2">Оригинальная ссылка:</div>
+        <div class="text-text-primary text-sm bg-gray-50 px-3 py-2 rounded-md break-all border">
+            {{ original_url }}
+        </div>
+    </div>
+
+    <!-- Stats and Status -->
+    <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="text-center p-3 bg-gray-50 rounded-lg">
+            <div class="text-lg font-bold text-primary">{{ click_count }}</div>
+            <div class="text-xs text-text-muted">кликов</div>
+        </div>
+        <div class="text-center p-3 bg-gray-50 rounded-lg">
+            <div class="text-lg font-bold text-green-600" id="rulesCount-{{ id }}">...</div>
+            <div class="text-xs text-text-muted">правил</div>
+        </div>
+    </div>
+
+    <!-- Date -->
+    <div class="text-xs text-text-muted mb-4 text-center">
+        📅 Создано: {{ created_at|strftime('%d.%m.%Y в %H:%M') }}
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap gap-2">
+        <a href="/analytics/{{ short_url.split('/')[-1] }}"
+           class="flex-1 bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors text-sm font-medium text-center">
+            📊 Аналитика
+        </a>
+        <a href="/rules?url_id={{ id }}"
+           class="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium text-center">
+            ⚙️ Правила
+        </a>
+        <button onclick="deleteLink({{ id }}, '{{ short_url.split('/')[-1] }}')"
+                class="flex-1 bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 transition-colors text-sm font-medium">
+            🗑️ Удалить
         </button>
-    </div>
-
-    <div class="text-text-muted text-sm mb-4 break-all">
-        {{ original_url }}
-    </div>
-
-    <div class="flex justify-between items-center text-xs text-text-muted">
-        <div class="flex items-center gap-1">
-            <span>👆</span>
-            <span>{{ click_count }} кликов</span>
-        </div>
-        <div class="flex items-center gap-1">
-            <span>📅</span>
-            <span>{{ created_at|strftime('%d.%m.%Y') }}</span>
-        </div>
     </div>
 </div>
 
@@ -34,16 +69,18 @@ function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
         // Find the button that was clicked
         const btn = event.target.closest('button');
-        const originalText = btn.textContent;
-        btn.textContent = '✅ Скопировано!';
-        btn.classList.add('bg-success');
-        btn.classList.remove('bg-primary', 'hover:bg-primary-hover');
+        if (btn && btn.id.startsWith('copyBtn-')) {
+            const originalText = btn.textContent;
+            btn.textContent = '✅ Скопировано!';
+            btn.classList.add('text-green-600');
+            btn.classList.remove('text-primary');
 
-        setTimeout(() => {
-            btn.textContent = originalText;
-            btn.classList.remove('bg-success');
-            btn.classList.add('bg-primary', 'hover:bg-primary-hover');
-        }, 2000);
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('text-green-600');
+                btn.classList.add('text-primary');
+            }, 2000);
+        }
     }).catch(err => {
         console.error('Copy failed:', err);
         // Fallback
@@ -55,16 +92,80 @@ function copyToClipboard(text) {
         document.body.removeChild(textArea);
 
         const btn = event.target.closest('button');
-        const originalText = btn.textContent;
-        btn.textContent = '✅ Скопировано!';
-        btn.classList.add('bg-success');
-        btn.classList.remove('bg-primary', 'hover:bg-primary-hover');
+        if (btn && btn.id.startsWith('copyBtn-')) {
+            const originalText = btn.textContent;
+            btn.textContent = '✅ Скопировано!';
+            btn.classList.add('text-green-600');
+            btn.classList.remove('text-primary');
 
-        setTimeout(() => {
-            btn.textContent = originalText;
-            btn.classList.remove('bg-success');
-            btn.classList.add('bg-primary', 'hover:bg-primary-hover');
-        }, 2000);
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('text-green-600');
+                btn.classList.add('text-primary');
+            }, 2000);
+        }
     });
 }
+
+function deleteLink(urlId, shortCode) {
+    if (!confirm(`Вы уверены, что хотите удалить ссылку "${shortCode}"?\n\nЭто действие нельзя отменить!`)) {
+        return;
+    }
+
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        alert('Требуется авторизация');
+        return;
+    }
+
+    fetch(`/api/urls/${urlId}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            alert('Ссылка успешно удалена!');
+            // Reload the links list
+            location.reload();
+        } else {
+            return response.json().then(data => {
+                throw new Error(data.error || 'Ошибка при удалении ссылки');
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Delete error:', error);
+        alert('Ошибка при удалении ссылки: ' + error.message);
+    });
+}
+
+// Load rules count for this URL
+document.addEventListener('DOMContentLoaded', function() {
+    const rulesCountElement = document.getElementById('rulesCount-{{ id }}');
+    if (rulesCountElement) {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            fetch(`/api/rules/{{ id }}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const count = data.rules ? data.rules.length : 0;
+                rulesCountElement.textContent = count;
+                if (count > 0) {
+                    rulesCountElement.classList.add('text-green-600');
+                } else {
+                    rulesCountElement.classList.add('text-gray-500');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading rules count:', error);
+                rulesCountElement.textContent = '0';
+                rulesCountElement.classList.add('text-gray-500');
+            });
+        }
+    }
+});
 </script>
