@@ -168,9 +168,27 @@ class AnalyticsDashboard {
 
     async loadAnalytics() {
         try {
-            // For now, show placeholder data since we don't have real analytics API yet
-            this.renderCharts(this.getMockData());
-            this.renderStatsTable(this.getMockStats());
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                this.showErrorState();
+                return;
+            }
+
+            const response = await fetch(`/api/analytics/${this.shortCode}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.analytics) {
+                    this.renderCharts(data.analytics);
+                    this.renderStatsTable(data.analytics.visits || []);
+                } else {
+                    this.showErrorState();
+                }
+            } else {
+                this.showErrorState();
+            }
         } catch (error) {
             console.error('Error loading analytics:', error);
             this.showErrorState();
@@ -246,10 +264,10 @@ class AnalyticsDashboard {
         this.charts.clicks = new Chart(clicksCtx, {
             type: 'line',
             data: {
-                labels: data.clicksOverTime.labels,
+                labels: data.clicks_over_time.labels || [],
                 datasets: [{
                     label: 'Клики',
-                    data: data.clicksOverTime.data,
+                    data: data.clicks_over_time.data || [],
                     borderColor: '#007aff',
                     backgroundColor: 'rgba(0, 122, 255, 0.1)',
                     tension: 0.4,
@@ -270,13 +288,15 @@ class AnalyticsDashboard {
 
         // Devices pie chart
         const devicesCtx = document.getElementById('devicesChart').getContext('2d');
+        const deviceLabels = Object.keys(data.devices || {});
+        const deviceData = Object.values(data.devices || {});
         this.charts.devices = new Chart(devicesCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Desktop', 'Mobile', 'Tablet'],
+                labels: deviceLabels.map(label => label.charAt(0).toUpperCase() + label.slice(1)),
                 datasets: [{
-                    data: [data.devices.desktop, data.devices.mobile, data.devices.tablet],
-                    backgroundColor: ['#007aff', '#28a745', '#ffc107'],
+                    data: deviceData,
+                    backgroundColor: ['#007aff', '#28a745', '#ffc107', '#dc3545'],
                     borderWidth: 0
                 }]
             },
@@ -294,10 +314,10 @@ class AnalyticsDashboard {
         this.charts.countries = new Chart(countriesCtx, {
             type: 'bar',
             data: {
-                labels: Object.keys(data.countries),
+                labels: Object.keys(data.countries || {}),
                 datasets: [{
                     label: 'Посещения',
-                    data: Object.values(data.countries),
+                    data: Object.values(data.countries || {}),
                     backgroundColor: '#007aff',
                     borderRadius: 4
                 }]
@@ -319,10 +339,10 @@ class AnalyticsDashboard {
         this.charts.referrers = new Chart(referrersCtx, {
             type: 'bar',
             data: {
-                labels: Object.keys(data.referrers),
+                labels: Object.keys(data.referrers || {}),
                 datasets: [{
                     label: 'Посещения',
-                    data: Object.values(data.referrers),
+                    data: Object.values(data.referrers || {}),
                     backgroundColor: '#28a745',
                     borderRadius: 4
                 }]

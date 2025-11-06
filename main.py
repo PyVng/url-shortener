@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 # Import our modules
 from database import init_db, get_db
-from models import Url, User, Rule
+from models import Url, User, Rule, Visit
 from schemas import (UrlCreate, UrlResponse, UserCreate, UserLogin,
                      UserResponse, TokenResponse)
 from cache import cache
@@ -801,6 +801,94 @@ def delete_url(url_id):
     except Exception as e:
         db.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/analytics/<short_code>")
+def get_analytics(short_code):
+    """Get analytics data for a URL."""
+    ensure_db_initialized()
+
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Не авторизован"}), 401
+
+    db = next(get_db())
+
+    try:
+        # Find URL and check ownership
+        url = db.query(Url).filter(Url.short_code == short_code, Url.user_id == user.id).first()
+        if not url:
+            return jsonify({"error": "Ссылка не найдена или не принадлежит вам"}), 404
+
+        # Get visit statistics
+        visits = db.query(Visit).filter(Visit.url_id == url.id).order_by(Visit.created_at.desc()).all()
+
+        # Process data for charts
+        analytics_data = {
+            "url_info": {
+                "id": url.id,
+                "short_code": url.short_code,
+                "original_url": url.original_url,
+                "click_count": url.click_count,
+                "created_at": url.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+            },
+            "clicks_over_time": {},
+            "devices": {},
+            "countries": {},
+            "referrers": {},
+            "visits": []
+        }
+
+        # Process visits data
+        for visit in visits:
+            # Clicks over time (daily)
+            date_key = visit.created_at.strftime("%Y-%m-%d")
+            analytics_data["clicks_over_time"][date_key] = analytics_data["clicks_over_time"].get(date_key, 0) + 1
+
+            # Devices
+            device = visit.device_type or "unknown"
+            analytics_data["devices"][device] = analytics_data["devices"].get(device, 0) + 1
+
+            # Countries
+            country = visit.country_code or "XX"
+            analytics_data["countries"][country] = analytics_data["countries"].get(country, 0) + 1
+
+            # Referrers
+            referrer = "direct"
+            if visit.referrer:
+                try:
+                    from urllib.parse import urlparse
+                    parsed = urlparse(visit.referrer)
+                    referrer = parsed.netloc or "direct"
+                    if not referrer or referrer == "":
+                        referrer = "direct"
+                except:
+                    referrer = "direct"
+            analytics_data["referrers"][referrer] = analytics_data["referrers"].get(referrer, 0) + 1
+
+            # Visit details for table
+            analytics_data["visits"].append({
+                "date": visit.created_at.strftime("%Y-%m-%d"),
+                "time": visit.created_at.strftime("%H:%M:%S"),
+                "ip": visit.ip_address or "unknown",
+                "country": visit.country_code or "XX",
+                "device": visit.device_type or "unknown",
+                "browser": visit.browser or "unknown",
+                "referrer": referrer,
+                "target_url": visit.final_url or url.original_url
+            })
+
+        # Convert to chart format
+        analytics_data["clicks_over_time"] = {
+            "labels": list(analytics_data["clicks_over_time"].keys()),
+            "data": list(analytics_data["clicks_over_time"].values())
+        }
+
+        return jsonify({"success": True, "analytics": analytics_data}), 200
+
+    except Exception as e:
+        print(f"Analytics error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # Local development server
