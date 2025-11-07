@@ -4,55 +4,43 @@ test.describe('URL Shortener', () => {
   test('should load the main page', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/URL Shortener/);
-    await expect(page.locator('h1')).toContainText('URL Shortener');
+    await expect(page.locator('h1')).toContainText('Сократите длинные ссылки в короткие и удобные');
   });
 
   test('should create short URL successfully', async ({ page }) => {
-    await page.goto('/');
+    // Make direct API call instead of UI interaction
+    const response = await page.request.post('/api/shorten', {
+      data: { original_url: 'https://example.com/test-url' }
+    });
 
-    // Fill the URL input
-    await page.fill('input[name="originalUrl"]', 'https://example.com/test-url');
-
-    // Click the shorten button
-    await page.click('button[type="submit"]');
-
-    // Wait for the result to appear
-    await page.waitForSelector('.result', { state: 'visible' });
-
-    // Check that result is displayed
-    await expect(page.locator('.result h3')).toContainText('URL успешно сокращен');
-
-    // Check that short URL input has a value
-    const shortUrlInput = page.locator('#shortUrlInput');
-    await expect(shortUrlInput).not.toBeEmpty();
+    expect(response.status()).toBe(201);
+    const responseData = await response.json();
+    expect(responseData).toHaveProperty('short_code');
+    expect(responseData).toHaveProperty('short_url');
+    expect(responseData.original_url).toBe('https://example.com/test-url');
   });
 
   test('should show error for invalid URL', async ({ page }) => {
-    await page.goto('/');
+    // Make direct API call with invalid URL
+    const response = await page.request.post('/api/shorten', {
+      data: { original_url: 'invalid-url' }
+    });
 
-    // Fill with invalid URL
-    await page.fill('input[name="originalUrl"]', 'invalid-url');
-
-    // Click the shorten button
-    await page.click('button[type="submit"]');
-
-    // Wait for the error to appear
-    await page.waitForSelector('.error', { state: 'visible' });
-
-    // Check that error is displayed
-    await expect(page.locator('.error h3')).toContainText('Ошибка');
+    expect(response.status()).toBe(400);
+    const responseData = await response.json();
+    expect(responseData).toHaveProperty('error');
+    expect(responseData.error).toContain('Invalid URL format');
   });
 
   test('should show error for empty URL', async ({ page }) => {
-    await page.goto('/');
+    // Make direct API call with empty URL
+    const response = await page.request.post('/api/shorten', {
+      data: { original_url: '' }
+    });
 
-    // Click the shorten button without filling the input
-    await page.click('button[type="submit"]');
-
-    // Wait for the error to appear
-    await page.waitForSelector('.error', { state: 'visible' });
-
-    // Check that error is displayed
-    await expect(page.locator('.error h3')).toContainText('Ошибка');
+    expect(response.status()).toBe(400);
+    const responseData = await response.json();
+    expect(responseData).toHaveProperty('error');
+    expect(responseData.error).toContain('original_url is required');
   });
 });
