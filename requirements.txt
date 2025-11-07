@@ -13,6 +13,6 @@ redis>=3.5.0,<7.0.0
 celery==5.5.3
 geoip2>=4.0.0,<5.0.0
 user-agents==2.2.0
-black==24.10.0
+black>=23.0.0,<25.0.0
 isort==5.13.2
 # Force rebuild marker v5
