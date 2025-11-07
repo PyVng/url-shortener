@@ -60,14 +60,14 @@ class TestClientInfo:
                 "X-Forwarded-For": "192.168.1.1, 10.0.0.1",
                 "X-Real-IP": "192.168.1.1",
                 "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36"
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " "AppleWebKit/537.36"
                 ),
                 "Referer": "https://google.com/search",
             }
         ):
             # Import after setting up request context
             from main import get_client_info
+
             result = get_client_info()
 
             assert result["ip_address"] == "192.168.1.1"
@@ -86,6 +86,7 @@ class TestClientInfo:
         with app.test_request_context():
             # Import after setting up request context
             from main import get_client_info
+
             result = get_client_info()
 
             assert result["ip_address"] == "127.0.0.1"

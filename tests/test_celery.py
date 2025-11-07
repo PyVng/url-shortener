@@ -172,9 +172,7 @@ class TestLogVisitTask:
         # Execute task directly - it should raise Retry exception
         mock_task = MagicMock()
         with pytest.raises(Exception):  # Celery Retry exception
-            log_visit.__wrapped__(
-                mock_task, 1, request_data, "https://example.com"
-            )
+            log_visit.__wrapped__(mock_task, 1, request_data, "https://example.com")
 
 
 class TestProcessAnalyticsTask:
