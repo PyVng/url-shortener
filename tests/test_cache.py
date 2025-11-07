@@ -1,20 +1,16 @@
-"""
-Unit tests for Redis cache functionality
-"""
+"""Unit tests for Redis cache functionality."""
 
 from unittest.mock import Mock, patch
-
-import pytest
 
 from cache import Cache
 
 
 class TestCache:
-    """Test cases for Cache class"""
+    """Test cases for Cache class."""
 
     @patch("redis.from_url")
     def test_cache_initialization_success(self, mock_redis_from_url):
-        """Test successful cache initialization"""
+        """Test successful cache initialization."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
 
@@ -25,7 +21,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_cache_initialization_failure(self, mock_redis_from_url):
-        """Test cache initialization with Redis failure"""
+        """Test cache initialization with Redis failure."""
         mock_redis_from_url.side_effect = Exception("Redis connection failed")
 
         cache = Cache()
@@ -34,7 +30,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_get_url_data_success(self, mock_redis_from_url):
-        """Test successful URL data retrieval from cache"""
+        """Test successful URL data retrieval from cache."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
 
@@ -51,7 +47,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_get_url_data_not_found(self, mock_redis_from_url):
-        """Test URL data not found in cache"""
+        """Test URL data not found in cache."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
         mock_redis.get.return_value = None
@@ -63,7 +59,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_get_url_data_redis_failure(self, mock_redis_from_url):
-        """Test cache failure handling"""
+        """Test cache failure handling."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
         mock_redis.get.side_effect = Exception("Redis error")
@@ -75,7 +71,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_get_url_data_no_redis(self, mock_redis_from_url):
-        """Test cache behavior when Redis is not available"""
+        """Test cache behavior when Redis is not available."""
         mock_redis_from_url.side_effect = Exception("Redis connection failed")
 
         cache = Cache()
@@ -85,7 +81,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_set_url_data_success(self, mock_redis_from_url):
-        """Test successful URL data storage in cache"""
+        """Test successful URL data storage in cache."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
 
@@ -102,7 +98,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_set_url_data_custom_ttl(self, mock_redis_from_url):
-        """Test URL data storage with custom TTL"""
+        """Test URL data storage with custom TTL."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
 
@@ -116,7 +112,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_set_url_data_no_redis(self, mock_redis_from_url):
-        """Test cache set behavior when Redis is not available"""
+        """Test cache set behavior when Redis is not available."""
         mock_redis_from_url.side_effect = Exception("Redis connection failed")
 
         cache = Cache()
@@ -126,7 +122,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_invalidate_url_success(self, mock_redis_from_url):
-        """Test successful URL cache invalidation"""
+        """Test successful URL cache invalidation."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
 
@@ -137,7 +133,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_invalidate_url_no_redis(self, mock_redis_from_url):
-        """Test cache invalidation when Redis is not available"""
+        """Test cache invalidation when Redis is not available."""
         mock_redis_from_url.side_effect = Exception("Redis connection failed")
 
         cache = Cache()
@@ -147,7 +143,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_get_cache_stats_success(self, mock_redis_from_url):
-        """Test successful cache statistics retrieval"""
+        """Test successful cache statistics retrieval."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
 
@@ -167,18 +163,18 @@ class TestCache:
         assert stats["total_keys"] == 150
 
     @patch("redis.from_url")
-    def test_get_cache_stats_no_redis(self):
-        """Test cache stats when Redis is not available"""
-        cache = Cache()
-        cache.redis_client = None
+    def test_get_cache_stats_no_redis(self, mock_redis_from_url):
+        """Test cache stats when Redis is not available."""
+        mock_redis_from_url.side_effect = Exception("Redis connection failed")
 
+        cache = Cache()
         stats = cache.get_cache_stats()
 
         assert stats == {"error": "Redis not connected"}
 
     @patch("redis.from_url")
     def test_increment_counter_success(self, mock_redis_from_url):
-        """Test successful counter increment"""
+        """Test successful counter increment."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
         mock_redis.incrby.return_value = 5
@@ -191,7 +187,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_increment_counter_no_redis(self, mock_redis_from_url):
-        """Test counter increment when Redis is not available"""
+        """Test counter increment when Redis is not available."""
         mock_redis_from_url.side_effect = Exception("Redis connection failed")
 
         cache = Cache()
@@ -202,7 +198,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_get_counter_success(self, mock_redis_from_url):
-        """Test successful counter retrieval"""
+        """Test successful counter retrieval."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
         mock_redis.get.return_value = b"42"
@@ -215,7 +211,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_get_counter_not_found(self, mock_redis_from_url):
-        """Test counter retrieval when key doesn't exist"""
+        """Test counter retrieval when key doesn't exist."""
         mock_redis = Mock()
         mock_redis_from_url.return_value = mock_redis
         mock_redis.get.return_value = None
@@ -227,7 +223,7 @@ class TestCache:
 
     @patch("redis.from_url")
     def test_get_counter_no_redis(self, mock_redis_from_url):
-        """Test counter retrieval when Redis is not available"""
+        """Test counter retrieval when Redis is not available."""
         mock_redis_from_url.side_effect = Exception("Redis connection failed")
 
         cache = Cache()

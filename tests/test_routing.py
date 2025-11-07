@@ -1,6 +1,4 @@
-"""
-Unit tests for smart routing functionality
-"""
+"""Unit tests for smart routing functionality."""
 
 from unittest.mock import MagicMock, patch
 
@@ -20,8 +18,11 @@ from models import Base, Rule, Url
 
 
 @pytest.fixture(scope="function")
-def test_db():
-    """Create a test database in memory"""
+def test_db(monkeypatch):
+    """Create a test database in memory."""
+    # Clear global engine state to prevent connection leaks
+    monkeypatch.setattr("database._engine", None)
+
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -33,147 +34,167 @@ def test_db():
     Base.metadata.create_all(bind=engine)
 
     # Create session
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    db = SessionLocal()
+    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = session_factory()
 
     try:
         yield db
     finally:
         db.close()
+        # Dispose engine to close connections
+        engine.dispose()
         Base.metadata.drop_all(bind=engine)
 
 
 class TestClientInfo:
-    """Test cases for client information extraction"""
+    """Test cases for client information extraction."""
 
-    @patch("main.request")
-    def test_get_client_info_complete(self, mock_request):
-        """Test extracting complete client information"""
-        mock_request.headers = {
-            "X-Forwarded-For": "192.168.1.1, 10.0.0.1",
-            "X-Real-IP": "192.168.1.1",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Referer": "https://google.com/search",
-        }
-        mock_request.remote_addr = "127.0.0.1"
+    def test_get_client_info_complete(self):
+        """Test extracting complete client information."""
+        from flask import Flask
 
-        result = get_client_info()
+        app = Flask(__name__)
 
-        assert result["ip_address"] == "192.168.1.1"
-        assert (
-            result["user_agent"]
-            == "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        )
-        assert result["referrer"] == "https://google.com/search"
+        with app.test_request_context(
+            headers={
+                "X-Forwarded-For": "192.168.1.1, 10.0.0.1",
+                "X-Real-IP": "192.168.1.1",
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36"
+                ),
+                "Referer": "https://google.com/search",
+            }
+        ):
+            # Import after setting up request context
+            from main import get_client_info
+            result = get_client_info()
 
-    @patch("main.request")
-    def test_get_client_info_minimal(self, mock_request):
-        """Test extracting minimal client information"""
-        mock_request.headers = {}
-        mock_request.remote_addr = "127.0.0.1"
+            assert result["ip_address"] == "192.168.1.1"
+            assert (
+                result["user_agent"]
+                == "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            )
+            assert result["referrer"] == "https://google.com/search"
 
-        result = get_client_info()
+    def test_get_client_info_minimal(self):
+        """Test extracting minimal client information."""
+        from flask import Flask
 
-        assert result["ip_address"] == "127.0.0.1"
-        assert result["user_agent"] == ""
-        assert result["referrer"] == ""
+        app = Flask(__name__)
+
+        with app.test_request_context():
+            # Import after setting up request context
+            from main import get_client_info
+            result = get_client_info()
+
+            assert result["ip_address"] == "127.0.0.1"
+            assert result["user_agent"] == ""
+            assert result["referrer"] == ""
 
 
 class TestDeviceDetection:
-    """Test cases for device type detection"""
+    """Test cases for device type detection."""
 
     def test_get_device_type_desktop(self):
-        """Test desktop device detection"""
-        ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        """Test desktop device detection."""
+        ua = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        )  # noqa: E501
         result = get_device_type(ua)
         assert result == "desktop"
 
     def test_get_device_type_mobile(self):
-        """Test mobile device detection"""
-        ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15"
+        """Test mobile device detection."""
+        ua = (
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) "
+            "AppleWebKit/605.1.15"
+        )
         result = get_device_type(ua)
         assert result == "mobile"
 
     def test_get_device_type_tablet(self):
-        """Test tablet device detection"""
+        """Test tablet device detection."""
         ua = "Mozilla/5.0 (iPad; CPU OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15"
         result = get_device_type(ua)
         assert result == "tablet"
 
     def test_get_device_type_unknown(self):
-        """Test fallback for unknown device"""
+        """Test fallback for unknown device."""
         ua = "Unknown User Agent"
         result = get_device_type(ua)
         assert result == "desktop"  # fallback
 
 
 class TestGeoLocation:
-    """Test cases for geolocation"""
+    """Test cases for geolocation."""
 
-    @patch("main.geoip2")
-    def test_get_country_code_success(self, mock_geoip2):
-        """Test successful country code retrieval"""
-        mock_reader = MagicMock()
-        mock_response = MagicMock()
-        mock_response.country.iso_code = "US"
+    def test_get_country_code_success(self):
+        """Test successful country code retrieval."""
+        with patch("geoip2.database.Reader") as mock_reader_class, patch(
+            "os.path.exists", return_value=True
+        ):
+            mock_reader = MagicMock()
+            mock_response = MagicMock()
+            mock_response.country.iso_code = "US"
 
-        mock_reader.country.return_value = mock_response
-        mock_geoip2.database.Reader.return_value.__enter__.return_value = mock_reader
+            mock_reader.country.return_value = mock_response
+            mock_reader_class.return_value.__enter__.return_value = mock_reader
 
-        with patch("os.path.exists", return_value=True):
             result = get_country_code("192.168.1.1")
 
-        assert result == "US"
+            assert result == "US"
 
-    @patch("main.geoip2")
-    def test_get_country_code_no_db(self, mock_geoip2):
-        """Test country code when GeoIP DB is not available"""
+    def test_get_country_code_no_db(self):
+        """Test country code when GeoIP DB is not available."""
         with patch("os.path.exists", return_value=False):
             result = get_country_code("192.168.1.1")
 
         assert result == "XX"
 
-    @patch("main.geoip2")
-    def test_get_country_code_error(self, mock_geoip2):
-        """Test country code retrieval error handling"""
-        mock_geoip2.database.Reader.side_effect = Exception("GeoIP error")
+    def test_get_country_code_error(self):
+        """Test country code retrieval error handling."""
+        with patch("geoip2.database.Reader") as mock_reader_class, patch(
+            "os.path.exists", return_value=True
+        ):
+            mock_reader_class.side_effect = Exception("GeoIP error")
 
-        with patch("os.path.exists", return_value=True):
             result = get_country_code("192.168.1.1")
 
-        assert result == "XX"
+            assert result == "XX"
 
 
 class TestTimeSlots:
-    """Test cases for time slot detection"""
+    """Test cases for time slot detection."""
 
     @patch("main.datetime")
     def test_get_current_time_slot_business(self, mock_datetime):
-        """Test business hours time slot"""
+        """Test business hours time slot."""
         mock_datetime.now.return_value.hour = 14  # 2 PM
         result = get_current_time_slot()
         assert result == "09:00-18:00"
 
     @patch("main.datetime")
     def test_get_current_time_slot_evening(self, mock_datetime):
-        """Test evening time slot"""
+        """Test evening time slot."""
         mock_datetime.now.return_value.hour = 20  # 8 PM
         result = get_current_time_slot()
         assert result == "18:00-22:00"
 
     @patch("main.datetime")
     def test_get_current_time_slot_night(self, mock_datetime):
-        """Test night time slot"""
+        """Test night time slot."""
         mock_datetime.now.return_value.hour = 2  # 2 AM
         result = get_current_time_slot()
         assert result == "22:00-09:00"
 
 
 class TestRoutingRules:
-    """Test cases for routing rules application"""
+    """Test cases for routing rules application."""
 
     def test_apply_routing_rules_no_rules(self, test_db):
-        """Test routing when no rules are defined"""
+        """Test routing when no rules are defined."""
         # Create a test URL
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
@@ -190,7 +211,7 @@ class TestRoutingRules:
         assert result == original_url
 
     def test_apply_routing_rules_country_match(self, test_db):
-        """Test country-based routing rule matching"""
+        """Test country-based routing rule matching."""
         # Create a test URL
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
@@ -221,7 +242,7 @@ class TestRoutingRules:
         assert result == "https://example.com/french"
 
     def test_apply_routing_rules_device_match(self, test_db):
-        """Test device-based routing rule matching"""
+        """Test device-based routing rule matching."""
         # Create a test URL
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
@@ -250,7 +271,7 @@ class TestRoutingRules:
         assert result == "https://example.com/mobile"
 
     def test_apply_routing_rules_time_match(self, test_db):
-        """Test time-based routing rule matching"""
+        """Test time-based routing rule matching."""
         # Create a test URL
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
@@ -281,7 +302,7 @@ class TestRoutingRules:
         assert result == "https://example.com/business"
 
     def test_apply_routing_rules_referrer_match(self, test_db):
-        """Test referrer-based routing rule matching"""
+        """Test referrer-based routing rule matching."""
         # Create a test URL
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
@@ -299,10 +320,11 @@ class TestRoutingRules:
         test_db.add(rule)
         test_db.commit()
 
+        referrer_url = "https://google.com/search?q=test"  # noqa: E501
         client_info = {
             "ip_address": "192.168.1.1",
             "user_agent": "Mozilla/5.0 (Windows NT 10.0)",
-            "referrer": "https://google.com/search?q=test",
+            "referrer": referrer_url,
         }
 
         result = apply_routing_rules(test_db, url_obj.id, client_info)
@@ -310,7 +332,7 @@ class TestRoutingRules:
         assert result == "https://example.com/seo-landing"
 
     def test_apply_routing_rules_weight_ab_testing(self, test_db):
-        """Test weight-based A/B testing routing"""
+        """Test weight-based A/B testing routing."""
         # Create a test URL
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
@@ -342,7 +364,7 @@ class TestRoutingRules:
         assert result == "https://example.com/variant-b"
 
     def test_apply_routing_rules_no_match(self, test_db):
-        """Test routing when no rules match"""
+        """Test routing when no rules match."""
         # Create a test URL
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
@@ -374,7 +396,7 @@ class TestRoutingRules:
         assert result == original_url
 
     def test_apply_routing_rules_priority_order(self, test_db):
-        """Test that rules are applied in priority order"""
+        """Test that rules are applied in priority order."""
         # Create a test URL
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
@@ -417,7 +439,7 @@ class TestRoutingRules:
         assert result == "https://example.com/us-high-priority"
 
     def test_apply_routing_rules_inactive_ignored(self, test_db):
-        """Test that inactive rules are ignored"""
+        """Test that inactive rules are ignored."""
         # Create a test URL
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"

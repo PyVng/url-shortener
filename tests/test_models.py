@@ -1,8 +1,4 @@
-"""
-Unit tests for URL Shortener models
-"""
-
-from datetime import datetime
+"""Unit tests for URL Shortener models."""
 
 import pytest
 from sqlalchemy import create_engine
@@ -13,8 +9,11 @@ from models import Base, Rule, Url, Visit
 
 
 @pytest.fixture(scope="function")
-def test_db():
-    """Create a test database in memory"""
+def test_db(monkeypatch):
+    """Create a test database in memory."""
+    # Clear global engine state to prevent connection leaks
+    monkeypatch.setattr("database._engine", None)
+
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -26,21 +25,23 @@ def test_db():
     Base.metadata.create_all(bind=engine)
 
     # Create session
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    db = SessionLocal()
+    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = session_factory()
 
     try:
         yield db
     finally:
         db.close()
+        # Dispose engine to close connections
+        engine.dispose()
         Base.metadata.drop_all(bind=engine)
 
 
 class TestUrlModel:
-    """Test cases for Url model"""
+    """Test cases for Url model."""
 
     def test_generate_short_code(self):
-        """Test short code generation"""
+        """Test short code generation."""
         code1 = Url.generate_short_code()
         code2 = Url.generate_short_code()
 
@@ -56,12 +57,12 @@ class TestUrlModel:
         assert all(c in allowed_chars for c in code2)
 
     def test_generate_short_code_custom_length(self):
-        """Test short code generation with custom length"""
+        """Test short code generation with custom length."""
         code = Url.generate_short_code(length=8)
         assert len(code) == 8
 
     def test_create_short_url_success(self, test_db):
-        """Test successful creation of short URL"""
+        """Test successful creation of short URL."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
 
@@ -74,7 +75,7 @@ class TestUrlModel:
         assert url_obj.user_id is None
 
     def test_create_short_url_with_user_id(self, test_db):
-        """Test creation of short URL with user ID"""
+        """Test creation of short URL with user ID."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
         user_id = "user123"
@@ -84,7 +85,7 @@ class TestUrlModel:
         assert url_obj.user_id == user_id
 
     def test_create_short_url_invalid_protocol(self, test_db):
-        """Test creation fails with invalid URL protocol"""
+        """Test creation fails with invalid URL protocol."""
         base_url = "http://localhost:8000"
         invalid_url = "ftp://example.com/test"
 
@@ -93,7 +94,7 @@ class TestUrlModel:
             Url.create_short_url(test_db, invalid_url, base_url)
 
     def test_create_short_url_too_long(self, test_db):
-        """Test creation fails with URL that's too long"""
+        """Test creation fails with URL that's too long."""
         base_url = "http://localhost:8000"
         long_url = "https://example.com/" + "a" * 2000
 
@@ -101,7 +102,7 @@ class TestUrlModel:
             Url.create_short_url(test_db, long_url, base_url)
 
     def test_get_by_short_code_exists(self, test_db):
-        """Test getting URL by existing short code"""
+        """Test getting URL by existing short code."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
 
@@ -114,13 +115,13 @@ class TestUrlModel:
         assert retrieved_url.original_url == original_url
 
     def test_get_by_short_code_not_exists(self, test_db):
-        """Test getting URL by non-existing short code"""
+        """Test getting URL by non-existing short code."""
         retrieved_url = Url.get_by_short_code(test_db, "nonexistent")
 
         assert retrieved_url is None
 
     def test_get_original_url_and_increment_clicks(self, test_db):
-        """Test getting original URL and click count increment"""
+        """Test getting original URL and click count increment."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
 
@@ -143,12 +144,12 @@ class TestUrlModel:
         assert updated_url.click_count == 2
 
     def test_get_original_url_not_exists(self, test_db):
-        """Test getting original URL for non-existing short code"""
+        """Test getting original URL for non-existing short code."""
         result = Url.get_original_url(test_db, "nonexistent")
         assert result is None
 
     def test_to_dict(self, test_db):
-        """Test conversion to dictionary"""
+        """Test conversion to dictionary."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
 
@@ -166,10 +167,10 @@ class TestUrlModel:
 
 
 class TestRuleModel:
-    """Test cases for Rule model"""
+    """Test cases for Rule model."""
 
     def test_create_rule_country(self, test_db):
-        """Test creating a country-based rule"""
+        """Test creating a country-based rule."""
         # Create a test URL first
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
@@ -195,7 +196,7 @@ class TestRuleModel:
         assert rule.is_active == 1
 
     def test_create_rule_device(self, test_db):
-        """Test creating a device-based rule"""
+        """Test creating a device-based rule."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
         url_obj = Url.create_short_url(test_db, original_url, base_url)
@@ -215,7 +216,7 @@ class TestRuleModel:
         assert rule.condition_value == "mobile"
 
     def test_create_rule_time(self, test_db):
-        """Test creating a time-based rule"""
+        """Test creating a time-based rule."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
         url_obj = Url.create_short_url(test_db, original_url, base_url)
@@ -235,7 +236,7 @@ class TestRuleModel:
         assert rule.condition_value == "09:00-18:00"
 
     def test_create_rule_weight_ab_testing(self, test_db):
-        """Test creating a weight-based rule for A/B testing"""
+        """Test creating a weight-based rule for A/B testing."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
         url_obj = Url.create_short_url(test_db, original_url, base_url)
@@ -256,7 +257,7 @@ class TestRuleModel:
         assert rule.weight == 0.5
 
     def test_rule_to_dict(self, test_db):
-        """Test Rule to_dict conversion"""
+        """Test Rule to_dict conversion."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
         url_obj = Url.create_short_url(test_db, original_url, base_url)
@@ -284,10 +285,10 @@ class TestRuleModel:
 
 
 class TestVisitModel:
-    """Test cases for Visit model"""
+    """Test cases for Visit model."""
 
     def test_create_visit_basic(self, test_db):
-        """Test creating a basic visit record"""
+        """Test creating a basic visit record."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
         url_obj = Url.create_short_url(test_db, original_url, base_url)
@@ -315,7 +316,7 @@ class TestVisitModel:
         assert visit.os_name == "Windows"
 
     def test_create_visit_mobile(self, test_db):
-        """Test creating a visit from mobile device"""
+        """Test creating a visit from mobile device."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
         url_obj = Url.create_short_url(test_db, original_url, base_url)
@@ -339,7 +340,7 @@ class TestVisitModel:
         assert visit.final_url == "https://example.com/mobile-version"
 
     def test_visit_to_dict(self, test_db):
-        """Test Visit to_dict conversion"""
+        """Test Visit to_dict conversion."""
         base_url = "http://localhost:8000"
         original_url = "https://example.com/test"
         url_obj = Url.create_short_url(test_db, original_url, base_url)
