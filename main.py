@@ -27,6 +27,18 @@ from schemas import (
 )
 from tasks import log_visit
 
+# Optional imports for geoip functionality
+try:
+    import geoip2.database
+    import user_agents
+except ImportError:
+    # Create mock modules for testing when geoip2 is not available
+    import types
+    geoip2 = types.ModuleType('geoip2')
+    geoip2.database = types.ModuleType('database')
+    user_agents = types.ModuleType('user_agents')
+    user_agents.parse = lambda ua: type('MockUA', (), {'is_mobile': False, 'is_tablet': False, 'is_pc': True})()
+
 # Create Flask app
 app = Flask(__name__)
 
@@ -133,7 +145,8 @@ def get_client_info():
 def get_device_type(user_agent_str: str) -> str:
     """Determine device type from User-Agent."""
     try:
-        import user_agents
+        if user_agents is None:
+            return "desktop"
 
         ua = user_agents.parse(user_agent_str)
         if ua.is_mobile:
@@ -149,7 +162,8 @@ def get_device_type(user_agent_str: str) -> str:
 def get_country_code(ip_address: str) -> str:
     """Get country code from IP address."""
     try:
-        import geoip2.database
+        if geoip2 is None:
+            return "XX"
 
         geo_db_path = os.getenv(
             "GEOIP_DB_PATH", "/usr/share/GeoIP/GeoLite2-Country.mmdb"
