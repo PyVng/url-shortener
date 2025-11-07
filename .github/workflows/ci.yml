@@ -125,14 +125,22 @@ jobs:
     - name: Install Playwright
       run: npx playwright install --with-deps
 
-    - name: Run E2E tests
+    - name: Start Flask server
       env:
         DATABASE_URL: sqlite:///test.db
         SECRET_KEY: test-secret-key
         JWT_SECRET_KEY: test-jwt-secret
       run: |
         python create_tables.py
-        npx playwright test
+        python main.py &
+        sleep 5
+
+    - name: Run E2E tests
+      env:
+        DATABASE_URL: sqlite:///test.db
+        SECRET_KEY: test-secret-key
+        JWT_SECRET_KEY: test-jwt-secret
+      run: npx playwright test
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
