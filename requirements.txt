@@ -1,9 +1,9 @@
-flask==3.1.2
+flask>=2.3.0,<3.0.0
 gunicorn==21.2.0
-sqlalchemy==2.0.44
+sqlalchemy>=1.4.0,<2.0.0
 psycopg2-binary==2.9.10
 python-dotenv==1.2.1
-pydantic==2.12.4
+pydantic>=1.8.0,<2.0.0
 flask-cors==6.0.1
 flask-wtf==1.2.1
 PyJWT==2.10.1
@@ -13,4 +13,6 @@ redis==7.0.1
 celery==5.5.3
 geoip2==5.1.0
 user-agents==2.2.0
+black==24.10.0
+isort==5.13.2
 # Force rebuild marker v5
