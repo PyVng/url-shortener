@@ -406,10 +406,10 @@ def shorten_url():
 
     try:
         # Try to get JSON data first
-        if request.is_json:
+        try:
             data = request.get_json()
-        else:
-            # Fall back to form data
+        except Exception:
+            # Fall back to form data if JSON parsing fails
             data = request.form.to_dict() if request.form else {}
 
         original_url = data.get("original_url")
