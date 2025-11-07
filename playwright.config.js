@@ -64,9 +64,9 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'python3 main.py',
-  //   url: 'http://localhost:8000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  webServer: {
+    command: 'python main.py',
+    url: 'http://localhost:8001',
+    reuseExistingServer: false,
+  },
 });
