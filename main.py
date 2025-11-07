@@ -3,12 +3,14 @@
 import os
 import random
 from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
 import jwt
-from flask import Flask, g, jsonify, redirect, render_template, request, send_file
+from flask import Flask, jsonify, redirect, render_template, request
 from flask_cors import CORS
-from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from cache import cache
 
@@ -41,8 +43,8 @@ csrf = CSRFProtect(app)
 
 # Add custom Jinja2 filters
 @app.template_filter("strftime")
-def strftime_filter(date, format_string):
-    """Format datetime object with strftime"""
+def strftime_filter(date: Optional[datetime], format_string: str) -> str:
+    """Format datetime object with strftime."""
     if date:
         return date.strftime(format_string)
     return ""
@@ -58,27 +60,27 @@ _db_initialized = False
 
 
 def create_access_token(user_id: int) -> str:
-    """Create JWT access token"""
+    """Create JWT access token."""
     expire = datetime.utcnow() + timedelta(hours=JWT_EXPIRATION_HOURS)
     to_encode = {"sub": str(user_id), "exp": expire}
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
 
-def verify_token(token: str):
-    """Verify JWT token and return user_id"""
+def verify_token(token: str) -> Optional[int]:
+    """Verify JWT token and return user_id."""
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
         user_id = int(payload.get("sub"))
         return user_id
     except jwt.ExpiredSignatureError:
         return None
-    except jwt.JWTError:
+    except jwt.PyJWTError:
         return None
 
 
-def get_current_user():
-    """Get current user from JWT token"""
+def get_current_user() -> Optional[User]:
+    """Get current user from JWT token."""
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return None
@@ -173,9 +175,11 @@ def get_current_time_slot() -> str:
         return "22:00-09:00"  # Night
 
 
-def apply_routing_rules(db, url_id: int, client_info: dict) -> str:
-    """
-    Apply routing rules and return the target URL.
+def apply_routing_rules(
+    db: Session, url_id: int, client_info: Dict[str, Any]
+) -> Optional[str]:
+    """Apply routing rules and return the target URL.
+
     Returns the original URL if no rules apply.
     """
     try:
@@ -212,7 +216,7 @@ def apply_routing_rules(db, url_id: int, client_info: dict) -> str:
                 rule_matches = rule.condition_value.lower() in referrer.lower()
             elif rule.rule_type == "weight":
                 # A/B testing - random selection based on weight
-                if random.random() < rule.weight:
+                if random.random() < float(rule.weight or 0):
                     rule_matches = True
 
             if rule_matches:
@@ -244,7 +248,7 @@ def register_user():
         )
 
         # Create access token
-        access_token = create_access_token(user.id)
+        access_token = create_access_token(user.id)  # type: ignore
 
         user_response = UserResponse.from_orm(user)
         token_response = TokenResponse(access_token=access_token, user=user_response)
@@ -401,8 +405,15 @@ def shorten_url():
     db = next(get_db())
 
     try:
-        data = request.get_json()
-        if not data or "original_url" not in data:
+        # Try to get JSON data first
+        if request.is_json:
+            data = request.get_json()
+        else:
+            # Fall back to form data
+            data = request.form.to_dict() if request.form else {}
+
+        original_url = data.get("original_url")
+        if not original_url:
             # Return HTML fragment for HTMX
             if request.headers.get("HX-Request"):
                 return (
@@ -411,7 +422,7 @@ def shorten_url():
                 )
             return jsonify({"error": "original_url is required"}), 400
 
-        url_data = UrlCreate(original_url=data["original_url"])
+        url_data = UrlCreate(original_url=original_url)
 
         # Get base URL from request
         protocol = request.headers.get("x-forwarded-proto", request.scheme)
@@ -511,12 +522,10 @@ def redirect_to_url(short_code):
         # Try to get URL data from cache first
         cached_data = cache.get_url_data(short_code)
         url_id = None
-        target_url = None
 
         if cached_data:
             # Use cached data
             url_id = cached_data.get("id")
-            target_url = cached_data.get("original_url")
         else:
             # Get from database
             url = Url.get_by_short_code(db, short_code)
@@ -524,7 +533,6 @@ def redirect_to_url(short_code):
                 return jsonify({"error": "Короткий URL не найден"}), 404
 
             url_id = url.id
-            target_url = url.original_url
 
             # Cache the URL data
             cache.set_url_data(
@@ -599,6 +607,8 @@ def test_database():
         db = next(get_db())
         # Try a simple query
         result = db.execute(text("SELECT 1")).fetchone()
+        if result is None:
+            return jsonify({"success": False, "error": "No result from query"}), 500
         return jsonify(
             {"success": True, "message": "Database connected", "test": result[0]}
         )
@@ -714,7 +724,7 @@ def get_my_links_html():
 
         return links_html
 
-    except Exception as e:
+    except Exception:
         return (
             render_template(
                 "empty_state.html",
@@ -762,7 +772,10 @@ def create_rule():
             return (
                 jsonify(
                     {
-                        "error": f"Неверный тип правила. Допустимые: {', '.join(valid_rule_types)}"
+                        "error": (
+                            f"Неверный тип правила. Допустимые: "
+                            f"{', '.join(valid_rule_types)}"
+                        ),
                     }
                 ),
                 400,
@@ -1005,7 +1018,7 @@ def get_analytics(short_code):
                     referrer = parsed.netloc or "direct"
                     if not referrer or referrer == "":
                         referrer = "direct"
-                except:
+                except Exception:
                     referrer = "direct"
             analytics_data["referrers"][referrer] = (
                 analytics_data["referrers"].get(referrer, 0) + 1
@@ -1035,7 +1048,7 @@ def get_analytics(short_code):
 
     except Exception as e:
         print(f"Analytics error: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 # Local development server
