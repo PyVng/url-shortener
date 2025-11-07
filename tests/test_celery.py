@@ -89,8 +89,8 @@ class TestLogVisitTask:
             # Create a mock task instance
             mock_task = MagicMock()
 
-            # Execute task with mock self parameter
-            result = log_visit.__wrapped__(
+            # Execute task function directly (bypass Celery decorator)
+            result = log_visit.__wrapped__.__func__(
                 mock_task, url_obj.id, request_data, original_url
             )
 
@@ -150,8 +150,8 @@ class TestLogVisitTask:
             # Create a mock task instance
             mock_task = MagicMock()
 
-            # Execute task with mock self parameter
-            result = log_visit.__wrapped__(
+            # Execute task function directly (bypass Celery decorator)
+            result = log_visit.__wrapped__.__func__(
                 mock_task, url_obj.id, request_data, original_url
             )
 
@@ -172,7 +172,7 @@ class TestLogVisitTask:
         # Execute task directly - it should raise Retry exception
         mock_task = MagicMock()
         with pytest.raises(Exception):  # Celery Retry exception
-            log_visit.__wrapped__(mock_task, 1, request_data, "https://example.com")
+            log_visit.__wrapped__.__func__(mock_task, 1, request_data, "https://example.com")
 
 
 class TestProcessAnalyticsTask:

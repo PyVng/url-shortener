@@ -1,6 +1,4 @@
-"""
-Celery tasks for URL Shortener
-"""
+"""Celery tasks for URL Shortener."""
 
 import os
 from datetime import datetime, timedelta
@@ -15,9 +13,7 @@ from models import Url, Visit
 
 @celery_app.task(bind=True)
 def log_visit(self, url_id: int, request_data: dict, final_url: str):
-    """
-    Log a visit to a URL with analytics data
-    """
+    """Log a visit to a URL with analytics data."""
     try:
         db = get_db_session()
 
@@ -91,9 +87,7 @@ def log_visit(self, url_id: int, request_data: dict, final_url: str):
 
 @celery_app.task
 def process_analytics(url_id: int):
-    """
-    Process analytics data for a URL (future enhancement)
-    """
+    """Process analytics data for a URL (future enhancement)."""
     # Placeholder for future analytics processing
     # Could calculate daily stats, update caches, etc.
     pass
@@ -101,9 +95,8 @@ def process_analytics(url_id: int):
 
 @celery_app.task
 def cleanup_old_visits(days: int = 90):
-    """
-    Clean up old visit records (older than specified days)
-    """
+    """Clean up old visit records (older than specified days)."""
+    db = None
     try:
         db = get_db_session()
         cutoff_date = datetime.utcnow() - timedelta(days=days)
@@ -117,4 +110,5 @@ def cleanup_old_visits(days: int = 90):
         print(f"Error cleaning up visits: {e}")
         return {"status": "error", "error": str(e)}
     finally:
-        db.close()
+        if db:
+            db.close()
