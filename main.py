@@ -34,10 +34,13 @@ try:
 except ImportError:
     # Create mock modules for testing when geoip2 is not available
     import types
-    geoip2 = types.ModuleType('geoip2')
-    geoip2.database = types.ModuleType('database')
-    user_agents = types.ModuleType('user_agents')
-    user_agents.parse = lambda ua: type('MockUA', (), {'is_mobile': False, 'is_tablet': False, 'is_pc': True})()
+
+    geoip2 = types.ModuleType("geoip2")
+    geoip2.database = types.ModuleType("database")
+    user_agents = types.ModuleType("user_agents")
+    user_agents.parse = lambda ua: type(
+        "MockUA", (), {"is_mobile": False, "is_tablet": False, "is_pc": True}
+    )()
 
 # Create Flask app
 app = Flask(__name__)
