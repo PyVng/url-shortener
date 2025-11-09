@@ -3,6 +3,8 @@
 import os
 
 from dotenv import load_dotenv
+from typing import Generator
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -20,7 +22,15 @@ is_production = (vercel_env == "production") or (
     os.getenv("ENVIRONMENT") == "production"
 )
 
-if not DATABASE_URL or not is_production:
+# If DATABASE_URL is explicitly set (like in CI), use it
+# Otherwise, default to local SQLite file
+if not DATABASE_URL:
+    DATABASE_URL = "sqlite:///./local.db"
+elif DATABASE_URL.startswith("sqlite:///:memory:"):
+    # Keep in-memory SQLite as-is
+    pass
+elif not is_production and not DATABASE_URL.startswith("postgresql"):
+    # In non-production, override with local SQLite unless PostgreSQL is explicitly requested
     DATABASE_URL = "sqlite:///./local.db"
 else:
     # Ensure PostgreSQL URL uses the correct scheme for SQLAlchemy 2.0
@@ -87,7 +97,7 @@ def init_db():
     print("Database initialized successfully")
 
 
-def get_db() -> Session:
+def get_db() -> Generator[Session, None, None]:
     """Get database session."""
     db = SessionLocal(bind=get_engine())
     try:

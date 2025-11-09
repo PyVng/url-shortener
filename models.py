@@ -1,22 +1,19 @@
-"""
-SQLAlchemy models for URL Shortener
-"""
+"""SQLAlchemy models for URL Shortener."""
 
 import hashlib
-import os
 import random
 import secrets
 import string
+from typing import Optional
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, func
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import Session, declarative_base, relationship
 
 Base = declarative_base()
 
 
 class User(Base):
-    """User model"""
+    """User model."""
 
     __tablename__ = "users"
 
@@ -31,22 +28,28 @@ class User(Base):
 
     @staticmethod
     def hash_password(password: str) -> str:
-        """Hash password using SHA-256 with salt"""
-        salt = secrets.token_hex(16)
-        return hashlib.sha256(f"{salt}{password}".encode()).hexdigest() + salt
+        """Hash password using SHA-256 with salt."""
+        salt = secrets.token_hex(16)  # 32 hex chars
+        hash_obj = hashlib.sha256()
+        hash_obj.update(f"{salt}{password}".encode('utf-8'))
+        return hash_obj.hexdigest() + salt
 
     @staticmethod
     def verify_password(password: str, password_hash: str) -> bool:
-        """Verify password against hash"""
-        if len(password_hash) < 64:
+        """Verify password against hash."""
+        if len(password_hash) != 96:  # 64 hash + 32 salt
             return False
         hash_part = password_hash[:64]
         salt = password_hash[64:]
-        return hashlib.sha256(f"{salt}{password}".encode()).hexdigest() == hash_part
+        hash_obj = hashlib.sha256()
+        hash_obj.update(f"{salt}{password}".encode('utf-8'))
+        return hash_obj.hexdigest() == hash_part
 
     @classmethod
-    def create_user(cls, db_session, username: str, email: str, password: str):
-        """Create a new user"""
+    def create_user(
+        cls, db_session: Session, username: str, email: str, password: str
+    ) -> "User":
+        """Create a new user."""
         if (
             db_session.query(cls)
             .filter((cls.username == username) | (cls.email == email))
@@ -65,8 +68,10 @@ class User(Base):
         return user
 
     @classmethod
-    def authenticate(cls, db_session, username_or_email: str, password: str):
-        """Authenticate user"""
+    def authenticate(
+        cls, db_session: Session, username_or_email: str, password: str
+    ) -> Optional["User"]:
+        """Authenticate user by username/email and password."""
         user = (
             db_session.query(cls)
             .filter(
@@ -80,7 +85,7 @@ class User(Base):
         return None
 
     def to_dict(self):
-        """Convert to dictionary (without password)"""
+        """Convert to dictionary (without password)."""
         return {
             "id": self.id,
             "username": self.username,
@@ -94,7 +99,7 @@ class User(Base):
 
 
 class Url(Base):
-    """URL model"""
+    """URL model."""
 
     __tablename__ = "urls"
 
@@ -107,15 +112,15 @@ class Url(Base):
 
     @staticmethod
     def generate_short_code(length: int = 6) -> str:
-        """Generate a random short code"""
+        """Generate a random short code."""
         chars = string.ascii_letters + string.digits
         return "".join(random.choice(chars) for _ in range(length))
 
     @classmethod
     def create_short_url(
         cls, db_session, original_url: str, base_url: str, user_id=None
-    ):
-        """Create a new short URL"""
+    ) -> "Url":
+        """Create a new short URL."""
         # Convert HttpUrl to string if needed
         url_str = str(original_url)
 
@@ -151,13 +156,13 @@ class Url(Base):
         return url_obj
 
     @classmethod
-    def get_by_short_code(cls, db_session, short_code: str):
-        """Get URL by short code"""
+    def get_by_short_code(cls, db_session, short_code: str) -> "Url | None":
+        """Get URL by short code."""
         return db_session.query(cls).filter(cls.short_code == short_code).first()
 
     @classmethod
-    def get_original_url(cls, db_session, short_code: str) -> str:
-        """Get original URL and increment click count"""
+    def get_original_url(cls, db_session, short_code: str) -> str | None:
+        """Get original URL and increment click count."""
         url_obj = cls.get_by_short_code(db_session, short_code)
         if not url_obj:
             return None
@@ -169,7 +174,7 @@ class Url(Base):
         return url_obj.original_url
 
     def to_dict(self):
-        """Convert to dictionary"""
+        """Convert to dictionary."""
         return {
             "id": str(self.id),
             "short_code": self.short_code,
@@ -186,7 +191,7 @@ class Url(Base):
 
 
 class Rule(Base):
-    """Rule model for conditional redirects"""
+    """Rule model for conditional redirects."""
 
     __tablename__ = "rules"
 
@@ -206,7 +211,7 @@ class Rule(Base):
     url = relationship("Url", backref="rules")
 
     def to_dict(self):
-        """Convert to dictionary"""
+        """Convert to dictionary."""
         return {
             "id": self.id,
             "url_id": self.url_id,
@@ -225,7 +230,7 @@ class Rule(Base):
 
 
 class Visit(Base):
-    """Visit model for click analytics"""
+    """Visit model for click analytics."""
 
     __tablename__ = "visits"
 
@@ -245,7 +250,7 @@ class Visit(Base):
     url = relationship("Url", backref="visits")
 
     def to_dict(self):
-        """Convert to dictionary"""
+        """Convert to dictionary."""
         return {
             "id": self.id,
             "url_id": self.url_id,
