@@ -156,12 +156,12 @@ class Url(Base):
         return url_obj
 
     @classmethod
-    def get_by_short_code(cls, db_session, short_code: str) -> "Url | None":
+    def get_by_short_code(cls, db_session, short_code: str) -> Optional["Url"]:
         """Get URL by short code."""
         return db_session.query(cls).filter(cls.short_code == short_code).first()
 
     @classmethod
-    def get_original_url(cls, db_session, short_code: str) -> str | None:
+    def get_original_url(cls, db_session, short_code: str) -> Optional[str]:
         """Get original URL and increment click count."""
         url_obj = cls.get_by_short_code(db_session, short_code)
         if not url_obj:
