@@ -65,8 +65,8 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'python main.py',
+    command: 'DATABASE_URL=sqlite:///test.db SECRET_KEY=test-secret-key JWT_SECRET_KEY=test-jwt-secret python main.py',
     url: 'http://localhost:8001',
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI,
   },
 });
