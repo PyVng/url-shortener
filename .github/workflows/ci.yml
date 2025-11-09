@@ -64,7 +64,7 @@ jobs:
 
     - name: Run unit tests with coverage
       env:
-        DATABASE_URL: sqlite:///test.db
+        DATABASE_URL: "sqlite:///:memory:"
         REDIS_URL: redis://localhost:6379/0
         SECRET_KEY: test-secret-key
         JWT_SECRET_KEY: test-jwt-secret
