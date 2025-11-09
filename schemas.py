@@ -47,7 +47,7 @@ class UrlResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
         json_schema_extra = {
             "example": {
                 "id": "1",
@@ -68,7 +68,7 @@ class UrlInfo(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class UserCreate(BaseModel):
@@ -112,7 +112,7 @@ class UserResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
         json_schema_extra = {
             "example": {
                 "id": 1,
