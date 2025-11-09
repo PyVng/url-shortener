@@ -24,19 +24,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
     - uses: actions/checkout@v4
 
@@ -77,7 +64,7 @@ jobs:
 
     - name: Run unit tests with coverage
       env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+        DATABASE_URL: sqlite:///test.db
         REDIS_URL: redis://localhost:6379/0
         SECRET_KEY: test-secret-key
         JWT_SECRET_KEY: test-jwt-secret
