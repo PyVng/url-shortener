@@ -31,7 +31,7 @@ class User(Base):
         """Hash password using SHA-256 with salt."""
         salt = secrets.token_hex(16)  # 32 hex chars
         hash_obj = hashlib.sha256()
-        hash_obj.update(f"{salt}{password}".encode('utf-8'))
+        hash_obj.update(f"{salt}{password}".encode("utf-8"))
         return hash_obj.hexdigest() + salt
 
     @staticmethod
@@ -42,7 +42,7 @@ class User(Base):
         hash_part = password_hash[:64]
         salt = password_hash[64:]
         hash_obj = hashlib.sha256()
-        hash_obj.update(f"{salt}{password}".encode('utf-8'))
+        hash_obj.update(f"{salt}{password}".encode("utf-8"))
         return hash_obj.hexdigest() == hash_part
 
     @classmethod
