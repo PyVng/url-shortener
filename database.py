@@ -1,10 +1,9 @@
 """Database connection and session management for URL Shortener."""
 
 import os
-
-from dotenv import load_dotenv
 from typing import Generator
 
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
