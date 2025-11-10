@@ -57,7 +57,7 @@
            class="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium text-center">
             ⚙️ Правила
         </a>
-        <button onclick="deleteLink({{ id }}, '{{ short_url.split('/')[-1] }}')"
+        <button onclick="deleteLink({{ id }}, '{{ short_code }}')"
                 class="flex-1 bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 transition-colors text-sm font-medium">
             🗑️ Удалить
         </button>
@@ -114,9 +114,15 @@ function deleteLink(urlId, shortCode) {
 
     const token = localStorage.getItem('auth_token');
     if (!token) {
-        alert('Требуется авторизация');
+        showNotification('Требуется авторизация', 'error');
         return;
     }
+
+    // Show loading state
+    const deleteBtn = event.target.closest('button');
+    const originalText = deleteBtn.innerHTML;
+    deleteBtn.innerHTML = '⏳ Удаление...';
+    deleteBtn.disabled = true;
 
     fetch(`/api/urls/${urlId}`, {
         method: 'DELETE',
@@ -126,9 +132,9 @@ function deleteLink(urlId, shortCode) {
     })
     .then(response => {
         if (response.ok) {
-            alert('Ссылка успешно удалена!');
-            // Reload the links list
-            location.reload();
+            showNotification('Ссылка успешно удалена!', 'success');
+            // Reload the links list without full page reload
+            loadLinks();
         } else {
             return response.json().then(data => {
                 throw new Error(data.error || 'Ошибка при удалении ссылки');
@@ -137,8 +143,30 @@ function deleteLink(urlId, shortCode) {
     })
     .catch(error => {
         console.error('Delete error:', error);
-        alert('Ошибка при удалении ссылки: ' + error.message);
+        showNotification('Ошибка при удалении ссылки: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Restore button state
+        deleteBtn.innerHTML = originalText;
+        deleteBtn.disabled = false;
     });
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-4 py-2 rounded-md text-white z-50 transition-all duration-300 ${
+        type === 'success' ? 'bg-green-500' :
+        type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+    }`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
 }
 
 // Load rules count for this URL

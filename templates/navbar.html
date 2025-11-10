@@ -58,6 +58,13 @@ class NavbarManager {
             this.navbarLogoutBtn.addEventListener('click', this.logout.bind(this));
         }
 
+        // Listen for user logged in event
+        window.addEventListener('userLoggedIn', (e) => {
+            this.setCurrentUser(e.detail);
+            // Redirect to my-links page after login
+            window.location.href = '/my-links';
+        });
+
         // Check auth status
         this.checkAuthStatus();
     }
